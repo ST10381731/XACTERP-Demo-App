@@ -1,17 +1,16 @@
-package com.example.stellarstocks.data.models
+package com.example.stellarstocks.data.entity.models
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
-import com.example.stellarstocks.data.models.InvoiceHeader
 
 @Entity(
     tableName = "invoice_detail",
     foreignKeys = [
         ForeignKey(
             entity = InvoiceHeader::class,
-            parentColumns = arrayOf("accountCode"),
-            childColumns = arrayOf("accountCode"),
+            parentColumns = arrayOf("invoiceNum"),
+            childColumns = arrayOf("invoiceNum"),
             onUpdate = ForeignKey.Companion.CASCADE,
             onDelete = ForeignKey.Companion.CASCADE
         )
@@ -24,6 +23,6 @@ data class InvoiceDetail(
     val qtySold: Double=0.0,
     val unitCost: Double=0.0,
     val unitSell: Double = 0.0,
-    val description: String,
+    val discount: Double = 0.0,
     val total: Double = 0.0
 )

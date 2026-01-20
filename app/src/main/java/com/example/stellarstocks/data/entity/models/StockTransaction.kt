@@ -1,9 +1,9 @@
-package com.example.stellarstocks.data.models
+package com.example.stellarstocks.data.entity.models
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
-import java.sql.Date
+import java.util.Date
 
 @Entity(
     tableName = "stock_transaction",
@@ -18,7 +18,7 @@ import java.sql.Date
     ]
 )
 data class StockTransaction(
-    @PrimaryKey val Id: Int,
+    @PrimaryKey val id: Int,
     val stockCode: String,
     val date: Date,
     val transactionType: String,

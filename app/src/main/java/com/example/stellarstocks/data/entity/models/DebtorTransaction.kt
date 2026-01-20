@@ -1,12 +1,12 @@
-package com.example.stellarstocks.data.models
+package com.example.stellarstocks.data.entity.models
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
-import java.sql.Date
+import java.util.Date
 
 @Entity(
-    tableName = "invoice_header",
+    tableName = "debtor_transaction",
     foreignKeys = [
         ForeignKey(
             entity = DebtorMaster::class,
@@ -17,11 +17,12 @@ import java.sql.Date
         )
     ]
 )
-data class InvoiceHeader(
-    @PrimaryKey val invoiceNum: Int,
+data class DebtorTransaction(
+    @PrimaryKey val id: Int,
     val accountCode: String,
     val date: Date,
-    val totalSellAmtExVat: Double,
-    val vat: Double = 0.0,
-    val totalCost: Double = 0.0
+    val transactionType: String,
+    val documentNo: Int,
+    val grossTransactionValue: Double = 0.0,
+    val vatValue: Double = 0.0
 )
