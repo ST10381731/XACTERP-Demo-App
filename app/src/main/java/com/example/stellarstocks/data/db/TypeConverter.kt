@@ -1,4 +1,4 @@
-package com.example.stellarstocks.data.entity
+package com.example.stellarstocks.data.db
 
 import androidx.room.TypeConverter
 import java.util.Date

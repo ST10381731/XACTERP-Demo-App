@@ -1,7 +1,8 @@
-package com.example.stellarstocks.data.entity.models
+package com.example.stellarstocks.data.db.models
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import java.util.Date
 
@@ -15,15 +16,15 @@ import java.util.Date
             onUpdate = ForeignKey.CASCADE,
             onDelete = ForeignKey.CASCADE
         )
-    ]
+    ],indices = [Index(value = ["stockCode"])]
 )
 data class StockTransaction(
-    @PrimaryKey val id: Int,
+    @PrimaryKey(autoGenerate = true) val id: Int=0,
     val stockCode: String,
     val date: Date,
     val transactionType: String,
-    val documentNum: Int,
-    val qty: Double = 0.0,
+    val documentNum: String,
+    val qty: Int,
     val unitCost: Double = 0.0,
-    val unitSold: Double = 0.0
+    val unitSell: Double = 0.0
 )

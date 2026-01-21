@@ -1,4 +1,4 @@
-package com.example.stellarstocks.data.entity.models
+package com.example.stellarstocks.data.db.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -13,7 +13,7 @@ data class StockMaster(
     val sellingCost: Double = 0.0,
     val totalPurchasesExclVat: Double = 0.0,
     val totalSalesExclVat: Double = 0.0,
-    val qtyPurchased: Double = 0.0,
-    val qtySold: Double = 0.0,
-    val stockOnHand: Double = 0.0
+    val qtyPurchased: Int,
+    val qtySold: Int,
+    val stockOnHand: Int
 )

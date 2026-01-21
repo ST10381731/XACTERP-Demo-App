@@ -1,12 +1,13 @@
-package com.example.stellarstocks.data.entity.models
+package com.example.stellarstocks.data.db.models
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import java.util.Date
 
 @Entity(
-    tableName = "debtor_transaction",
+    tableName = "invoice_header",
     foreignKeys = [
         ForeignKey(
             entity = DebtorMaster::class,
@@ -15,14 +16,13 @@ import java.util.Date
             onUpdate = ForeignKey.Companion.CASCADE,
             onDelete = ForeignKey.Companion.CASCADE
         )
-    ]
+    ],indices = [Index(value = ["accountCode"])]
 )
-data class DebtorTransaction(
-    @PrimaryKey val id: Int,
+data class InvoiceHeader(
+    @PrimaryKey(autoGenerate = true) val invoiceNum: Int=0,
     val accountCode: String,
     val date: Date,
-    val transactionType: String,
-    val documentNo: Int,
-    val grossTransactionValue: Double = 0.0,
-    val vatValue: Double = 0.0
+    val totalSellAmtExVat: Double,
+    val vat: Double = 0.0,
+    val totalCost: Double = 0.0
 )

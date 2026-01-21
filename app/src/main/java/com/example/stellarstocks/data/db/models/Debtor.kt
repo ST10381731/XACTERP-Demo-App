@@ -1,4 +1,4 @@
-package com.example.stellarstocks.data.entity.models
+package com.example.stellarstocks.data.db.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
