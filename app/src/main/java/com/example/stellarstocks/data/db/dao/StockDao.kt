@@ -29,7 +29,7 @@ interface StockDao {
     suspend fun insertTransaction(transaction: StockTransaction)
 
     @Query("SELECT * FROM stock_transaction WHERE stockCode = :code")
-    fun getTransactions(code: String): Flow<List<StockTransaction>>
+    fun getStockTransactions(code: String): Flow<List<StockTransaction>>
 
 }
 

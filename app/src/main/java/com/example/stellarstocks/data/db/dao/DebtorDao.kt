@@ -28,5 +28,5 @@ interface DebtorDao {
     suspend fun insertTransaction(transaction: DebtorTransaction)
 
     @Query("SELECT * FROM debtor_transaction WHERE accountCode = :code")
-    fun getTransactions(code: String): Flow<List<DebtorTransaction>>
+    fun getDebtorTransactions(code: String): Flow<List<DebtorTransaction>>
 }

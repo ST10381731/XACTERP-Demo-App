@@ -23,7 +23,7 @@ data class StockTransaction(
     val stockCode: String,
     val date: Date,
     val transactionType: String,
-    val documentNum: String,
+    val documentNum: Int,
     val qty: Int,
     val unitCost: Double = 0.0,
     val unitSell: Double = 0.0

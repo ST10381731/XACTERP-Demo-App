@@ -18,7 +18,8 @@ import androidx.room.PrimaryKey
         ForeignKey(
             entity = StockMaster::class,
             parentColumns = ["stockCode"],
-            childColumns = ["stockCode"]
+            childColumns = ["stockCode"],
+            onDelete = ForeignKey.RESTRICT
         )
     ],
     indices = [Index("stockCode"), Index("invoiceNum")]

@@ -5,15 +5,21 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.sqlite.db.SupportSQLiteDatabase
+import com.example.stellarstocks.data.db.dao.DebtorDao
+import com.example.stellarstocks.data.db.dao.InvoiceDetailDao
+import com.example.stellarstocks.data.db.dao.InvoiceHeaderDao
+import com.example.stellarstocks.data.db.dao.SeedData
+import com.example.stellarstocks.data.db.dao.StockDao
+import com.example.stellarstocks.data.db.models.DebtorMaster
 import com.example.stellarstocks.data.db.models.DebtorTransaction
 import com.example.stellarstocks.data.db.models.InvoiceDetail
 import com.example.stellarstocks.data.db.models.InvoiceHeader
 import com.example.stellarstocks.data.db.models.StockMaster
 import com.example.stellarstocks.data.db.models.StockTransaction
-import com.example.stellarstocks.data.db.models.DebtorMaster
-import com.example.stellarstocks.data.db.dao.DebtorDao
-import com.example.stellarstocks.data.db.dao.InvoiceDao
-import com.example.stellarstocks.data.db.dao.StockDao
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Database(entities = [
     StockMaster::class,
@@ -22,13 +28,13 @@ import com.example.stellarstocks.data.db.dao.StockDao
     InvoiceDetail::class,
     DebtorTransaction::class,
     StockTransaction::class
-], version = 3, exportSchema = false)
+], version = 4, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class StellarStocksDatabase : RoomDatabase() {
-
-abstract fun stockDao(): StockDao
-abstract fun debtorDao(): DebtorDao
-abstract fun invoiceDao(): InvoiceDao
+    abstract fun stockDao(): StockDao
+    abstract fun debtorDao(): DebtorDao
+    abstract fun invoiceHeaderDao(): InvoiceHeaderDao
+    abstract fun invoiceDetailDao(): InvoiceDetailDao
 
 
     companion object {

@@ -23,7 +23,7 @@ data class DebtorTransaction(
     val accountCode: String,
     val date: Date,
     val transactionType: String,
-    val documentNo: String,
+    val documentNo: Int,
     val grossTransactionValue: Double = 0.0,
     val vatValue: Double = 0.0
 )

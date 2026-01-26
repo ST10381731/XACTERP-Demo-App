@@ -13,8 +13,8 @@ import java.util.Date
             entity = DebtorMaster::class,
             parentColumns = arrayOf("accountCode"),
             childColumns = arrayOf("accountCode"),
-            onUpdate = ForeignKey.Companion.CASCADE,
-            onDelete = ForeignKey.Companion.CASCADE
+            onUpdate = ForeignKey.CASCADE,
+            onDelete = ForeignKey.CASCADE
         )
     ],indices = [Index(value = ["accountCode"])]
 )
