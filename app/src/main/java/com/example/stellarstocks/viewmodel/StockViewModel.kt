@@ -13,17 +13,64 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Date
+import kotlin.math.abs
+
+enum class StockSortOption {
+    MOST_RECENT,
+    HIGHEST_VALUE,
+    LOWEST_VALUE
+}
 
 class StockViewModel(private val repository: StellarStocksRepository) : ViewModel() {
 
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery = _searchQuery.asStateFlow()
     private val _stock = MutableStateFlow<List<StockMaster>>(emptyList())
     val stock: StateFlow<List<StockMaster>> = _stock
+
+    val filteredStock: StateFlow<List<StockMaster>> = combine(
+        repository.getAllStock(),
+        _searchQuery
+    ) { stockList, query ->
+        if (query.isBlank()) {
+            stockList
+        } else {
+            stockList.filter { it.stockCode.contains(query, ignoreCase = true) }
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
     private val _selectedStock = MutableStateFlow<StockMaster?>(null)
     val selectedStock = _selectedStock.asStateFlow()
 
     private val _selectedTransactions = MutableStateFlow<List<StockTransaction>>(emptyList())
     val selectedTransactions = _selectedTransactions.asStateFlow()
+    private val _currentSort = MutableStateFlow(StockSortOption.MOST_RECENT)
+    val currentSort = _currentSort.asStateFlow()
+
+    val visibleTransactions: StateFlow<List<StockTransaction>> = combine(
+        _selectedTransactions,
+        _currentSort
+    ) { transactions, sortOption ->
+        when (sortOption) {
+            StockSortOption.MOST_RECENT -> transactions.sortedByDescending { it.date }
+            StockSortOption.HIGHEST_VALUE -> transactions.sortedByDescending { calculateTransactionValue(it) }
+            StockSortOption.LOWEST_VALUE -> transactions.sortedBy { calculateTransactionValue(it) }
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    private fun calculateTransactionValue(trans: StockTransaction): Double {
+        val price = if (trans.transactionType == "Purchase") trans.unitCost else trans.unitSell
+        // Use absolute quantity so -5 items sold counts as a "value" of 5 * price
+        return price * abs(trans.qty)
+    }
 
     private val _adjustmentSearchCode = MutableStateFlow("")
     val adjustmentSearchCode = _adjustmentSearchCode.asStateFlow()
@@ -49,32 +96,17 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
         }
     }
 
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery = _searchQuery.asStateFlow()
-
-    val filteredStock: StateFlow<List<StockMaster>> = combine(
-        repository.getAllStock(),
-        _searchQuery
-    ) { stock, query ->
-        if (query.isBlank()) {
-            stock
-        } else {
-            stock.filter { it.stockCode.contains(query, ignoreCase = true) }// Filter by Stock Code
-        }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
-    )
-
     fun onSearchQueryChange(query: String) {
         _searchQuery.value = query
+    }
+
+    fun updateSort(option: StockSortOption) {
+        _currentSort.value = option
     }
 
     fun selectStockForDetails(code: String) {
         viewModelScope.launch {
             _selectedStock.value = repository.getStock(code)
-
             repository.getStockTransactions(code).collect { transactions ->
                 _selectedTransactions.value = transactions
             }

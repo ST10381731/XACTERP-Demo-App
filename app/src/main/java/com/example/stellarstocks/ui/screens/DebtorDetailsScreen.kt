@@ -5,6 +5,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,6 +19,7 @@ import com.example.stellarstocks.data.db.models.DebtorTransaction
 import com.example.stellarstocks.ui.theme.DarkGreen
 import com.example.stellarstocks.ui.theme.LightGreen
 import com.example.stellarstocks.viewmodel.DebtorViewModel
+import com.example.stellarstocks.viewmodel.SortOption
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -26,7 +29,10 @@ fun DebtorDetailsScreen(
     viewModel: DebtorViewModel
 ) {
     val debtor by viewModel.selectedDebtor.collectAsState()
-    val transactions by viewModel.selectedTransactions.collectAsState()
+    val transactions by viewModel.visibleTransactions.collectAsState()
+    val currentSort by viewModel.currentSort.collectAsState()
+
+    var expanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(accountCode) {
         viewModel.selectDebtorForDetails(accountCode)
@@ -69,14 +75,61 @@ fun DebtorDetailsScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text(
-            text = "Transaction History",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            color = DarkGreen,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
+        // filter
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Transaction History",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = DarkGreen
+            )
 
+            // Sort Dropdown
+            Box {
+                Button(
+                    onClick = { expanded = true },
+                    colors = ButtonDefaults.buttonColors(containerColor = LightGreen)
+                ) {
+                    Text("Sort By: ${getSortLabel(currentSort)}", color = Color.Black)
+                    Icon(Icons.Default.ArrowDropDown, contentDescription = "Sort", tint = Color.Black)
+                }
+
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Most Recent Item Sold") },
+                        onClick = {
+                            viewModel.updateSort(SortOption.MOST_RECENT)
+                            expanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Highest Transaction Value") },
+                        onClick = {
+                            viewModel.updateSort(SortOption.HIGHEST_VALUE)
+                            expanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Lowest Transaction Value") },
+                        onClick = {
+                            viewModel.updateSort(SortOption.LOWEST_VALUE)
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Table Header
         Row(
             Modifier
                 .fillMaxWidth()
@@ -89,11 +142,20 @@ fun DebtorDetailsScreen(
             Text("Value", Modifier.weight(1f), fontWeight = FontWeight.Bold)
         }
 
+        // Table content
         LazyColumn {
             items(transactions) { trans ->
                 TransactionRow(trans)
             }
         }
+    }
+}
+
+fun getSortLabel(option: SortOption): String {
+    return when(option) {
+        SortOption.MOST_RECENT -> "Date"
+        SortOption.HIGHEST_VALUE -> "High Value"
+        SortOption.LOWEST_VALUE -> "Low Value"
     }
 }
 
