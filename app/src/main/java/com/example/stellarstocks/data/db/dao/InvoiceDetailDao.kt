@@ -9,5 +9,5 @@ import com.example.stellarstocks.data.db.models.InvoiceDetail
 interface InvoiceDetailDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertInvoiceDetails(invoiceDetails: List<InvoiceDetail>)
+    suspend fun insertInvoiceDetails(invoiceDetails: List<InvoiceDetail>) // Insert stock per Invoice
 }

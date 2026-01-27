@@ -59,7 +59,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.stellarstocks.data.db.models.StockMaster
 import com.example.stellarstocks.ui.navigation.Screen
 import com.example.stellarstocks.ui.screens.DebtorCreationScreen
 import com.example.stellarstocks.ui.screens.DebtorDetailsScreen
@@ -208,7 +207,7 @@ fun MainApp() {
     val context = LocalContext.current
 
     val app = context.applicationContext as StellarStocksApplication
-    val db = app.database
+    app.database
     val repository = app.repository
 
 

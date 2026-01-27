@@ -92,7 +92,7 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
                 val result = repository.getStock(code)
                 if (result != null) {
                     _foundAdjustmentStock.value = result
-                    _adjustmentQty.value = 0 // Reset slider
+                    _adjustmentQty.value = 0
                     _toastMessage.value = "Stock Found"
                 } else {
                     _foundAdjustmentStock.value = null
@@ -133,8 +133,6 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
             _adjustmentSearchCode.value = ""
             _adjustmentQty.value = 0
 
-            // Refresh list
-            fetchStock()
         }
     }
 

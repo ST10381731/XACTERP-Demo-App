@@ -14,26 +14,26 @@ import kotlinx.coroutines.flow.Flow
 interface StockDao {
     // Stock Master File
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertStock(stock: StockMaster)
+    suspend fun insertStock(stock: StockMaster) // Insert a new Stock
 
     @Query("SELECT * FROM stock_master")
-    fun getAllStock(): Flow<List<StockMaster>>
+    fun getAllStock(): Flow<List<StockMaster>> // Get all Stocks
 
     @Query("SELECT * FROM stock_master WHERE stockCode = :code")
-    suspend fun getStock(code: String): StockMaster?
+    suspend fun getStock(code: String): StockMaster? // Get a Stock by stockCode
 
     @Query("UPDATE stock_master SET stockOnHand = stockOnHand + :qty WHERE stockCode = :code")
-    suspend fun updateStockQty(code: String, qty: Int)
+    suspend fun updateStockQty(code: String, qty: Int) // Update stockOnHand
 
     // Stock Transaction
     @Insert
-    suspend fun insertTransaction(transaction: StockTransaction)
+    suspend fun insertTransaction(transaction: StockTransaction) // Insert a new Stock Transaction
 
     @Query("SELECT * FROM stock_transaction WHERE stockCode = :code")
-    fun getStockTransactions(code: String): Flow<List<StockTransaction>>
+    fun getStockTransactions(code: String): Flow<List<StockTransaction>> // Get Stock Transactions by stockCode
 
     @Transaction
-    suspend fun performAdjustment(transaction: StockTransaction) {
+    suspend fun performAdjustment(transaction: StockTransaction) { // Perform a quantity adjustment on a stock
         updateStockQty(transaction.stockCode, transaction.qty)
         insertTransaction(transaction)
     }

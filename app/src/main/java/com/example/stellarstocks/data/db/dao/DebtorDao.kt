@@ -14,23 +14,24 @@ import kotlinx.coroutines.flow.Flow
 interface DebtorDao {
     // Debtor Master File
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertDebtor(debtor: DebtorMaster)
+    suspend fun insertDebtor(debtor: DebtorMaster) // Insert a new Debtor
 
     @Delete
-    suspend fun deleteDebtor(debtor: DebtorMaster)
+    suspend fun deleteDebtor(debtor: DebtorMaster) // Delete a Debtor
 
     @Query("SELECT * FROM debtor_master")
-    fun getAllDebtors(): Flow<List<DebtorMaster>>
+    fun getAllDebtors(): Flow<List<DebtorMaster>> // Get all Debtors
 
     @Query("SELECT * FROM debtor_master WHERE accountCode = :code")
-    suspend fun getDebtor(code: String): DebtorMaster?
+    suspend fun getDebtor(code: String): DebtorMaster? // Get a Debtor by accountCode
 
     @Query("UPDATE debtor_master SET balance = balance + :amount, salesYearToDate = salesYearToDate + :amount WHERE accountCode = :code")
-    suspend fun updateBalance(code: String, amount: Double)
+    suspend fun updateBalance(code: String, amount: Double) // Update balance and salesYearToDate
+
     // Debtor Transaction
     @Insert
-    suspend fun insertTransaction(transaction: DebtorTransaction)
+    suspend fun insertTransaction(transaction: DebtorTransaction) // Insert a new Debtor Transaction
 
-    @Query("SELECT * FROM debtor_transaction WHERE accountCode = :code")
+    @Query("SELECT * FROM debtor_transaction WHERE accountCode = :code") // Get Debtor Transactions by accountCode
     fun getDebtorTransactions(code: String): Flow<List<DebtorTransaction>>
 }

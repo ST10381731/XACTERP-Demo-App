@@ -21,6 +21,7 @@ sealed class Screen(val route: String) {
     object StockAdjustment : Screen("stock_adjustment")
     object StockEdit : Screen("stock_edit")
 
+    // Stock Details
     object StockDetails : Screen("stock_details/{stockCode}") {
         fun createRoute(stockCode: String) = "stock_details/$stockCode"
     }
