@@ -9,7 +9,6 @@ sealed class Screen(val route: String) {
     object DebtorMenu : Screen("debtor_menu")
     object DebtorEnquiry : Screen("debtor_enquiry")
     object DebtorCreation : Screen("debtor_creation")
-    object DebtorEdit : Screen("debtor_edit")
 
     // Details Screen
     object DebtorDetails : Screen("debtor_details/{accountCode}") {

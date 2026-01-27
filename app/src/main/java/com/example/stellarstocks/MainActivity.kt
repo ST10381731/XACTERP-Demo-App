@@ -61,6 +61,7 @@ import com.example.stellarstocks.data.db.models.StockMaster
 import com.example.stellarstocks.ui.navigation.Screen
 import com.example.stellarstocks.ui.screens.DebtorCreationScreen
 import com.example.stellarstocks.ui.screens.DebtorDetailsScreen
+import com.example.stellarstocks.ui.screens.StockDetailsScreen
 import com.example.stellarstocks.ui.theme.DarkGreen
 import com.example.stellarstocks.ui.theme.LightGreen
 import com.example.stellarstocks.ui.theme.StellarStocksTheme
@@ -252,7 +253,15 @@ fun MainApp() {
             composable(Screen.Invoice.route) { InvoiceScreen() }
 
             composable(Screen.StockMenu.route) { StockMenuScreen(navController) }
-            composable(Screen.StockEnquiry.route) { StockEnquiryScreen(stockViewModel) }
+            composable(Screen.StockEnquiry.route) {
+                StockEnquiryScreen(stockViewModel, navController)
+            }
+            composable(Screen.StockDetails.route) { backStackEntry ->
+                val stockCode = backStackEntry.arguments?.getString("stockCode")
+                if (stockCode != null) {
+                    StockDetailsScreen(stockCode, stockViewModel)
+                }
+            }
             composable(Screen.StockCreation.route) { StockCreationScreen() }
             composable(Screen.StockAdjustment.route) { StockAdjustmentScreen() }
             composable(Screen.StockEdit.route) { StockCreationScreen() }
@@ -267,8 +276,6 @@ fun MainApp() {
             composable(Screen.DebtorCreation.route) {
                 DebtorCreationScreen(debtorViewModel)
             }
-
-            composable(Screen.DebtorEdit.route) { DebtorEditScreen() }
 
 
             composable(Screen.DebtorDetails.route) { backStackEntry ->
@@ -379,42 +386,37 @@ fun DebtorEnquiryScreen(debtorViewModel: DebtorViewModel, navController: NavCont
     }
 }
 
-@Composable
-fun DebtorEditScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Use Maintenance Screen for Edits")
-    }
-}
 
 @Composable
-fun StockEnquiryScreen(stockViewModel: StockViewModel) {
+fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavController) {
     val stockList by stockViewModel.stock.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth()) {
-            TableCell(text = "Code", weight = .25f, isHeader = true)
-            TableCell(text = "Desc", weight = .5f, isHeader = true)
-            TableCell(text = "Qty", weight = .25f, isHeader = true)
-            TableCell(text = "Cost", weight = .25f, isHeader = true)
+            TableCell(text = "Code", weight = .4f, isHeader = true)
+            TableCell(text = "Desc", weight = .6f, isHeader = true)
+            TableCell(text = "Qty", weight = .4f, isHeader = true)
+            TableCell(text = "Cost", weight = .4f, isHeader = true)
         }
         if (stockList.isEmpty()) {
             Text("No Stock Found", modifier = Modifier.padding(16.dp))
         }
         LazyColumn {
             items(stockList) { stock ->
-                StockListRow(stock)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            navController.navigate(Screen.StockDetails.createRoute(stock.stockCode))
+                        }
+                ) {
+                    TableCell(text = stock.stockCode, weight = .4f)
+                    TableCell(text = stock.stockDescription, weight = .6f)
+                    TableCell(text = stock.stockOnHand.toString(), weight = .4f)
+                    TableCell(text = stock.cost.toString(), weight = .4f)
+                }
             }
         }
-    }
-}
-
-@Composable
-fun StockListRow(stock: StockMaster) {
-    Row(Modifier.fillMaxWidth()) {
-        TableCell(text = stock.stockCode, weight = .25f)
-        TableCell(text = stock.stockDescription, weight = .5f)
-        TableCell(text = stock.stockOnHand.toString(), weight = .25f)
-        TableCell(text = stock.cost.toString(), weight = .25f)
     }
 }
 

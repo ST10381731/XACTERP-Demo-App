@@ -10,7 +10,7 @@ data class StockMaster(
     @PrimaryKey val stockCode: String,
     val stockDescription: String,
     val cost: Double = 0.0,
-    val sellingCost: Double = 0.0,
+    val sellingPrice: Double = 0.0,
     val totalPurchasesExclVat: Double = 0.0,
     val totalSalesExclVat: Double = 0.0,
     val qtyPurchased: Int,

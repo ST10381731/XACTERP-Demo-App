@@ -33,7 +33,7 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
         }
     }
 
-    /*fun selectStockForDetails(code: String) {
+    fun selectStockForDetails(code: String) {
         viewModelScope.launch {
             _selectedStock.value = repository.getStock(code)
 
@@ -41,5 +41,5 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
                 _selectedTransactions.value = transactions
             }
         }
-    }*/
+    }
 }
