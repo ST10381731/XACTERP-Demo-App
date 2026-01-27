@@ -39,6 +39,10 @@ class StellarStocksRepositoryImpl @Inject constructor(
 
     override fun getStockTransactions(code: String): Flow<List<StockTransaction>> = stockDao.getStockTransactions(code)
 
+    override suspend fun adjustStock(transaction: StockTransaction) {
+        stockDao.performAdjustment(transaction)
+    }
+
     override suspend fun processInvoice(header: InvoiceHeader, items: List<InvoiceDetail>) {
         invoiceHeaderDao.insertInvoiceHeaders(listOf(header))
         invoiceDetailDao.insertInvoiceDetails(items)

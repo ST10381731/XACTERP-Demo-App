@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import com.example.stellarstocks.data.db.models.StockMaster
 import com.example.stellarstocks.data.db.models.StockTransaction
@@ -21,8 +22,8 @@ interface StockDao {
     @Query("SELECT * FROM stock_master WHERE stockCode = :code")
     suspend fun getStock(code: String): StockMaster?
 
-    @Query("UPDATE stock_master SET stockOnHand = stockOnHand - :qty, qtySold = qtySold + :qty WHERE stockCode = :code")
-    suspend fun updateStockLevel(code: String, qty: Int)
+    @Query("UPDATE stock_master SET stockOnHand = stockOnHand + :qty WHERE stockCode = :code")
+    suspend fun updateStockQty(code: String, qty: Int)
 
     // Stock Transaction
     @Insert
@@ -31,6 +32,11 @@ interface StockDao {
     @Query("SELECT * FROM stock_transaction WHERE stockCode = :code")
     fun getStockTransactions(code: String): Flow<List<StockTransaction>>
 
+    @Transaction
+    suspend fun performAdjustment(transaction: StockTransaction) {
+        updateStockQty(transaction.stockCode, transaction.qty)
+        insertTransaction(transaction)
+    }
 }
 
 

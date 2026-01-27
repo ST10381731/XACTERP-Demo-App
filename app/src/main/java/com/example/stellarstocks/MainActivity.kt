@@ -30,11 +30,13 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -61,6 +63,7 @@ import com.example.stellarstocks.data.db.models.StockMaster
 import com.example.stellarstocks.ui.navigation.Screen
 import com.example.stellarstocks.ui.screens.DebtorCreationScreen
 import com.example.stellarstocks.ui.screens.DebtorDetailsScreen
+import com.example.stellarstocks.ui.screens.StockAdjustmentScreen
 import com.example.stellarstocks.ui.screens.StockDetailsScreen
 import com.example.stellarstocks.ui.theme.DarkGreen
 import com.example.stellarstocks.ui.theme.LightGreen
@@ -263,7 +266,8 @@ fun MainApp() {
                 }
             }
             composable(Screen.StockCreation.route) { StockCreationScreen() }
-            composable(Screen.StockAdjustment.route) { StockAdjustmentScreen() }
+            composable(Screen.StockAdjustment.route) {
+                StockAdjustmentScreen(viewModel = stockViewModel)}
             composable(Screen.StockEdit.route) { StockCreationScreen() }
 
             composable(Screen.DebtorMenu.route) { DebtorMenuScreen(navController) }
@@ -356,42 +360,81 @@ fun DebtorMenuScreen(navController: NavController) {
 
 @Composable
 fun DebtorEnquiryScreen(debtorViewModel: DebtorViewModel, navController: NavController) {
-    val debtorList by debtorViewModel.debtors.collectAsState()
+    val debtorList by debtorViewModel.filteredDebtors.collectAsState()
+    val searchQuery by debtorViewModel.searchQuery.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { debtorViewModel.onSearchQueryChange(it) },
+            label = { Text("Search Account Code") },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            singleLine = true
+        )
+
         Row(Modifier.fillMaxWidth()) {
             TableCell(text = "Code", weight = .25f, isHeader = true)
             TableCell(text = "Name", weight = .5f, isHeader = true)
             TableCell(text = "Balance", weight = .25f, isHeader = true)
         }
+
         if (debtorList.isEmpty()) {
-            Text("No Debtors Found", modifier = Modifier.padding(16.dp))
-        }
-        LazyColumn {
-            items(debtorList) { debtor ->
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            // Navigate to Details Screen
-                            navController.navigate(Screen.DebtorDetails.createRoute(debtor.accountCode))
-                        }
-                ) {
-                    TableCell(text = debtor.accountCode, weight = .25f)
-                    TableCell(text = debtor.name, weight = .5f)
-                    TableCell(text = "R${debtor.balance}", weight = .25f)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("No debtors found matching '$searchQuery'", color = Color.Gray)
+            }
+        } else {
+            LazyColumn {
+                items(debtorList) { debtor ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                navController.navigate(Screen.DebtorDetails.createRoute(debtor.accountCode))
+                            }
+                    ) {
+                        TableCell(text = debtor.accountCode, weight = .25f)
+                        TableCell(text = debtor.name, weight = .5f)
+                        TableCell(text = "R${debtor.balance}", weight = .25f)
+                    }
                 }
             }
         }
     }
 }
 
-
 @Composable
 fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavController) {
-    val stockList by stockViewModel.stock.collectAsState()
+    val stockList by stockViewModel.filteredStock.collectAsState()
+    val searchQuery by stockViewModel.searchQuery.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { stockViewModel.onSearchQueryChange(it) },
+            label = { Text("Search Stock Code") },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            singleLine = true
+        )
+
         Row(Modifier.fillMaxWidth()) {
             TableCell(text = "Code", weight = .4f, isHeader = true)
             TableCell(text = "Desc", weight = .6f, isHeader = true)
@@ -399,31 +442,32 @@ fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavControl
             TableCell(text = "Cost", weight = .4f, isHeader = true)
         }
         if (stockList.isEmpty()) {
-            Text("No Stock Found", modifier = Modifier.padding(16.dp))
-        }
-        LazyColumn {
-            items(stockList) { stock ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            navController.navigate(Screen.StockDetails.createRoute(stock.stockCode))
-                        }
-                ) {
-                    TableCell(text = stock.stockCode, weight = .4f)
-                    TableCell(text = stock.stockDescription, weight = .6f)
-                    TableCell(text = stock.stockOnHand.toString(), weight = .4f)
-                    TableCell(text = stock.cost.toString(), weight = .4f)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("No stock found matching '$searchQuery'", color = Color.Gray)
+            }
+        } else {
+            LazyColumn {
+                items(stockList) { stock ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                navController.navigate(Screen.StockDetails.createRoute(stock.stockCode))
+                            }
+                    ) {
+                        TableCell(text = stock.stockCode, weight = .4f)
+                        TableCell(text = stock.stockDescription, weight = .6f)
+                        TableCell(text = stock.stockOnHand.toString(), weight = .4f)
+                        TableCell(text = stock.cost.toString(), weight = .4f)
+                    }
                 }
             }
         }
-    }
-}
-
-@Composable
-fun StockAdjustmentScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Stock Adjustment Screen")
     }
 }
 
@@ -433,3 +477,4 @@ fun StockCreationScreen() {
         Text("Stock Creation Screen")
     }
 }
+

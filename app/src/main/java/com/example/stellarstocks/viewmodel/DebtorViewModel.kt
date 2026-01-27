@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.collections.emptyList
@@ -20,6 +21,24 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery = _searchQuery.asStateFlow()
+
+    val filteredDebtors: StateFlow<List<DebtorMaster>> = combine(
+        repository.getAllDebtors(),
+        _searchQuery
+    ) { debtors, query ->
+        if (query.isBlank()) {
+            debtors
+        } else {
+            debtors.filter { it.accountCode.contains(query, ignoreCase = true) }// Filter by Account Code
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
     private val _selectedDebtor = MutableStateFlow<DebtorMaster?>(null)
     val selectedDebtor = _selectedDebtor.asStateFlow()
@@ -46,12 +65,16 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
     val toastMessage = _toastMessage.asStateFlow()
 
 
+    fun onSearchQueryChange(query: String) {
+        _searchQuery.value = query
+    }
+
     fun selectDebtorForDetails(code: String) {
         viewModelScope.launch {
-            // Fetch Master Details
+            // Get Master Details
             _selectedDebtor.value = repository.getDebtor(code)
 
-            // Fetch Transaction History
+            // Get Transaction History
             repository.getDebtorTransactions(code).collect { transactions ->
                 _selectedTransactions.value = transactions
             }
@@ -85,7 +108,7 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
 
             val nextId = maxId + 1
             _accountCode.value = "ACC" + String.format("%03d", nextId)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             _accountCode.value = "ACC001"
         }
     }

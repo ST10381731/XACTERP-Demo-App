@@ -20,6 +20,7 @@ interface StellarStocksRepository {
 
     // Stock Transaction
     fun getStockTransactions(code: String): Flow<List<StockTransaction>>
+    suspend fun adjustStock(transaction: StockTransaction)
 
     // Invoicing
     suspend fun processInvoice(header: InvoiceHeader, items: List<InvoiceDetail>)
