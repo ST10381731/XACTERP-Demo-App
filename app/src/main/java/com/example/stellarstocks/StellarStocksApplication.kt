@@ -5,11 +5,17 @@ import com.example.stellarstocks.data.db.StellarStocksDatabase
 import com.example.stellarstocks.data.db.repository.StellarStocksRepository
 import com.example.stellarstocks.data.db.repository.StellarStocksRepositoryImpl
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 @HiltAndroidApp
 class StellarStocksApplication : Application() {
 
-    val database by lazy { StellarStocksDatabase.getDatabase(this) }
+    val applicationScope = CoroutineScope(SupervisorJob())
+
+    val database by lazy { StellarStocksDatabase.getDatabase(this, applicationScope) }
 
     val repository: StellarStocksRepository by lazy {
         StellarStocksRepositoryImpl(
@@ -18,5 +24,14 @@ class StellarStocksApplication : Application() {
             database.invoiceHeaderDao(),
             database.invoiceDetailDao()
         )
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+
+        applicationScope.launch(Dispatchers.IO) {
+
+            database.openHelper.writableDatabase
+        }
     }
 }

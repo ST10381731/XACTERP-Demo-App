@@ -1,6 +1,7 @@
 package com.example.stellarstocks.data.db.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -11,8 +12,12 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface DebtorDao {
+    // Debtor Master File
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDebtor(debtor: DebtorMaster)
+
+    @Delete
+    suspend fun deleteDebtor(debtor: DebtorMaster)
 
     @Query("SELECT * FROM debtor_master")
     fun getAllDebtors(): Flow<List<DebtorMaster>>
@@ -22,8 +27,7 @@ interface DebtorDao {
 
     @Query("UPDATE debtor_master SET balance = balance + :amount, salesYearToDate = salesYearToDate + :amount WHERE accountCode = :code")
     suspend fun updateBalance(code: String, amount: Double)
-
-    // Transaction History
+    // Debtor Transaction
     @Insert
     suspend fun insertTransaction(transaction: DebtorTransaction)
 

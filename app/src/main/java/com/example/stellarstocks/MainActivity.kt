@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,6 +31,7 @@ import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -45,7 +47,6 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -55,11 +56,11 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.example.stellarstocks.data.db.StellarStocksDatabase
-import com.example.stellarstocks.data.db.models.DebtorMaster
+import androidx.navigation.compose.rememberNavController
 import com.example.stellarstocks.data.db.models.StockMaster
-import com.example.stellarstocks.data.db.repository.StellarStocksRepositoryImpl
 import com.example.stellarstocks.ui.navigation.Screen
+import com.example.stellarstocks.ui.screens.DebtorCreationScreen
+import com.example.stellarstocks.ui.screens.DebtorDetailsScreen
 import com.example.stellarstocks.ui.theme.DarkGreen
 import com.example.stellarstocks.ui.theme.LightGreen
 import com.example.stellarstocks.ui.theme.StellarStocksTheme
@@ -67,6 +68,7 @@ import com.example.stellarstocks.ui.theme.Yellow
 import com.example.stellarstocks.viewmodel.DebtorViewModel
 import com.example.stellarstocks.viewmodel.DebtorViewModelFactory
 import com.example.stellarstocks.viewmodel.StockViewModel
+import com.example.stellarstocks.viewmodel.StockViewModelFactory
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -80,6 +82,11 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+data class BottomNavItem(
+    val label: String,
+    val icon: ImageVector,
+    val route: String
+)
 
 fun createWavePath(width: Float, height: Float, waveHeight: Float): Path { //function draws a wave from top left to right
     return Path().apply {
@@ -99,6 +106,22 @@ fun createWavePath(width: Float, height: Float, waveHeight: Float): Path { //fun
         lineTo(width, 0f)
         close()
     }
+}
+
+@Composable
+fun RowScope.TableCell(
+    text: String,
+    weight: Float,
+    isHeader: Boolean = false
+) {
+    Text(
+        text = text,
+        modifier = Modifier
+            .border(1.dp, Color.LightGray)
+            .weight(weight)
+            .padding(8.dp),
+        fontWeight = if (isHeader) FontWeight.Bold else FontWeight.Normal
+    )
 }
 
 @Composable
@@ -131,9 +154,7 @@ fun LandingPage() {
             )
             drawPath(path = wavePath, color = Yellow)
         }
-
-
-        Canvas(modifier = Modifier.fillMaxSize()) {// overlaps the top part of the yellow wave
+        Canvas(modifier = Modifier.fillMaxSize()) {
             val wavePath = createWavePath(
                 width = size.width,
                 height = size.height * 0.32f,
@@ -141,8 +162,6 @@ fun LandingPage() {
             )
             drawPath(path = wavePath, color = DarkGreen)
         }
-
-
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -150,15 +169,13 @@ fun LandingPage() {
             contentAlignment = Alignment.BottomCenter
         ) {
             Text(
-                text = "Name+Logo",
+                text = "Name + Logo",
                 fontSize = 40.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color.Black,
                 modifier = Modifier.padding(bottom = 40.dp)
             )
         }
-
-
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -173,7 +190,7 @@ fun LandingPage() {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "swipe to continue",
+                text = "Swipe to continue",
                 color = DarkGreen,
                 fontSize = 16.sp
             )
@@ -183,14 +200,18 @@ fun LandingPage() {
 
 @Composable
 fun MainApp() {
-    val navController = androidx.navigation.compose.rememberNavController()
+    val navController = rememberNavController()
     val context = LocalContext.current
-    val db = StellarStocksDatabase.getDatabase(context)
-    val repository = StellarStocksRepositoryImpl(db.debtorDao(),db.stockDao(), db.invoiceHeaderDao(), db.invoiceDetailDao())
-    val debtorViewModel: DebtorViewModel = viewModel(factory = DebtorViewModelFactory(repository))
-    val stockViewModel: StockViewModel = viewModel()
 
-    val navItems = listOf(  // List of items for the navigation bar
+    val app = context.applicationContext as StellarStocksApplication
+    val db = app.database
+    val repository = app.repository
+
+
+    val debtorViewModel: DebtorViewModel = viewModel(factory = DebtorViewModelFactory(repository))
+    val stockViewModel: StockViewModel = viewModel(factory = StockViewModelFactory(repository))
+
+    val navItems = listOf(
         BottomNavItem("Home", Icons.Default.Home, Screen.Home.route),
         BottomNavItem("Stocks", Icons.Default.Inventory, Screen.StockMenu.route),
         BottomNavItem("Invoices", Icons.Default.Description, Screen.Invoice.route),
@@ -222,24 +243,40 @@ fun MainApp() {
             }
         }
     ) { innerPadding ->
-        // all destinations
         NavHost(
             navController = navController,
             startDestination = Screen.Home.route,
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(Screen.Home.route) { HomeScreen() }
-            composable(Screen.StockMenu.route) { StockMenuScreen(navController) }
             composable(Screen.Invoice.route) { InvoiceScreen() }
-            composable(Screen.DebtorMenu.route) { DebtorMenuScreen(navController) }
-            composable(Screen.DebtorEnquiry.route) { DebtorEnquiryScreen(debtorViewModel) }
-            composable(Screen.DebtorCreation.route) { DebtorCreationScreen() }
-            composable(Screen.DebtorEdit.route) { DebtorEditScreen() }
-            composable(Screen.StockCreation.route) { StockCreationScreen() }
+
+            composable(Screen.StockMenu.route) { StockMenuScreen(navController) }
             composable(Screen.StockEnquiry.route) { StockEnquiryScreen(stockViewModel) }
+            composable(Screen.StockCreation.route) { StockCreationScreen() }
             composable(Screen.StockAdjustment.route) { StockAdjustmentScreen() }
             composable(Screen.StockEdit.route) { StockCreationScreen() }
 
+            composable(Screen.DebtorMenu.route) { DebtorMenuScreen(navController) }
+
+            composable(Screen.DebtorEnquiry.route) {
+                DebtorEnquiryScreen(debtorViewModel, navController)
+            }
+
+
+            composable(Screen.DebtorCreation.route) {
+                DebtorCreationScreen(debtorViewModel)
+            }
+
+            composable(Screen.DebtorEdit.route) { DebtorEditScreen() }
+
+
+            composable(Screen.DebtorDetails.route) { backStackEntry ->
+                val accountCode = backStackEntry.arguments?.getString("accountCode")
+                if (accountCode != null) {
+                    DebtorDetailsScreen(accountCode, debtorViewModel)
+                }
+            }
         }
     }
 }
@@ -247,15 +284,14 @@ fun MainApp() {
 @Composable
 fun HomeScreen() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Home Screen. Need to link stats from tables and print them here")
+        Text("Home Screen. Need to research graphing")
     }
 }
-
 
 @Composable
 fun InvoiceScreen() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Invoicing Menu")
+        Text("Invoicing Menu. Need to research invoicing previews")
     }
 }
 
@@ -271,36 +307,20 @@ fun StockMenuScreen(navController: NavController) {
         Button(
             onClick = { navController.navigate(Screen.StockEnquiry.route) },
             modifier = Modifier.fillMaxWidth(),
-            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                containerColor = LightGreen
-            )
-        ) {
-            Text("Stock Enquiry")
-        }
-
+            colors = ButtonDefaults.buttonColors(containerColor = LightGreen)
+        ) { Text("Stock Enquiry") }
         Spacer(modifier = Modifier.height(16.dp))
-
         Button(
             onClick = { navController.navigate(Screen.StockCreation.route) },
             modifier = Modifier.fillMaxWidth(),
-            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                containerColor = LightGreen
-            )
-        ) {
-            Text("Stock Maintenance")
-        }
-
+            colors = ButtonDefaults.buttonColors(containerColor = LightGreen)
+        ) { Text("Stock Maintenance") }
         Spacer(modifier = Modifier.height(16.dp))
-
         Button(
             onClick = { navController.navigate(Screen.StockAdjustment.route) },
             modifier = Modifier.fillMaxWidth(),
-            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                containerColor = LightGreen
-            )
-        ) {
-            Text("Stock Adjustment")
-        }
+            colors = ButtonDefaults.buttonColors(containerColor = LightGreen)
+        ) { Text("Stock Adjustment") }
     }
 }
 
@@ -316,95 +336,53 @@ fun DebtorMenuScreen(navController: NavController) {
         Button(
             onClick = { navController.navigate(Screen.DebtorEnquiry.route) },
             modifier = Modifier.fillMaxWidth(),
-            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                containerColor = LightGreen
-            )
-        ) {
-            Text("Debtor Enquiry")
-        }
+            colors = ButtonDefaults.buttonColors(containerColor = LightGreen)
+        ) { Text("Debtor Enquiry") }
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = { navController.navigate(Screen.DebtorCreation.route) },
             modifier = Modifier.fillMaxWidth(),
-            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                containerColor = LightGreen
-            )
-        ) {
-            Text("Debtor Maintenance")
-        }
-
+            colors = ButtonDefaults.buttonColors(containerColor = LightGreen)
+        ) { Text("Debtor Maintenance") }
     }
 }
 
 @Composable
-fun DebtorEnquiryScreen(debtorViewModel: DebtorViewModel) {
+fun DebtorEnquiryScreen(debtorViewModel: DebtorViewModel, navController: NavController) {
     val debtorList by debtorViewModel.debtors.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth()) {
-            TableCell(text = "Account Code", weight = .5f, isHeader = true)
-            TableCell(text = "Address", weight = .5f, isHeader = true)
-            TableCell(text = "Balance", weight = .5f, isHeader = true)
+            TableCell(text = "Code", weight = .25f, isHeader = true)
+            TableCell(text = "Name", weight = .5f, isHeader = true)
+            TableCell(text = "Balance", weight = .25f, isHeader = true)
         }
         if (debtorList.isEmpty()) {
-            Text("No Debtors Found")
+            Text("No Debtors Found", modifier = Modifier.padding(16.dp))
         }
         LazyColumn {
             items(debtorList) { debtor ->
-                DebtorListItem(debtor)
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            // Navigate to Details Screen
+                            navController.navigate(Screen.DebtorDetails.createRoute(debtor.accountCode))
+                        }
+                ) {
+                    TableCell(text = debtor.accountCode, weight = .25f)
+                    TableCell(text = debtor.name, weight = .5f)
+                    TableCell(text = "R${debtor.balance}", weight = .25f)
+                }
             }
         }
     }
 }
 
 @Composable
-fun DebtorListItem(debtor: DebtorMaster) {
-    Row(Modifier.fillMaxWidth()) {
-        TableCell(text = debtor.accountCode, weight = .25f)
-        TableCell(text = debtor.address1, weight = .5f)
-        TableCell(text = debtor.balance.toString(), weight = .25f)
-    }
-}
-
-@Composable
-fun RowScope.TableCell(
-    text: String,
-    weight: Float,
-    isHeader: Boolean = false
-) {
-
-    Text(
-        text = text,
-        modifier = Modifier
-            .border(1.dp, Color.LightGray)
-            .weight(weight)
-            .padding(8.dp),
-        fontWeight = if (isHeader) FontWeight.Bold else FontWeight.Normal
-
-    )
-
-}
-
-
-@Composable
-fun DebtorDetailsScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Debtor Details Screen")
-    }
-}
-
-
-@Composable
 fun DebtorEditScreen() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Debtor Edit Screen")
-    }
-}
-
-@Composable
-fun DebtorCreationScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Debtor Creation Screen")
+        Text("Use Maintenance Screen for Edits")
     }
 }
 
@@ -414,36 +392,29 @@ fun StockEnquiryScreen(stockViewModel: StockViewModel) {
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth()) {
-            TableCell(text = "Stock Code", weight = .25f, isHeader = true)
-            TableCell(text = "Description", weight = .5f, isHeader = true)
-            TableCell(text = "Stock on hand", weight = .25f, isHeader = true)
+            TableCell(text = "Code", weight = .25f, isHeader = true)
+            TableCell(text = "Desc", weight = .5f, isHeader = true)
+            TableCell(text = "Qty", weight = .25f, isHeader = true)
             TableCell(text = "Cost", weight = .25f, isHeader = true)
         }
         if (stockList.isEmpty()) {
-            Text("No Stock Found")
+            Text("No Stock Found", modifier = Modifier.padding(16.dp))
         }
         LazyColumn {
             items(stockList) { stock ->
-                StockList(stock)
+                StockListRow(stock)
             }
         }
     }
 }
 
 @Composable
-fun StockList(stock: StockMaster) {
+fun StockListRow(stock: StockMaster) {
     Row(Modifier.fillMaxWidth()) {
         TableCell(text = stock.stockCode, weight = .25f)
         TableCell(text = stock.stockDescription, weight = .5f)
         TableCell(text = stock.stockOnHand.toString(), weight = .25f)
         TableCell(text = stock.cost.toString(), weight = .25f)
-    }
-}
-
-@Composable
-fun StockDetailsScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Stock Details Screen")
     }
 }
 
@@ -458,20 +429,5 @@ fun StockAdjustmentScreen() {
 fun StockCreationScreen() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text("Stock Creation Screen")
-    }
-}
-
-
-data class BottomNavItem(
-    val label: String,
-    val icon: ImageVector,
-    val route: String
-)
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    StellarStocksTheme {
-        LandingPage()
     }
 }

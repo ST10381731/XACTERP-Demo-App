@@ -3,7 +3,7 @@ package com.example.stellarstocks.data.db
 import androidx.room.TypeConverter
 import java.util.Date
 
-class Converters {
+class Converters { // Converts dates into long type which can be stored in room
     @TypeConverter
     fun fromTimestamp(value: Long?): Date? {
         return value?.let { Date(it) }

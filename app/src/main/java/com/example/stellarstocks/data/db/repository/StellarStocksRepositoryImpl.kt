@@ -22,6 +22,8 @@ class StellarStocksRepositoryImpl @Inject constructor(
 
     override suspend fun insertDebtor(debtor: DebtorMaster) = debtorDao.insertDebtor(debtor)
 
+    override suspend fun deleteDebtor(debtor: DebtorMaster) = debtorDao.deleteDebtor(debtor)
+
     override fun getAllDebtors(): Flow<List<DebtorMaster>> = debtorDao.getAllDebtors()
 
     override suspend fun getDebtor(code: String): DebtorMaster? = debtorDao.getDebtor(code)

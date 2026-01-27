@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface StockDao {
-    // Master File
+    // Stock Master File
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertStock(stock: StockMaster)
 
@@ -24,7 +24,7 @@ interface StockDao {
     @Query("UPDATE stock_master SET stockOnHand = stockOnHand - :qty, qtySold = qtySold + :qty WHERE stockCode = :code")
     suspend fun updateStockLevel(code: String, qty: Int)
 
-    // Transaction History
+    // Stock Transaction
     @Insert
     suspend fun insertTransaction(transaction: StockTransaction)
 
