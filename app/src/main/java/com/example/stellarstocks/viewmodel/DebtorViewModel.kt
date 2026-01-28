@@ -6,11 +6,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.stellarstocks.data.db.models.DebtorMaster
 import com.example.stellarstocks.data.db.models.DebtorTransaction
 import com.example.stellarstocks.data.db.repository.StellarStocksRepository
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.collections.emptyList
@@ -75,6 +77,8 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
     private val _toastMessage = MutableStateFlow<String?>(null)
     val toastMessage = _toastMessage.asStateFlow()
 
+    private val _navigationChannel = Channel<Boolean>()
+    val navigationChannel = _navigationChannel.receiveAsFlow()
 
     fun onSearchQueryChange(query: String) {
         _searchQuery.value = query
@@ -107,12 +111,20 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
     fun onAddress2Change(newValue: String) { _address2.value = newValue }
 
     fun generateNewCode() {
-        val currentList = filteredDebtors.value
-        if (currentList.isEmpty()) { _accountCode.value = "ACC001"; return }
-        try {
-            val maxId = currentList.mapNotNull { it.accountCode.removePrefix("ACC").toIntOrNull() }.maxOrNull() ?: 0
-            _accountCode.value = "ACC" + String.format("%03d", maxId + 1)
-        } catch (_: Exception) { _accountCode.value = "ACC001" }
+        viewModelScope.launch {
+            val lastCode = repository.getLastDebtorCode()
+
+            if (lastCode == null) {
+                _accountCode.value = "ACC001"
+            } else {
+                try {
+                    val number = lastCode.removePrefix("ACC").toIntOrNull() ?: 0
+                    _accountCode.value = "ACC" + String.format("%03d", number + 1)
+                } catch (_: Exception) {
+                    _accountCode.value = "ACC001"
+                }
+            }
+        }
     }
 
     fun searchDebtor() {
@@ -130,26 +142,47 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
 
     fun saveDebtor() {
         viewModelScope.launch {
-            if (_name.value.isBlank() || _name.value.isDigitsOnly() || _address1.value.isBlank()) { _toastMessage.value = "Please fill in the required fields (*)"; return@launch }
+            if (_name.value.isBlank() || _name.value.isDigitsOnly() || _address1.value.isBlank()) { _toastMessage.value = "Name is required"; return@launch }
+
             val debtor = DebtorMaster(
                 accountCode = _accountCode.value, name = _name.value,
                 address1 = _address1.value, address2 = _address2.value, balance = 0.0
             )
+
             if (_isEditMode.value) {
                 val existing = repository.getDebtor(_accountCode.value)
-                if (existing != null) repository.insertDebtor(debtor.copy(balance = existing.balance, salesYearToDate = existing.salesYearToDate, costYearToDate = existing.costYearToDate))
-            } else { repository.insertDebtor(debtor) }
-            _toastMessage.value = "Saved Successfully"
-            if (!_isEditMode.value) { clearForm(); generateNewCode() }
+                if (existing != null) {
+                    repository.insertDebtor(debtor.copy(
+                        balance = existing.balance,
+                        salesYearToDate = existing.salesYearToDate,
+                        costYearToDate = existing.costYearToDate
+                    ))
+                    _toastMessage.value = "Debtor Updated"
+                    _navigationChannel.send(true)
+                }
+            } else {
+                repository.insertDebtor(debtor)
+                _toastMessage.value = "Debtor Created"
+
+                _navigationChannel.send(true)
+
+                clearForm()
+            }
         }
     }
 
     fun deleteDebtor() {
         viewModelScope.launch {
             val existing = repository.getDebtor(_accountCode.value)
-            if (existing != null) { repository.deleteDebtor(existing); _toastMessage.value = "Deleted"; clearForm() }
+            if (existing != null) {
+                repository.deleteDebtor(existing)
+                _toastMessage.value = "Deleted"
+                clearForm()
+                _navigationChannel.send(true)
+            }
         }
     }
+
     fun clearToast() { _toastMessage.value = null }
     private fun clearForm() { _name.value = ""; _address1.value = ""; _address2.value = ""; _accountCode.value = "" }
 }

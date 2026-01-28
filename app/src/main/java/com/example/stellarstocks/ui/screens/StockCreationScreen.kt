@@ -35,6 +35,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.example.stellarstocks.ui.navigation.Screen
 import com.example.stellarstocks.ui.theme.DarkGreen
 import com.example.stellarstocks.ui.theme.LightGreen
 import com.example.stellarstocks.ui.theme.Orange
@@ -42,7 +44,7 @@ import com.example.stellarstocks.viewmodel.DebtorViewModel
 import com.example.stellarstocks.viewmodel.StockViewModel
 
 @Composable
-fun StockCreationScreen(viewModel: StockViewModel = viewModel()) {
+fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: NavController) {
     val isEditMode by viewModel.isEditMode.collectAsState()
     val stockCode by viewModel.stockCode.collectAsState()
     val description by viewModel.description.collectAsState()
@@ -57,6 +59,16 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel()) {
         toastMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             viewModel.clearToast()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.navigationChannel.collect { shouldNavigate ->
+            if (shouldNavigate) {
+                navController.navigate(Screen.StockEnquiry.route) {
+                    popUpTo(Screen.StockMenu.route) { inclusive = false }
+                }
+            }
         }
     }
 

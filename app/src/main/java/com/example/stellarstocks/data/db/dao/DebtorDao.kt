@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface DebtorDao {
     // Debtor Master File
+    @Query("SELECT accountCode FROM debtor_master ORDER BY accountCode DESC LIMIT 1")
+    suspend fun getHighestAccountCode(): String?
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDebtor(debtor: DebtorMaster) // Insert a new Debtor
 

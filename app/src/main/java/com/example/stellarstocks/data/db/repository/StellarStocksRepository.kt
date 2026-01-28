@@ -9,7 +9,7 @@ interface StellarStocksRepository {
     suspend fun deleteDebtor(debtor: DebtorMaster)
     fun getAllDebtors(): Flow<List<DebtorMaster>>
     suspend fun getDebtor(code: String): DebtorMaster?
-
+    suspend fun getLastDebtorCode(): String? // Add this
     //Debtor Transaction
     fun getDebtorTransactions(code: String): Flow<List<DebtorTransaction>>
 
@@ -18,6 +18,7 @@ interface StellarStocksRepository {
     fun getAllStock(): Flow<List<StockMaster>>
     suspend fun getStock(code: String): StockMaster?
     suspend fun deleteStock(stock: StockMaster)
+    suspend fun getLastStockCode(): String?
 
 
     // Stock Transaction

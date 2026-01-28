@@ -274,7 +274,7 @@ fun MainApp() {
             }
 
             composable(Screen.StockCreation.route) {
-                StockCreationScreen(stockViewModel)
+                StockCreationScreen(stockViewModel, navController)
             }
 
             composable(Screen.StockAdjustment.route) {
@@ -288,7 +288,7 @@ fun MainApp() {
             }
 
             composable(Screen.DebtorCreation.route) {
-                DebtorCreationScreen(debtorViewModel)
+                DebtorCreationScreen(debtorViewModel, navController)
             }
 
             composable(Screen.DebtorDetails.route) { backStackEntry ->
@@ -480,11 +480,3 @@ fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavControl
         }
     }
 }
-
-@Composable
-fun StockCreationScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Stock Creation Screen")
-    }
-}
-

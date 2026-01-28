@@ -7,11 +7,13 @@ import com.example.stellarstocks.data.db.models.DebtorMaster
 import com.example.stellarstocks.data.db.models.StockMaster
 import com.example.stellarstocks.data.db.models.StockTransaction
 import com.example.stellarstocks.data.db.repository.StellarStocksRepository
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -105,6 +107,9 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
         fetchStock()
     }
 
+    private val _navigationChannel = Channel<Boolean>()
+    val navigationChannel = _navigationChannel.receiveAsFlow()
+
     private fun fetchStock() {
         viewModelScope.launch {
             repository.getAllStock().collect { stockList ->
@@ -142,12 +147,20 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
     fun onSellingPriceChange(newValue: Double) { _sellingPrice.value = newValue }
 
     fun generateNewCode() {
-        val currentList = filteredStock.value
-        if (currentList.isEmpty()) { _stockCode.value = "STK001"; return }
-        try {
-            val maxId = currentList.mapNotNull { it.stockCode.removePrefix("STK").toIntOrNull() }.maxOrNull() ?: 0
-            _stockCode.value = "STK" + String.format("%03d", maxId + 1)
-        } catch (_: Exception) { _stockCode.value = "STK001" }
+        viewModelScope.launch {
+            val lastCode = repository.getLastStockCode()
+
+            if (lastCode == null) {
+                _stockCode.value = "STK001"
+            } else {
+                try {
+                    val number = lastCode.removePrefix("STK").toIntOrNull() ?: 0
+                    _stockCode.value = "STK" + String.format("%03d", number + 1)
+                } catch (_: Exception) {
+                    _stockCode.value = "STK001"
+                }
+            }
+        }
     }
 
     fun searchStock() {
@@ -172,10 +185,17 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
             , qtyPurchased = 0, qtySold = 0, totalPurchasesExclVat = 0.0, totalSalesExclVat = 0.0)
             if (_isEditMode.value) {
                 val existing = repository.getStock(_stockCode.value)
-                if (existing != null) repository.insertStock(stock.copy(stockOnHand = existing.stockOnHand, qtyPurchased = existing.qtyPurchased, qtySold = existing.qtySold, totalPurchasesExclVat = existing.totalPurchasesExclVat, totalSalesExclVat = existing.totalSalesExclVat))
-            } else { repository.insertStock(stock) }
-            _toastMessage.value = "Saved Successfully"
-            if (!_isEditMode.value) { clearForm(); generateNewCode() }
+                if (existing != null) repository.insertStock(stock.copy(stockOnHand = existing.stockOnHand, qtyPurchased = existing.qtyPurchased,
+                    qtySold = existing.qtySold, totalPurchasesExclVat = existing.totalPurchasesExclVat, totalSalesExclVat = existing.totalSalesExclVat))
+                _toastMessage.value = "Debtor Updated"
+                _navigationChannel.send(true)
+            } else { repository.insertStock(stock)
+                _toastMessage.value = "Debtor Created"
+
+                _navigationChannel.send(true)
+                clearForm()
+
+            }
         }
     }
     fun onAdjustmentSearchChange(query: String) {
@@ -236,7 +256,12 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
     fun deleteStock() {
         viewModelScope.launch {
             val existing = repository.getStock(_stockCode.value)
-            if (existing != null) { repository.deleteStock(existing); _toastMessage.value = "Deleted"; clearForm() }
+            if (existing != null) {
+                repository.deleteStock(existing)
+                _toastMessage.value = "Deleted"
+                clearForm()
+                _navigationChannel.send(true)
+            }
         }
     }
 

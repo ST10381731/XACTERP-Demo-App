@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface StockDao {
     // Stock Master File
+    @Query("SELECT stockCode FROM stock_master ORDER BY stockCode DESC LIMIT 1")
+    suspend fun getHighestStockCode(): String?
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertStock(stock: StockMaster) // Insert a new Stock
 

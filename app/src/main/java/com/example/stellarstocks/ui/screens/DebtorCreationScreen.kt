@@ -33,13 +33,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.example.stellarstocks.ui.navigation.Screen
 import com.example.stellarstocks.ui.theme.DarkGreen
 import com.example.stellarstocks.ui.theme.LightGreen
 import com.example.stellarstocks.ui.theme.Orange
 import com.example.stellarstocks.viewmodel.DebtorViewModel
 
 @Composable
-fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel()) {
+fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController: NavController) {
     val isEditMode by viewModel.isEditMode.collectAsState()
     val accountCode by viewModel.accountCode.collectAsState()
     val name by viewModel.name.collectAsState()
@@ -49,7 +51,7 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel()) {
     val context = LocalContext.current
 
 
-    val scrollState = rememberScrollState() // Allow scrolling if the keyboard covers the bottom buttons
+    val scrollState = rememberScrollState()
 
     LaunchedEffect(toastMessage) {
         toastMessage?.let {
@@ -60,6 +62,16 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel()) {
 
     LaunchedEffect(Unit) {
         if (!isEditMode) viewModel.generateNewCode()
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.navigationChannel.collect { shouldNavigate ->
+            if (shouldNavigate) {
+                navController.navigate(Screen.DebtorEnquiry.route) {
+                    popUpTo(Screen.DebtorMenu.route) { inclusive = false }
+                }
+            }
+        }
     }
 
     Column(

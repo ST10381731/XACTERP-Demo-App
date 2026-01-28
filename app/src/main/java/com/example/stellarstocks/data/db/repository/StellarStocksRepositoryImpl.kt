@@ -27,6 +27,10 @@ class StellarStocksRepositoryImpl @Inject constructor(
     override fun getAllDebtors(): Flow<List<DebtorMaster>> = debtorDao.getAllDebtors()
 
     override suspend fun getDebtor(code: String): DebtorMaster? = debtorDao.getDebtor(code)
+    override suspend fun getLastDebtorCode(): String? {
+        return debtorDao.getHighestAccountCode()
+    }
+
 
     override fun getDebtorTransactions(code: String): Flow<List<DebtorTransaction>> = debtorDao.getDebtorTransactions(code)
 
@@ -38,6 +42,10 @@ class StellarStocksRepositoryImpl @Inject constructor(
     override fun getAllStock(): Flow<List<StockMaster>> = stockDao.getAllStock()
 
     override suspend fun getStock(code: String): StockMaster? = stockDao.getStock(code)
+
+    override suspend fun getLastStockCode(): String? {
+        return stockDao.getHighestStockCode()
+    }
 
     override fun getStockTransactions(code: String): Flow<List<StockTransaction>> = stockDao.getStockTransactions(code)
 
