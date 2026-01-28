@@ -1,6 +1,7 @@
 package com.example.stellarstocks.data.db.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -15,6 +16,9 @@ interface StockDao {
     // Stock Master File
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertStock(stock: StockMaster) // Insert a new Stock
+
+    @Delete
+    suspend fun deleteStock(stock: StockMaster) // Delete a Stock
 
     @Query("SELECT * FROM stock_master")
     fun getAllStock(): Flow<List<StockMaster>> // Get all Stocks

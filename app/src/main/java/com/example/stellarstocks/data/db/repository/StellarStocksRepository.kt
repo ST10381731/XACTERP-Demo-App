@@ -17,6 +17,8 @@ interface StellarStocksRepository {
     suspend fun insertStock(stock: StockMaster)
     fun getAllStock(): Flow<List<StockMaster>>
     suspend fun getStock(code: String): StockMaster?
+    suspend fun deleteStock(stock: StockMaster)
+
 
     // Stock Transaction
     fun getStockTransactions(code: String): Flow<List<StockTransaction>>

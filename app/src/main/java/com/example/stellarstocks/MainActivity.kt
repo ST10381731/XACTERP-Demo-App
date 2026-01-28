@@ -63,6 +63,7 @@ import com.example.stellarstocks.ui.navigation.Screen
 import com.example.stellarstocks.ui.screens.DebtorCreationScreen
 import com.example.stellarstocks.ui.screens.DebtorDetailsScreen
 import com.example.stellarstocks.ui.screens.StockAdjustmentScreen
+import com.example.stellarstocks.ui.screens.StockCreationScreen
 import com.example.stellarstocks.ui.screens.StockDetailsScreen
 import com.example.stellarstocks.ui.theme.DarkGreen
 import com.example.stellarstocks.ui.theme.LightGreen
@@ -91,7 +92,11 @@ data class BottomNavItem(
     val route: String
 )
 
-fun createWavePath(width: Float, height: Float, waveHeight: Float): Path { //function draws a wave from top left to right
+fun createWavePath(
+    width: Float,
+    height: Float,
+    waveHeight: Float
+): Path { //function draws a wave from top left to right
     return Path().apply {
         reset()
         // Start at top-left
@@ -264,10 +269,12 @@ fun MainApp() {
                     StockDetailsScreen(stockCode, stockViewModel)
                 }
             }
-            composable(Screen.StockCreation.route) { StockCreationScreen() }
+            composable(Screen.StockCreation.route) {
+                StockCreationScreen(stockViewModel)
+            }
             composable(Screen.StockAdjustment.route) {
-                StockAdjustmentScreen(viewModel = stockViewModel)}
-            composable(Screen.StockEdit.route) { StockCreationScreen() }
+                StockAdjustmentScreen(viewModel = stockViewModel)
+            }
 
             composable(Screen.DebtorMenu.route) { DebtorMenuScreen(navController) }
 
@@ -412,6 +419,11 @@ fun DebtorEnquiryScreen(debtorViewModel: DebtorViewModel, navController: NavCont
         }
     }
 }
+/*More adjustments to the enquiry screen for Debtors. I need the current table to be limited to the top half
+* of the screen while the bottom will be dedicated to the new debtor transaction table.
+* This table will show all transactions and will update itself as the user searches via AccountCode
+* Lastly I need a filter in place with the following constraints.
+* Filter most recent item sold or the transaction with the highest/lowest value for the debtor*/
 
 @Composable
 fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavController) {
@@ -436,7 +448,7 @@ fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavControl
 
         Row(Modifier.fillMaxWidth()) {
             TableCell(text = "Code", weight = .4f, isHeader = true)
-            TableCell(text = "Desc", weight = .6f, isHeader = true)
+            TableCell(text = "Description", weight = .6f, isHeader = true)
             TableCell(text = "Qty", weight = .4f, isHeader = true)
             TableCell(text = "Cost", weight = .4f, isHeader = true)
         }

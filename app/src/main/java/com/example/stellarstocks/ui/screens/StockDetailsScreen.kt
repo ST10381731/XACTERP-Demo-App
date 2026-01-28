@@ -118,14 +118,14 @@ fun StockDetailsScreen(
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Highest Value") },
+                        text = { Text("Highest Qty") },
                         onClick = {
                             viewModel.updateSort(StockSortOption.HIGHEST_VALUE)
                             expanded = false
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Lowest Value") },
+                        text = { Text("Lowest Qty") },
                         onClick = {
                             viewModel.updateSort(StockSortOption.LOWEST_VALUE)
                             expanded = false
@@ -158,12 +158,12 @@ fun StockDetailsScreen(
     }
 }
 
-// Helper for labels
+// for labels
 fun getStockSortLabel(option: StockSortOption): String {
     return when(option) {
         StockSortOption.MOST_RECENT -> "Date"
-        StockSortOption.HIGHEST_VALUE -> "High Value"
-        StockSortOption.LOWEST_VALUE -> "Low Value"
+        StockSortOption.HIGHEST_VALUE -> "High Qty"
+        StockSortOption.LOWEST_VALUE -> "Low Qty"
     }
 }
 

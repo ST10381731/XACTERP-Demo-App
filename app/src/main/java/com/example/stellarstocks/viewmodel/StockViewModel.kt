@@ -2,6 +2,7 @@ package com.example.stellarstocks.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.stellarstocks.data.db.models.DebtorMaster
 import com.example.stellarstocks.data.db.models.StockMaster
 import com.example.stellarstocks.data.db.models.StockTransaction
 import com.example.stellarstocks.data.db.repository.StellarStocksRepository
@@ -47,7 +48,7 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
     val selectedStock = _selectedStock.asStateFlow()
 
     private val _selectedTransactions = MutableStateFlow<List<StockTransaction>>(emptyList())
-    val selectedTransactions = _selectedTransactions.asStateFlow()
+
     private val _currentSort = MutableStateFlow(StockSortOption.MOST_RECENT)
     val currentSort = _currentSort.asStateFlow()
 
@@ -81,6 +82,21 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
     private val _adjustmentQty = MutableStateFlow(0)
     val adjustmentQty = _adjustmentQty.asStateFlow()
 
+    private val _isEditMode = MutableStateFlow(false)
+    val isEditMode = _isEditMode.asStateFlow()
+
+    private val _stockCode = MutableStateFlow("")
+    val stockCode = _stockCode.asStateFlow()
+
+    private val _description = MutableStateFlow("")
+    val description = _description.asStateFlow()
+
+    private val _cost = MutableStateFlow(0.0)
+    val cost = _cost.asStateFlow()
+
+    private val _sellingPrice = MutableStateFlow(0.0)
+    val sellingPrice = _sellingPrice.asStateFlow()
+
     private val _toastMessage = MutableStateFlow<String?>(null)
     val toastMessage = _toastMessage.asStateFlow()
 
@@ -113,6 +129,54 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
         }
     }
 
+    fun toggleMode() {
+        _isEditMode.value = !_isEditMode.value
+        clearForm()
+        if (!_isEditMode.value) generateNewCode()
+    }
+
+    fun onStockCodeChange(newValue: String) { _stockCode.value = newValue }
+    fun onDescriptionChange(newValue: String) { _description.value = newValue }
+    fun onCostChange(newValue: Double) { _cost.value = newValue }
+    fun onSellingPriceChange(newValue: Double) { _sellingPrice.value = newValue }
+
+    fun generateNewCode() {
+        val currentList = filteredStock.value
+        if (currentList.isEmpty()) { _stockCode.value = "STK001"; return }
+        try {
+            val maxId = currentList.mapNotNull { it.stockCode.removePrefix("STK").toIntOrNull() }.maxOrNull() ?: 0
+            _stockCode.value = "STK" + String.format("%03d", maxId + 1)
+        } catch (_: Exception) { _stockCode.value = "STK001" }
+    }
+
+    fun searchStock() {
+        viewModelScope.launch {
+            val code = _stockCode.value.trim()
+            val stock = repository.getStock(code)
+            if (stock != null) {
+                _description.value = stock.stockDescription
+                _cost.value = stock.cost
+                _sellingPrice.value = stock.sellingPrice
+                _toastMessage.value = "Stock Found"
+            } else { _toastMessage.value = "Stock not found" }
+        }
+    }
+
+    fun saveStock() {
+        viewModelScope.launch {
+            if (_description.value.isBlank() || _cost.value == 0.0 || _sellingPrice.value == 0.0) { _toastMessage.value = "Please fill in the required fields (*)"; return@launch }
+            val stock = StockMaster(
+                stockCode = _stockCode.value, stockDescription = _description.value,
+                cost = _cost.value, sellingPrice = _sellingPrice.value, stockOnHand = 0
+            , qtyPurchased = 0, qtySold = 0, totalPurchasesExclVat = 0.0, totalSalesExclVat = 0.0)
+            if (_isEditMode.value) {
+                val existing = repository.getStock(_stockCode.value)
+                if (existing != null) repository.insertStock(stock.copy(stockOnHand = existing.stockOnHand, qtyPurchased = existing.qtyPurchased, qtySold = existing.qtySold, totalPurchasesExclVat = existing.totalPurchasesExclVat, totalSalesExclVat = existing.totalSalesExclVat))
+            } else { repository.insertStock(stock) }
+            _toastMessage.value = "Saved Successfully"
+            if (!_isEditMode.value) { clearForm(); generateNewCode() }
+        }
+    }
     fun onAdjustmentSearchChange(query: String) {
         _adjustmentSearchCode.value = query
     }
@@ -168,5 +232,14 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
         }
     }
 
+    fun deleteStock() {
+        viewModelScope.launch {
+            val existing = repository.getStock(_stockCode.value)
+            if (existing != null) { repository.deleteStock(existing); _toastMessage.value = "Deleted"; clearForm() }
+        }
+    }
+
     fun clearToast() { _toastMessage.value = null }
+
+    private fun clearForm() { _description.value = ""; _cost.value = 0.0; _sellingPrice.value = 0.0; _stockCode.value = "" }
 }

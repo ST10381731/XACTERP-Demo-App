@@ -24,7 +24,7 @@ object SeedData {
         StockMaster("STK002", "Wireless Mechanical Keyboard", 800.0, 1200.0, 16000.0, 12000.0, 20, 10, 10),
         StockMaster("STK003", "24-inch IPS Monitor", 2500.0, 3500.0, 25000.0, 0.0, 10, 0, 10),
         StockMaster("STK004", "USB-C Docking Station", 1500.0, 2200.0, 15000.0, 4400.0, 10, 2, 8),
-        StockMaster("STK005", "Laptop Stand Aluminium", 300.0, 550.0, 6000.0, 2750.0, 20, 5, 15)
+        StockMaster("STK005", "Laptop Stand", 300.0, 550.0, 6000.0, 2750.0, 20, 5, 15)
     )
 
     val invoiceHeaders = listOf(

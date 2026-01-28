@@ -33,6 +33,8 @@ class StellarStocksRepositoryImpl @Inject constructor(
 
     override suspend fun insertStock(stock: StockMaster) = stockDao.insertStock(stock)
 
+    override suspend fun deleteStock(stock: StockMaster) = stockDao.deleteStock(stock)
+
     override fun getAllStock(): Flow<List<StockMaster>> = stockDao.getAllStock()
 
     override suspend fun getStock(code: String): StockMaster? = stockDao.getStock(code)

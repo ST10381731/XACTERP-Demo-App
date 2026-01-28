@@ -111,7 +111,7 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
         try {
             val maxId = currentList.mapNotNull { it.accountCode.removePrefix("ACC").toIntOrNull() }.maxOrNull() ?: 0
             _accountCode.value = "ACC" + String.format("%03d", maxId + 1)
-        } catch (e: Exception) { _accountCode.value = "ACC001" }
+        } catch (_: Exception) { _accountCode.value = "ACC001" }
     }
 
     fun searchDebtor() {
@@ -129,7 +129,7 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
 
     fun saveDebtor() {
         viewModelScope.launch {
-            if (_name.value.isBlank()) { _toastMessage.value = "Name is required"; return@launch }
+            if (_name.value.isBlank() || _address1.value.isBlank()) { _toastMessage.value = "Please fill in the required fields (*)"; return@launch }
             val debtor = DebtorMaster(
                 accountCode = _accountCode.value, name = _name.value,
                 address1 = _address1.value, address2 = _address2.value, balance = 0.0
