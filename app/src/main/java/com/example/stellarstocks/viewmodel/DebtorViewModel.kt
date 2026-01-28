@@ -1,5 +1,6 @@
 package com.example.stellarstocks.viewmodel
 
+import androidx.core.text.isDigitsOnly
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.stellarstocks.data.db.models.DebtorMaster
@@ -129,7 +130,7 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
 
     fun saveDebtor() {
         viewModelScope.launch {
-            if (_name.value.isBlank() || _address1.value.isBlank()) { _toastMessage.value = "Please fill in the required fields (*)"; return@launch }
+            if (_name.value.isBlank() || _name.value.isDigitsOnly() || _address1.value.isBlank()) { _toastMessage.value = "Please fill in the required fields (*)"; return@launch }
             val debtor = DebtorMaster(
                 accountCode = _accountCode.value, name = _name.value,
                 address1 = _address1.value, address2 = _address2.value, balance = 0.0

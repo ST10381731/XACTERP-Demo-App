@@ -154,8 +154,8 @@ fun DebtorDetailsScreen(
 fun getSortLabel(option: SortOption): String {
     return when(option) {
         SortOption.MOST_RECENT -> "Date"
-        SortOption.HIGHEST_VALUE -> "High Value"
-        SortOption.LOWEST_VALUE -> "Low Value"
+        SortOption.HIGHEST_VALUE -> "Highest Value"
+        SortOption.LOWEST_VALUE -> "Lowest Value"
     }
 }
 

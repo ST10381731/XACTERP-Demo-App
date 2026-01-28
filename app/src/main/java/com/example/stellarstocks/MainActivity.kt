@@ -257,21 +257,26 @@ fun MainApp() {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(Screen.Home.route) { HomeScreen() }
+
             composable(Screen.Invoice.route) { InvoiceScreen() }
 
             composable(Screen.StockMenu.route) { StockMenuScreen(navController) }
+
             composable(Screen.StockEnquiry.route) {
                 StockEnquiryScreen(stockViewModel, navController)
             }
+
             composable(Screen.StockDetails.route) { backStackEntry ->
                 val stockCode = backStackEntry.arguments?.getString("stockCode")
                 if (stockCode != null) {
                     StockDetailsScreen(stockCode, stockViewModel)
                 }
             }
+
             composable(Screen.StockCreation.route) {
                 StockCreationScreen(stockViewModel)
             }
+
             composable(Screen.StockAdjustment.route) {
                 StockAdjustmentScreen(viewModel = stockViewModel)
             }
@@ -282,11 +287,9 @@ fun MainApp() {
                 DebtorEnquiryScreen(debtorViewModel, navController)
             }
 
-
             composable(Screen.DebtorCreation.route) {
                 DebtorCreationScreen(debtorViewModel)
             }
-
 
             composable(Screen.DebtorDetails.route) { backStackEntry ->
                 val accountCode = backStackEntry.arguments?.getString("accountCode")
@@ -405,6 +408,7 @@ fun DebtorEnquiryScreen(debtorViewModel: DebtorViewModel, navController: NavCont
                 items(debtorList) { debtor ->
                     Row(
                         modifier = Modifier
+                            .weight(1f)
                             .fillMaxWidth()
                             .clickable {
                                 navController.navigate(Screen.DebtorDetails.createRoute(debtor.accountCode))
@@ -419,11 +423,6 @@ fun DebtorEnquiryScreen(debtorViewModel: DebtorViewModel, navController: NavCont
         }
     }
 }
-/*More adjustments to the enquiry screen for Debtors. I need the current table to be limited to the top half
-* of the screen while the bottom will be dedicated to the new debtor transaction table.
-* This table will show all transactions and will update itself as the user searches via AccountCode
-* Lastly I need a filter in place with the following constraints.
-* Filter most recent item sold or the transaction with the highest/lowest value for the debtor*/
 
 @Composable
 fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavController) {

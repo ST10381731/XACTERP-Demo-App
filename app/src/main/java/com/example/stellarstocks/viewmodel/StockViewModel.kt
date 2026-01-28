@@ -1,5 +1,6 @@
 package com.example.stellarstocks.viewmodel
 
+import androidx.core.text.isDigitsOnly
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.stellarstocks.data.db.models.DebtorMaster
@@ -164,7 +165,7 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
 
     fun saveStock() {
         viewModelScope.launch {
-            if (_description.value.isBlank() || _cost.value == 0.0 || _sellingPrice.value == 0.0) { _toastMessage.value = "Please fill in the required fields (*)"; return@launch }
+            if (_description.value.isBlank() || _description.value.isDigitsOnly() ||_cost.value == 0.0 || _sellingPrice.value == 0.0) { _toastMessage.value = "Please fill in the required fields (*)"; return@launch }
             val stock = StockMaster(
                 stockCode = _stockCode.value, stockDescription = _description.value,
                 cost = _cost.value, sellingPrice = _sellingPrice.value, stockOnHand = 0

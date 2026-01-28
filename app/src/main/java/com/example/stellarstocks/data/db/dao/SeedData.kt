@@ -13,10 +13,10 @@ object SeedData {
 
     val debtors = listOf(
         DebtorMaster("ACC001", "Tech Solutions KZN", "12 West Street", "Durban", 15000.0, 45000.0, 30000.0),
-        DebtorMaster("ACC002", "Jozi Consulting", "88 Maude Ave", "Sandton", 4000.0, 12000.0, 8000.0),
+        DebtorMaster("ACC002", "Jozi Jola Consulting", "88 Maude Ave", "Sandton", 4000.0, 12000.0, 8000.0),
         DebtorMaster("ACC003", "Cape Logistics", "45 Port Road", "Cape Town", 10000.0, 25000.0, 15000.0),
-        DebtorMaster("ACC004", "Chatsworth Stationery", "101 Croftdene Dr", "Chatsworth", 1500.0, 5000.0, 3500.0),
-        DebtorMaster("ACC005", "Midlands IT", "5 Main Road", "Howick", 0.0, 0.0, 0.0)
+        DebtorMaster("ACC004", "Waltons Stationery", "101 Croftdene Dr", "Chatsworth", 1500.0, 5000.0, 3500.0),
+        DebtorMaster("ACC005", "Page Automation IT", "5 Main Road", "Howick", 0.0, 0.0, 0.0)
     )
 
     val stock = listOf(
