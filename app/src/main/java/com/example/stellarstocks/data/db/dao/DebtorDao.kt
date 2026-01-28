@@ -18,10 +18,10 @@ interface DebtorDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDebtor(debtor: DebtorMaster) // Insert a new Debtor
 
-    @Delete
-    suspend fun deleteDebtor(debtor: DebtorMaster) // Delete a Debtor
+    @Query("UPDATE debtor_master SET isActive = 0 WHERE accountCode = :code")
+    suspend fun deleteDebtor(code: String) // Delete a Debtor
 
-    @Query("SELECT * FROM debtor_master")
+    @Query("SELECT * FROM debtor_master WHERE isActive = 1")
     fun getAllDebtors(): Flow<List<DebtorMaster>> // Get all Debtors
 
     @Query("SELECT * FROM debtor_master WHERE accountCode = :code")

@@ -11,5 +11,6 @@ data class DebtorMaster(
     val address2: String,
     val balance: Double = 0.0,
     val salesYearToDate: Double = 0.0,
-    val costYearToDate: Double = 0.0
+    val costYearToDate: Double = 0.0,
+    val isActive: Boolean = true
 )

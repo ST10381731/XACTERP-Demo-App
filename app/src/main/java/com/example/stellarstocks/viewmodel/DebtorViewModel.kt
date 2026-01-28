@@ -173,13 +173,11 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
 
     fun deleteDebtor() {
         viewModelScope.launch {
-            val existing = repository.getDebtor(_accountCode.value)
-            if (existing != null) {
-                repository.deleteDebtor(existing)
-                _toastMessage.value = "Deleted"
-                clearForm()
-                _navigationChannel.send(true)
-            }
+            repository.deleteDebtor(_accountCode.value)
+
+            _toastMessage.value = "Debtor Deleted"
+            clearForm()
+            _navigationChannel.send(true)
         }
     }
 

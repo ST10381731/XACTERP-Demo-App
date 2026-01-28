@@ -255,13 +255,11 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
 
     fun deleteStock() {
         viewModelScope.launch {
-            val existing = repository.getStock(_stockCode.value)
-            if (existing != null) {
-                repository.deleteStock(existing)
-                _toastMessage.value = "Deleted"
-                clearForm()
-                _navigationChannel.send(true)
-            }
+            repository.deleteStock(_stockCode.value)
+
+            _toastMessage.value = "Stock Deleted"
+            clearForm()
+            _navigationChannel.send(true)
         }
     }
 

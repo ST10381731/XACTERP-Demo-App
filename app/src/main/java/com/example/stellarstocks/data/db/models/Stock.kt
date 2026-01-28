@@ -15,5 +15,6 @@ data class StockMaster(
     val totalSalesExclVat: Double = 0.0,
     val qtyPurchased: Int,
     val qtySold: Int,
-    val stockOnHand: Int
+    val stockOnHand: Int,
+    val isActive: Boolean = true
 )

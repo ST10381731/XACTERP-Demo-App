@@ -19,10 +19,10 @@ interface StockDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertStock(stock: StockMaster) // Insert a new Stock
 
-    @Delete
-    suspend fun deleteStock(stock: StockMaster) // Delete a Stock
+    @Query("UPDATE stock_master SET isActive = 0 WHERE stockCode = :code")
+    suspend fun deleteStock(code: String) // Delete a Stock
 
-    @Query("SELECT * FROM stock_master")
+    @Query("SELECT * FROM stock_master WHERE isActive = 1")
     fun getAllStock(): Flow<List<StockMaster>> // Get all Stocks
 
     @Query("SELECT * FROM stock_master WHERE stockCode = :code")
