@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Inventory
@@ -34,6 +35,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
@@ -269,7 +271,7 @@ fun MainApp() {
             composable(Screen.StockDetails.route) { backStackEntry ->
                 val stockCode = backStackEntry.arguments?.getString("stockCode")
                 if (stockCode != null) {
-                    StockDetailsScreen(stockCode, stockViewModel)
+                    StockDetailsScreen(stockCode, stockViewModel, navController)
                 }
             }
 
@@ -278,7 +280,7 @@ fun MainApp() {
             }
 
             composable(Screen.StockAdjustment.route) {
-                StockAdjustmentScreen(viewModel = stockViewModel)
+                StockAdjustmentScreen(viewModel = stockViewModel, navController = navController)
             }
 
             composable(Screen.DebtorMenu.route) { DebtorMenuScreen(navController) }
@@ -294,7 +296,7 @@ fun MainApp() {
             composable(Screen.DebtorDetails.route) { backStackEntry ->
                 val accountCode = backStackEntry.arguments?.getString("accountCode")
                 if (accountCode != null) {
-                    DebtorDetailsScreen(accountCode, debtorViewModel)
+                    DebtorDetailsScreen(accountCode, debtorViewModel, navController)
                 }
             }
         }
@@ -376,7 +378,12 @@ fun DebtorEnquiryScreen(debtorViewModel: DebtorViewModel, navController: NavCont
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-    ) {
+    ) {Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 8.dp)) {
+        IconButton(onClick = { navController.popBackStack() }) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = DarkGreen)
+        }
+        Text("Debtor Enquiry", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DarkGreen)
+    }
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { debtorViewModel.onSearchQueryChange(it) },
@@ -433,7 +440,12 @@ fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavControl
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-    ) {
+    ) {Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 8.dp)) {
+        IconButton(onClick = { navController.popBackStack() }) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = DarkGreen)
+        }
+        Text("Stock Enquiry", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DarkGreen)
+    }
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { stockViewModel.onSearchQueryChange(it) },

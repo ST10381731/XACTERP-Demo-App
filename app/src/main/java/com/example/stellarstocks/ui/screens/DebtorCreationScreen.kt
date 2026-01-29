@@ -19,11 +19,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -70,6 +73,7 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
 
     val scrollState = rememberScrollState()
 
+    var showSearchDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(toastMessage) {
         toastMessage?.let {
@@ -92,6 +96,20 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
         }
     }
 
+    if (showSearchDialog) {
+        DebtorCreationSearchDialog(
+            viewModel = viewModel,
+            onDismiss = { showSearchDialog = false },
+            onDebtorSelected = { debtor ->
+                viewModel.onSearchCodeChange(debtor.accountCode)
+                viewModel.onNameChange(debtor.name)
+                viewModel.onAddress1Change(debtor.address1)
+                viewModel.onAddress2Change(debtor.address2)
+                showSearchDialog = false
+            }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -99,15 +117,26 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
             .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = if (isEditMode) "Edit Mode" else "Creation Mode",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = Orange,
-            modifier = Modifier
-                .padding(bottom = 16.dp)
-                .clickable { viewModel.toggleMode() }
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Orange
+                )
+            }
+        }
+            Text(
+                text = if (isEditMode) "Edit Mode" else "Creation Mode",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = Orange,
+                modifier = Modifier
+                    .padding(start = 16.dp)
+                    .clickable { viewModel.toggleMode() }
+            )
+
         Text(
             text = "(Tap text above to switch mode)",
             fontSize = 12.sp,
@@ -131,9 +160,8 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
             if (isEditMode) {
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(
-                    onClick = { viewModel.searchDebtor() },
+                    onClick = { showSearchDialog = true },
                     colors = ButtonDefaults.buttonColors(containerColor = LightGreen),
-
                     modifier = Modifier.height(56.dp),
                     shape = MaterialTheme.shapes.extraSmall
                 ) {
@@ -165,7 +193,6 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
         )
 
         Spacer(modifier = Modifier.height(16.dp))
-
 
         OutlinedTextField(
             value = address2,
@@ -222,12 +249,20 @@ fun DebtorCreationSearchDialog(
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {
+                Text(
+                    text = "Select Debtor",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { viewModel.onSearchQueryChange(it) },
                     label = { Text("Search by account code or name") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    readOnly = true,
+                    leadingIcon = { Icon(Icons.Default.Search, null) }
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 LazyColumn {
@@ -236,11 +271,16 @@ fun DebtorCreationSearchDialog(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { onDebtorSelected(debtor) }
-                                .padding(vertical = 8.dp)
+                                .padding(vertical = 12.dp)
                         ) {
-                            Text(debtor.accountCode, modifier = Modifier.weight(1f))
+                            Text(
+                                debtor.accountCode,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f)
+                            )
                             Text(debtor.name, modifier = Modifier.weight(2f))
                         }
+                        HorizontalDivider()
                     }
                 }
             }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.stellarstocks.data.db.models.StockMaster
 import com.example.stellarstocks.ui.theme.DarkGreen
 import com.example.stellarstocks.ui.theme.LightGreen
@@ -27,7 +29,7 @@ import com.example.stellarstocks.viewmodel.StockViewModel
 import kotlin.math.roundToInt
 
 @Composable
-fun StockAdjustmentScreen(viewModel: StockViewModel = viewModel()) {
+fun StockAdjustmentScreen(viewModel: StockViewModel = viewModel(), navController: NavController) {
     val searchCode by viewModel.adjustmentSearchCode.collectAsState()
     val foundStock by viewModel.foundAdjustmentStock.collectAsState()
     val adjustmentQty by viewModel.adjustmentQty.collectAsState()
@@ -58,7 +60,19 @@ fun StockAdjustmentScreen(viewModel: StockViewModel = viewModel()) {
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
+    ) {Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 24.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        IconButton(onClick = { navController.popBackStack() }) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Back",
+                tint = DarkGreen
+            )
+        }
         Text(
             text = "Stock Adjustment",
             fontSize = 24.sp,
@@ -66,7 +80,7 @@ fun StockAdjustmentScreen(viewModel: StockViewModel = viewModel()) {
             color = DarkGreen,
             modifier = Modifier.padding(bottom = 24.dp)
         )
-
+    }
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically

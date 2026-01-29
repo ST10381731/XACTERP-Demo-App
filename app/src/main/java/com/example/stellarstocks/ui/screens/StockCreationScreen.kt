@@ -11,14 +11,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -26,6 +32,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,8 +43,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.stellarstocks.data.db.models.StockMaster
 import com.example.stellarstocks.ui.navigation.Screen
 import com.example.stellarstocks.ui.theme.DarkGreen
 import com.example.stellarstocks.ui.theme.LightGreen
@@ -54,6 +65,8 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
     val context = LocalContext.current
 
     val scrollState = rememberScrollState()
+
+    var showSearchDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(toastMessage) {
         toastMessage?.let {
@@ -76,6 +89,21 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
         if (!isEditMode) viewModel.generateNewCode()
     }
 
+    if (showSearchDialog) {
+        StockCreationSearchDialog(
+            viewModel = viewModel,
+            onDismiss = { showSearchDialog = false },
+            onStockSelected = { stock ->
+                // Populate the form with selected data
+                viewModel.onStockCodeChange(stock.stockCode)
+                viewModel.onDescriptionChange(stock.stockDescription)
+                viewModel.onCostChange(stock.cost)
+                viewModel.onSellingPriceChange(stock.sellingPrice)
+                showSearchDialog = false
+            }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -83,6 +111,15 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
             .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Row(
+        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = { navController.popBackStack() }) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Orange
+            )
+        }
+    }
         Text(
             text = if (isEditMode) "Edit Mode" else "Creation Mode",
             fontSize = 24.sp,
@@ -108,15 +145,15 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
                 label = { Text(if (isEditMode) "Search Stock Code" else "Auto Account Code") },
                 enabled = isEditMode,
                 modifier = Modifier.weight(1f),
-                singleLine = true
+                singleLine = true,
+                readOnly = true
             )
 
             if (isEditMode) {
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(
-                    onClick = { viewModel.searchStock() },
+                    onClick = { showSearchDialog = true },
                     colors = ButtonDefaults.buttonColors(containerColor = LightGreen),
-
                     modifier = Modifier.height(56.dp),
                     shape = MaterialTheme.shapes.extraSmall
                 ) {
@@ -177,6 +214,58 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
                     modifier = Modifier.weight(1f)
                 ) {
                     Text("Delete Stock")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun StockCreationSearchDialog(
+    viewModel: StockViewModel,
+    onDismiss: () -> Unit,
+    onStockSelected: (StockMaster) -> Unit
+) {
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val filteredStock by viewModel.filteredStock.collectAsState()
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(500.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Select Stock Item",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { viewModel.onSearchQueryChange(it) },
+                    label = { Text("Search by code or description") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    leadingIcon = { Icon(Icons.Default.Search, null) }
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                LazyColumn {
+                    items(filteredStock) { stock ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onStockSelected(stock) }
+                                .padding(vertical = 12.dp)
+                        ) {
+                            Text(stock.stockCode, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                            Text(stock.stockDescription, modifier = Modifier.weight(2f))
+                        }
+                        HorizontalDivider()
+                    }
                 }
             }
         }

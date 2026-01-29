@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.example.stellarstocks.data.db.models.DebtorTransactionInfo
 import com.example.stellarstocks.ui.theme.DarkGreen
 import com.example.stellarstocks.ui.theme.LightGreen
@@ -52,7 +53,8 @@ import java.util.Locale
 @Composable
 fun DebtorDetailsScreen(
     accountCode: String,
-    viewModel: DebtorViewModel
+    viewModel: DebtorViewModel,
+    navController: NavHostController
 ) {
     val debtor by viewModel.selectedDebtor.collectAsState()
     val transactions by viewModel.visibleTransactions.collectAsState()
@@ -170,11 +172,11 @@ fun DebtorDetailsScreen(
                 .background(LightGreen)
                 .padding(8.dp)
         ) {
-            Text("Date", Modifier.weight(0.5f), fontWeight = FontWeight.Bold)
-            Text("Doc No.", Modifier.weight(0.6f), fontWeight = FontWeight.Bold)
-            Text("Type", Modifier.weight(0.6f), fontWeight = FontWeight.Bold)
-            Text("Value", Modifier.weight(0.6f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
-            Text("Items", Modifier.weight(1f), fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+            Text("Date", Modifier.weight(0.7f), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            Text("Doc", Modifier.weight(0.5f), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            Text("Type", Modifier.weight(0.7f), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            Text("Items", Modifier.weight(1.0f), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            Text("Value", Modifier.weight(0.6f), fontWeight = FontWeight.Bold, fontSize = 12.sp, textAlign = TextAlign.End)
         }
 
         LazyColumn {
@@ -212,28 +214,33 @@ fun DebtorTransactionRow(trans: DebtorTransactionInfo) {
     val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     var expanded by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
+    Row(
+        Modifier
             .fillMaxWidth()
             .clickable { expanded = !expanded }
             .border(width = 0.5.dp, color = Color.LightGray)
-            .padding(8.dp)
+            .padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(dateFormat.format(trans.date), Modifier.weight(0.7f), fontSize = 12.sp)
-            Text(trans.documentNum.toString(), Modifier.weight(0.6f), fontSize = 12.sp)
-            Text(trans.transactionType, Modifier.weight(0.7f), fontSize = 12.sp)
-            Text(String.format("R%.2f", trans.value), Modifier.weight(0.6f), fontSize = 12.sp, textAlign = TextAlign.End)
-            Text(
-                text = trans.items ?: "N/A",
-                modifier = Modifier.weight(1f),
-                fontSize = 12.sp,
-                textAlign = TextAlign.Center,
-                maxLines = if (expanded) Int.MAX_VALUE else 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
+        // Date
+        Text(dateFormat.format(trans.date), Modifier.weight(0.7f), fontSize = 11.sp)
+
+        // Doc No
+        Text(trans.documentNum.toString(), Modifier.weight(0.5f), fontSize = 11.sp)
+
+        // Transaction Type
+        Text(trans.transactionType, Modifier.weight(0.7f), fontSize = 11.sp)
+
+        // Items
+        Text(
+            text = trans.items ?: "-",
+            modifier = Modifier.weight(1.0f),
+            fontSize = 11.sp,
+            maxLines = if (expanded) Int.MAX_VALUE else 1,
+            overflow = TextOverflow.Ellipsis
+        )
+
+        // Value
+        Text(String.format("R%.2f", trans.value), Modifier.weight(0.6f), fontSize = 11.sp, textAlign = TextAlign.End)
     }
 }

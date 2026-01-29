@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -24,6 +25,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,8 +39,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.example.stellarstocks.data.db.models.TransactionInfo
 import com.example.stellarstocks.ui.theme.DarkGreen
 import com.example.stellarstocks.ui.theme.LightGreen
@@ -50,7 +54,8 @@ import java.util.Locale
 @Composable
 fun StockDetailsScreen(
     stockCode: String,
-    viewModel: StockViewModel
+    viewModel: StockViewModel,
+    navController: NavHostController
 ) {
     val stock by viewModel.selectedStock.collectAsState()
     val transactions by viewModel.visibleTransactions.collectAsState()
@@ -75,15 +80,12 @@ fun StockDetailsScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-    ) {
-
-        Text(
-            text = "Stock Details",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = DarkGreen,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
+    ) {Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 16.dp)) {
+        IconButton(onClick = { navController.popBackStack() }) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = DarkGreen)
+        }
+        Text("Stock Details", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = DarkGreen)
+    }
 
         Card(
             colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -170,14 +172,15 @@ fun StockDetailsScreen(
             Modifier
                 .fillMaxWidth()
                 .background(LightGreen)
-                .padding(8.dp)
+                .padding(vertical = 8.dp, horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Date", Modifier.weight(0.8f), fontWeight = FontWeight.Bold)
-            Text("Acc", Modifier.weight(0.6f), fontWeight = FontWeight.Bold)
-            Text("Doc", Modifier.weight(0.6f), fontWeight = FontWeight.Bold)
-            Text("Type", Modifier.weight(0.8f), fontWeight = FontWeight.Bold)
-            Text("Qty", Modifier.weight(0.4f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
-            Text("Value", Modifier.weight(0.7f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End) // Changed to Value
+            Text("Date", Modifier.weight(0.8f), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+            Text("Acc", Modifier.weight(0.6f), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+            Text("Doc", Modifier.weight(0.5f), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+            Text("Type", Modifier.weight(0.7f), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+            Text("Qty", Modifier.weight(0.4f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End, fontSize = 11.sp)
+            Text("Value", Modifier.weight(0.7f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End, fontSize = 11.sp)
         }
 
         LazyColumn {
@@ -219,13 +222,52 @@ fun StockTransactionRow(trans: TransactionInfo) {
         Modifier
             .fillMaxWidth()
             .border(width = 0.5.dp, color = Color.LightGray)
-            .padding(8.dp)
+            .padding(vertical = 8.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(dateFormat.format(trans.date), Modifier.weight(0.8f), fontSize = 12.sp)
-        Text(trans.accountCode ?: "N/A", Modifier.weight(0.6f), fontSize = 12.sp)
-        Text(trans.documentNum.toString(), Modifier.weight(0.5f), fontSize = 12.sp)
-        Text(trans.transactionType, Modifier.weight(0.7f), fontSize = 12.sp)
-        Text(trans.qty.toString(), Modifier.weight(0.4f), fontSize = 12.sp, textAlign = TextAlign.End)
-        Text(String.format("R%.2f", trans.value), Modifier.weight(0.7f), fontSize = 12.sp, textAlign = TextAlign.End)
+
+        Text(
+            text = dateFormat.format(trans.date),
+            modifier = Modifier.weight(0.8f),
+            fontSize = 11.sp
+        )
+
+        Text(
+            text = trans.accountCode ?: "-",
+            modifier = Modifier.weight(0.6f),
+            fontSize = 11.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+
+        Text(
+            text = trans.documentNum.toString(),
+            modifier = Modifier.weight(0.5f),
+            fontSize = 11.sp,
+            maxLines = 1
+        )
+
+        Text(
+            text = trans.transactionType,
+            modifier = Modifier.weight(0.7f),
+            fontSize = 11.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+
+        Text(
+            text = trans.qty.toString(),
+            modifier = Modifier.weight(0.4f),
+            fontSize = 11.sp,
+            textAlign = TextAlign.End,
+            maxLines = 1
+        )
+        Text(
+            text = String.format("R%.2f", trans.value),
+            modifier = Modifier.weight(0.7f),
+            fontSize = 11.sp,
+            textAlign = TextAlign.End,
+            maxLines = 1
+        )
     }
 }
