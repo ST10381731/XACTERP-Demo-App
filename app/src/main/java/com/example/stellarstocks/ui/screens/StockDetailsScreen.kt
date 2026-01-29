@@ -2,13 +2,36 @@ package com.example.stellarstocks.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -16,14 +39,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.stellarstocks.data.db.models.StockTransaction
+import com.example.stellarstocks.data.db.models.TransactionInfo
 import com.example.stellarstocks.ui.theme.DarkGreen
 import com.example.stellarstocks.ui.theme.LightGreen
 import com.example.stellarstocks.viewmodel.StockSortOption
 import com.example.stellarstocks.viewmodel.StockViewModel
 import java.text.SimpleDateFormat
 import java.util.Locale
-import kotlin.math.abs
 
 @Composable
 fun StockDetailsScreen(
@@ -111,23 +133,30 @@ fun StockDetailsScreen(
                     onDismissRequest = { expanded = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Most Recent") },
+                        text = { Text("Full List") },
                         onClick = {
-                            viewModel.updateSort(StockSortOption.MOST_RECENT)
+                            viewModel.updateSort(StockSortOption.FULL_LIST)
                             expanded = false
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Highest Qty") },
+                        text = { Text("Recent Debtor") },
                         onClick = {
-                            viewModel.updateSort(StockSortOption.HIGHEST_VALUE)
+                            viewModel.updateSort(StockSortOption.RECENT_DEBTOR_ONLY)
                             expanded = false
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Lowest Qty") },
+                        text = { Text("Highest Quantity") },
                         onClick = {
-                            viewModel.updateSort(StockSortOption.LOWEST_VALUE)
+                            viewModel.updateSort(StockSortOption.HIGHEST_QUANTITY)
+                            expanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Lowest Quantity") },
+                        onClick = {
+                            viewModel.updateSort(StockSortOption.LOWEST_QUANTITY)
                             expanded = false
                         }
                     )
@@ -144,6 +173,7 @@ fun StockDetailsScreen(
                 .padding(8.dp)
         ) {
             Text("Date", Modifier.weight(0.8f), fontWeight = FontWeight.Bold)
+            Text("Acc", Modifier.weight(0.6f), fontWeight = FontWeight.Bold)
             Text("Doc", Modifier.weight(0.6f), fontWeight = FontWeight.Bold)
             Text("Type", Modifier.weight(0.8f), fontWeight = FontWeight.Bold)
             Text("Qty", Modifier.weight(0.4f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
@@ -158,15 +188,15 @@ fun StockDetailsScreen(
     }
 }
 
-// for labels
+// for filter labels
 fun getStockSortLabel(option: StockSortOption): String {
     return when(option) {
-        StockSortOption.MOST_RECENT -> "Date"
-        StockSortOption.HIGHEST_VALUE -> "High Qty"
-        StockSortOption.LOWEST_VALUE -> "Low Qty"
+        StockSortOption.FULL_LIST -> "Full List"
+        StockSortOption.RECENT_DEBTOR_ONLY -> "Recent Debtor"
+        StockSortOption.HIGHEST_QUANTITY -> "Highest Quantity"
+        StockSortOption.LOWEST_QUANTITY -> "Lowest Quantity"
     }
 }
-
 
 @Composable
 fun StockDetailRow(label: String, value: String) {
@@ -182,12 +212,8 @@ fun StockDetailRow(label: String, value: String) {
 }
 
 @Composable
-fun StockTransactionRow(trans: StockTransaction) {
+fun StockTransactionRow(trans: TransactionInfo) {
     val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-    val unitPrice = if (trans.transactionType == "Purchase") trans.unitCost else trans.unitSell
-
-
-    val totalValue = unitPrice * abs(trans.qty)// Calculate Total Value for display
 
     Row(
         Modifier
@@ -196,9 +222,10 @@ fun StockTransactionRow(trans: StockTransaction) {
             .padding(8.dp)
     ) {
         Text(dateFormat.format(trans.date), Modifier.weight(0.8f), fontSize = 12.sp)
-        Text(trans.documentNum.toString(), Modifier.weight(0.6f), fontSize = 12.sp)
-        Text(trans.transactionType, Modifier.weight(0.8f), fontSize = 12.sp)
+        Text(trans.accountCode ?: "N/A", Modifier.weight(0.6f), fontSize = 12.sp)
+        Text(trans.documentNum.toString(), Modifier.weight(0.5f), fontSize = 12.sp)
+        Text(trans.transactionType, Modifier.weight(0.7f), fontSize = 12.sp)
         Text(trans.qty.toString(), Modifier.weight(0.4f), fontSize = 12.sp, textAlign = TextAlign.End)
-        Text("R $totalValue", Modifier.weight(0.7f), fontSize = 12.sp, textAlign = TextAlign.End)
+        Text(String.format("R%.2f", trans.value), Modifier.weight(0.7f), fontSize = 12.sp, textAlign = TextAlign.End)
     }
 }

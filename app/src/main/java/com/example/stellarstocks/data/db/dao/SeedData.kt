@@ -12,19 +12,19 @@ object SeedData {
     private fun daysAgo(days: Int): Date = Date(System.currentTimeMillis() - (days * 24 * 60 * 60 * 1000L))
 
     val debtors = listOf(
-        DebtorMaster("ACC001", "Tech Solutions KZN", "12 West Street", "Durban", 15000.0, 45000.0, 30000.0),
-        DebtorMaster("ACC002", "Jozi Jola Consulting", "88 Maude Ave", "Sandton", 4000.0, 12000.0, 8000.0),
-        DebtorMaster("ACC003", "Cape Logistics", "45 Port Road", "Cape Town", 10000.0, 25000.0, 15000.0),
-        DebtorMaster("ACC004", "Waltons Stationery", "101 Croftdene Dr", "Chatsworth", 1500.0, 5000.0, 3500.0),
-        DebtorMaster("ACC005", "Page Automation IT", "5 Main Road", "Howick", 0.0, 0.0, 0.0)
+        DebtorMaster("ACC001", "Tech Solutions KZN", "12 West Street", "Durban", 15000.0, 45000.0, 30000.0, true),
+        DebtorMaster("ACC002", "Jozi Jola Consulting", "88 Maude Ave", "Sandton", 4000.0, 12000.0, 8000.0, true),
+        DebtorMaster("ACC003", "Cape Logistics", "45 Port Road", "Cape Town", 10000.0, 25000.0, 15000.0, true),
+        DebtorMaster("ACC004", "Waltons Stationery", "101 Croftdene Dr", "Chatsworth", 1500.0, 5000.0, 3500.0, true),
+        DebtorMaster("ACC005", "Page Automation IT", "5 Main Road", "Howick", 0.0, 0.0, 0.0, true)
     )
 
     val stock = listOf(
-        StockMaster("STK001", "Ergonomic Office Chair", 1200.0, 1800.0, 12000.0, 18000.0, 10, 10, 0),
-        StockMaster("STK002", "Wireless Mechanical Keyboard", 800.0, 1200.0, 16000.0, 12000.0, 20, 10, 10),
-        StockMaster("STK003", "24-inch IPS Monitor", 2500.0, 3500.0, 25000.0, 0.0, 10, 0, 10),
-        StockMaster("STK004", "USB-C Docking Station", 1500.0, 2200.0, 15000.0, 4400.0, 10, 2, 8),
-        StockMaster("STK005", "Laptop Stand", 300.0, 550.0, 6000.0, 2750.0, 20, 5, 15)
+        StockMaster("STK001", "Ergonomic Office Chair", 1200.0, 1800.0, 12000.0, 18000.0, 10, 10, 0, true),
+        StockMaster("STK002", "Wireless Mechanical Keyboard", 800.0, 1200.0, 16000.0, 12000.0, 20, 10, 10, true),
+        StockMaster("STK003", "24-inch IPS Monitor", 2500.0, 3500.0, 25000.0, 0.0, 10, 0, 10, true),
+        StockMaster("STK004", "USB-C Docking Station", 1500.0, 2200.0, 15000.0, 4400.0, 10, 2, 8, true),
+        StockMaster("STK005", "Laptop Stand", 300.0, 550.0, 6000.0, 2750.0, 20, 5, 15, true)
     )
 
     val invoiceHeaders = listOf(

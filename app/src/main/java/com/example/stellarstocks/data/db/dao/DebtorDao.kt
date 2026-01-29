@@ -8,6 +8,7 @@ import androidx.room.Query
 import androidx.room.Update
 import com.example.stellarstocks.data.db.models.DebtorMaster
 import com.example.stellarstocks.data.db.models.DebtorTransaction
+import com.example.stellarstocks.data.db.models.DebtorTransactionInfo
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -36,4 +37,12 @@ interface DebtorDao {
 
     @Query("SELECT * FROM debtor_transaction WHERE accountCode = :code") // Get Debtor Transactions by accountCode
     fun getDebtorTransactions(code: String): Flow<List<DebtorTransaction>>
+
+    @Query("""
+    SELECT dt.date, dt.documentNo AS documentNum, dt.transactionType, dt.grossTransactionValue AS value,
+           (SELECT GROUP_CONCAT(sm.stockDescription, ', ') FROM invoice_items ii JOIN stock_master sm ON ii.stockCode = sm.stockCode WHERE ii.invoiceNum = dt.documentNo) AS items
+    FROM debtor_transaction dt
+    WHERE dt.accountCode = :accountCode
+    """)
+    fun getDebtorTransactionInfo(accountCode: String): Flow<List<DebtorTransactionInfo>>
 }

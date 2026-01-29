@@ -1,7 +1,10 @@
 package com.example.stellarstocks.ui.screens
 
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -15,7 +18,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.stellarstocks.data.db.models.StockMaster
 import com.example.stellarstocks.ui.theme.DarkGreen
 import com.example.stellarstocks.ui.theme.LightGreen
 import com.example.stellarstocks.viewmodel.StockViewModel
@@ -28,12 +33,24 @@ fun StockAdjustmentScreen(viewModel: StockViewModel = viewModel()) {
     val adjustmentQty by viewModel.adjustmentQty.collectAsState()
     val toastMessage by viewModel.toastMessage.collectAsState()
     val context = LocalContext.current
+    var showSearchDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(toastMessage) {
         toastMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             viewModel.clearToast()
         }
+    }
+
+    if (showSearchDialog) {
+        StockSearchDialog(
+            viewModel = viewModel,
+            onDismiss = { showSearchDialog = false },
+            onStockSelected = {
+                viewModel.onStockSelectedForAdjustment(it)
+                showSearchDialog = false
+            }
+        )
     }
 
     Column(
@@ -57,13 +74,14 @@ fun StockAdjustmentScreen(viewModel: StockViewModel = viewModel()) {
             OutlinedTextField(
                 value = searchCode,
                 onValueChange = { viewModel.onAdjustmentSearchChange(it) },
-                label = { Text("Enter Stock Code") },
+                label = { Text("Select a Stock Code via the Search Button") },
                 modifier = Modifier.weight(1f),
-                singleLine = true
+                singleLine = true,
+                readOnly = true
             )
             Spacer(modifier = Modifier.width(8.dp))
             Button(
-                onClick = { viewModel.searchForAdjustment() },
+                onClick = { showSearchDialog = true },
                 colors = ButtonDefaults.buttonColors(containerColor = LightGreen),
                 shape = MaterialTheme.shapes.small,
                 modifier = Modifier.height(56.dp)
@@ -109,14 +127,13 @@ fun StockAdjustmentScreen(viewModel: StockViewModel = viewModel()) {
                     val num = it.toIntOrNull()
                     if (num != null) {// Only update if it's a valid number
                         viewModel.onAdjustmentQtyChange(num)
-                    } else if (it.isEmpty() || it == "-") { // Allow user type negative sign
+                    } else if (it.isEmpty() || it == "-") { // Allow negative numbers
                     }
                 },
                 label = { Text("Adjustment Amount (+/-)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.width(200.dp)
             )
-
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
@@ -136,3 +153,51 @@ fun StockAdjustmentScreen(viewModel: StockViewModel = viewModel()) {
         }
     }
 }
+
+@Composable
+fun StockSearchDialog(
+    viewModel: StockViewModel,
+    onDismiss: () -> Unit,
+    onStockSelected: (StockMaster) -> Unit
+) {
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val filteredStock by viewModel.filteredStock.collectAsState()
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(500.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { viewModel.onSearchQueryChange(it) },
+                    label = { Text("Search by code or description") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                LazyColumn {
+                    items(filteredStock) { stock ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onStockSelected(stock) }
+                                .padding(vertical = 8.dp)
+                        ) {
+                            Text(stock.stockCode, modifier = Modifier.weight(1f))
+                            Text(stock.stockDescription, modifier = Modifier.weight(2f))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/*add fully fledged pop up search for edit mode of stock creation screen where the
+        search is similar to stock enquiry and auto fills the details upon selecting a stock. This should use the
+        same search logic and layout as the stock adjustment page*/

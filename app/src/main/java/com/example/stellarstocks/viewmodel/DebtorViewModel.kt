@@ -4,7 +4,8 @@ import androidx.core.text.isDigitsOnly
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.stellarstocks.data.db.models.DebtorMaster
-import com.example.stellarstocks.data.db.models.DebtorTransaction
+import com.example.stellarstocks.data.db.models.DebtorTransactionInfo
+import com.example.stellarstocks.data.db.models.StockMaster
 import com.example.stellarstocks.data.db.repository.StellarStocksRepository
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,21 +19,29 @@ import kotlinx.coroutines.launch
 import kotlin.collections.emptyList
 
 enum class SortOption {
-    MOST_RECENT,   // Date Descending
-    HIGHEST_VALUE, // Value Descending
-    LOWEST_VALUE   // Value Ascending
+    FULL_LIST,
+    RECENT_ITEM_SOLD,
+    HIGHEST_VALUE,
+    LOWEST_VALUE
 }
 class DebtorViewModel(private val repository: StellarStocksRepository) : ViewModel() {
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
-    private val _currentSort = MutableStateFlow(SortOption.MOST_RECENT)
+    private val _currentSort = MutableStateFlow(SortOption.FULL_LIST)
     val currentSort = _currentSort.asStateFlow()
 
     val filteredDebtors: StateFlow<List<DebtorMaster>> = combine(
         repository.getAllDebtors(),
         _searchQuery
     ) { debtors, query ->
-        if (query.isBlank()) debtors else debtors.filter { it.accountCode.contains(query, ignoreCase = true) }
+        if (query.isBlank()) {
+            debtors
+        } else {
+            debtors.filter {
+                it.accountCode.contains(query, ignoreCase = true) ||
+                        it.name.contains(query, ignoreCase = true)
+            }
+        }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -42,16 +51,17 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
     private val _selectedDebtor = MutableStateFlow<DebtorMaster?>(null)
     val selectedDebtor = _selectedDebtor.asStateFlow()
 
-    private val _selectedTransactions = MutableStateFlow<List<DebtorTransaction>>(emptyList())
+    private val _selectedTransactions = MutableStateFlow<List<DebtorTransactionInfo>>(emptyList())
 
-    val visibleTransactions: StateFlow<List<DebtorTransaction>> = combine(
+    val visibleTransactions: StateFlow<List<DebtorTransactionInfo>> = combine(
         _selectedTransactions,
         _currentSort
     ) { transactions, sortOption ->
         when (sortOption) {
-            SortOption.MOST_RECENT -> transactions.sortedByDescending { it.date }
-            SortOption.HIGHEST_VALUE -> transactions.sortedByDescending { it.grossTransactionValue }
-            SortOption.LOWEST_VALUE -> transactions.sortedBy { it.grossTransactionValue }
+            SortOption.FULL_LIST -> transactions.sortedByDescending { it.date }
+            SortOption.RECENT_ITEM_SOLD -> transactions.filter { it.items != null }.sortedByDescending { it.date }
+            SortOption.HIGHEST_VALUE -> transactions.sortedByDescending { it.value }
+            SortOption.LOWEST_VALUE -> transactions.sortedBy { it.value }
         }
     }.stateIn(
         scope = viewModelScope,
@@ -90,7 +100,7 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
             _selectedDebtor.value = repository.getDebtor(code)
 
             // Get Transaction History
-            repository.getDebtorTransactions(code).collect { transactions ->
+            repository.getDebtorTransactionInfo(code).collect { transactions ->
                 _selectedTransactions.value = transactions
             }
         }

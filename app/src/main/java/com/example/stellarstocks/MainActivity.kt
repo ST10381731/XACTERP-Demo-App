@@ -380,7 +380,7 @@ fun DebtorEnquiryScreen(debtorViewModel: DebtorViewModel, navController: NavCont
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { debtorViewModel.onSearchQueryChange(it) },
-            label = { Text("Search Account Code") },
+            label = { Text("Search Account Code or Name") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
             modifier = Modifier
                 .fillMaxWidth()
@@ -437,7 +437,7 @@ fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavControl
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { stockViewModel.onSearchQueryChange(it) },
-            label = { Text("Search Stock Code") },
+            label = { Text("Search Stock Code or Name") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
             modifier = Modifier
                 .fillMaxWidth()
@@ -451,6 +451,7 @@ fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavControl
             TableCell(text = "Qty", weight = .4f, isHeader = true)
             TableCell(text = "Cost", weight = .4f, isHeader = true)
         }
+
         if (stockList.isEmpty()) {
             Box(
                 modifier = Modifier

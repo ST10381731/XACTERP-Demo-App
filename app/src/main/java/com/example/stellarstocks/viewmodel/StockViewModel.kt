@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.stellarstocks.data.db.models.DebtorMaster
 import com.example.stellarstocks.data.db.models.StockMaster
 import com.example.stellarstocks.data.db.models.StockTransaction
+import com.example.stellarstocks.data.db.models.TransactionInfo
 import com.example.stellarstocks.data.db.repository.StellarStocksRepository
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,9 +21,10 @@ import java.util.Date
 import kotlin.math.abs
 
 enum class StockSortOption {
-    MOST_RECENT,
-    HIGHEST_VALUE,
-    LOWEST_VALUE
+    FULL_LIST,
+    RECENT_DEBTOR_ONLY,
+    HIGHEST_QUANTITY,
+    LOWEST_QUANTITY
 }
 
 class StockViewModel(private val repository: StellarStocksRepository) : ViewModel() {
@@ -39,7 +41,10 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
         if (query.isBlank()) {
             stockList
         } else {
-            stockList.filter { it.stockCode.contains(query, ignoreCase = true) }
+            stockList.filter {
+                it.stockCode.contains(query, ignoreCase = true) ||
+                it.stockDescription.contains(query, ignoreCase = true)
+            }
         }
     }.stateIn(
         scope = viewModelScope,
@@ -50,31 +55,26 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
     private val _selectedStock = MutableStateFlow<StockMaster?>(null)
     val selectedStock = _selectedStock.asStateFlow()
 
-    private val _selectedTransactions = MutableStateFlow<List<StockTransaction>>(emptyList())
+    private val _selectedTransactions = MutableStateFlow<List<TransactionInfo>>(emptyList())
 
-    private val _currentSort = MutableStateFlow(StockSortOption.MOST_RECENT)
+    private val _currentSort = MutableStateFlow(StockSortOption.FULL_LIST)
     val currentSort = _currentSort.asStateFlow()
 
-    val visibleTransactions: StateFlow<List<StockTransaction>> = combine(
+    val visibleTransactions: StateFlow<List<TransactionInfo>> = combine(
         _selectedTransactions,
         _currentSort
     ) { transactions, sortOption ->
         when (sortOption) {
-            StockSortOption.MOST_RECENT -> transactions.sortedByDescending { it.date }
-            StockSortOption.HIGHEST_VALUE -> transactions.sortedByDescending { calculateTransactionValue(it) }
-            StockSortOption.LOWEST_VALUE -> transactions.sortedBy { calculateTransactionValue(it) }
+            StockSortOption.FULL_LIST -> transactions.sortedByDescending { it.date }
+            StockSortOption.RECENT_DEBTOR_ONLY -> transactions.filter { it.accountCode != null }.sortedByDescending { it.date }
+            StockSortOption.HIGHEST_QUANTITY -> transactions.sortedByDescending { it.qty }
+            StockSortOption.LOWEST_QUANTITY -> transactions.sortedBy { it.qty }
         }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
-
-    private fun calculateTransactionValue(trans: StockTransaction): Double {
-        val price = if (trans.transactionType == "Purchase") trans.unitCost else trans.unitSell
-        // Use absolute quantity so -5 items sold counts as a "value" of 5 * price
-        return price * abs(trans.qty)
-    }
 
     private val _adjustmentSearchCode = MutableStateFlow("")
     val adjustmentSearchCode = _adjustmentSearchCode.asStateFlow()
@@ -129,7 +129,7 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
     fun selectStockForDetails(code: String) {
         viewModelScope.launch {
             _selectedStock.value = repository.getStock(code)
-            repository.getStockTransactions(code).collect { transactions ->
+            repository.getTransactionInfoForStock(code).collect { transactions ->
                 _selectedTransactions.value = transactions
             }
         }
@@ -200,6 +200,12 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
     }
     fun onAdjustmentSearchChange(query: String) {
         _adjustmentSearchCode.value = query
+    }
+
+    fun onStockSelectedForAdjustment(stock: StockMaster) {
+        _foundAdjustmentStock.value = stock
+        _adjustmentSearchCode.value = stock.stockCode
+        _adjustmentQty.value = 0
     }
 
     fun searchForAdjustment() {

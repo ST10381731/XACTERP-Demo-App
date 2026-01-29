@@ -2,20 +2,46 @@ package com.example.stellarstocks.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.stellarstocks.data.db.models.DebtorTransaction
+import com.example.stellarstocks.data.db.models.DebtorTransactionInfo
 import com.example.stellarstocks.ui.theme.DarkGreen
 import com.example.stellarstocks.ui.theme.LightGreen
 import com.example.stellarstocks.viewmodel.DebtorViewModel
@@ -45,6 +71,8 @@ fun DebtorDetailsScreen(
         return
     }
 
+    val currentDebtor = debtor!!
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -64,18 +92,18 @@ fun DebtorDetailsScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(Modifier.padding(16.dp)) {
-                DetailRow("Account Code:", debtor!!.accountCode)
-                DetailRow("Name:", debtor!!.name)
-                DetailRow("Address:", "${debtor!!.address1}, ${debtor!!.address2}")
+                DebtorDetailRow("Account Code:", currentDebtor.accountCode)
+                DebtorDetailRow("Name:", currentDebtor.name)
+                DebtorDetailRow("Address:", "${currentDebtor.address1}, ${currentDebtor.address2}")
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                DetailRow("Balance:", "R ${debtor!!.balance}")
-                DetailRow("Sales YTD:", "R ${debtor!!.salesYearToDate}")
+                DebtorDetailRow("Balance:", "R ${currentDebtor.balance}")
+                DebtorDetailRow("Sales YTD:", "R ${currentDebtor.salesYearToDate}")
+                DebtorDetailRow("Cost YTD:", "R ${currentDebtor.costYearToDate}")
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // filter
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -103,21 +131,28 @@ fun DebtorDetailsScreen(
                     onDismissRequest = { expanded = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Most Recent Item Sold") },
+                        text = { Text("Full List") },
                         onClick = {
-                            viewModel.updateSort(SortOption.MOST_RECENT)
+                            viewModel.updateSort(SortOption.FULL_LIST)
                             expanded = false
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Highest Transaction Value") },
+                        text = { Text("Recent Item Sold") },
+                        onClick = {
+                            viewModel.updateSort(SortOption.RECENT_ITEM_SOLD)
+                            expanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Highest Value") },
                         onClick = {
                             viewModel.updateSort(SortOption.HIGHEST_VALUE)
                             expanded = false
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Lowest Transaction Value") },
+                        text = { Text("Lowest Value") },
                         onClick = {
                             viewModel.updateSort(SortOption.LOWEST_VALUE)
                             expanded = false
@@ -129,23 +164,22 @@ fun DebtorDetailsScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Table Header
         Row(
             Modifier
                 .fillMaxWidth()
                 .background(LightGreen)
                 .padding(8.dp)
         ) {
-            Text("Date", Modifier.weight(1f), fontWeight = FontWeight.Bold)
-            Text("Doc No", Modifier.weight(0.8f), fontWeight = FontWeight.Bold)
-            Text("Type", Modifier.weight(1f), fontWeight = FontWeight.Bold)
-            Text("Value", Modifier.weight(1f), fontWeight = FontWeight.Bold)
+            Text("Date", Modifier.weight(0.5f), fontWeight = FontWeight.Bold)
+            Text("Doc No.", Modifier.weight(0.6f), fontWeight = FontWeight.Bold)
+            Text("Type", Modifier.weight(0.6f), fontWeight = FontWeight.Bold)
+            Text("Value", Modifier.weight(0.6f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
+            Text("Items", Modifier.weight(1f), fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
         }
 
-        // Table content
         LazyColumn {
             items(transactions) { trans ->
-                TransactionRow(trans)
+                DebtorTransactionRow(trans)
             }
         }
     }
@@ -153,14 +187,15 @@ fun DebtorDetailsScreen(
 
 fun getSortLabel(option: SortOption): String {
     return when(option) {
-        SortOption.MOST_RECENT -> "Date"
+        SortOption.FULL_LIST -> "Full List"
+        SortOption.RECENT_ITEM_SOLD -> "Recent Item Sold"
         SortOption.HIGHEST_VALUE -> "Highest Value"
         SortOption.LOWEST_VALUE -> "Lowest Value"
     }
 }
 
 @Composable
-fun DetailRow(label: String, value: String) {
+fun DebtorDetailRow(label: String, value: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -173,17 +208,32 @@ fun DetailRow(label: String, value: String) {
 }
 
 @Composable
-fun TransactionRow(trans: DebtorTransaction) {
+fun DebtorTransactionRow(trans: DebtorTransactionInfo) {
     val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-    Row(
-        Modifier
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
             .fillMaxWidth()
+            .clickable { expanded = !expanded }
             .border(width = 0.5.dp, color = Color.LightGray)
             .padding(8.dp)
     ) {
-        Text(dateFormat.format(trans.date), Modifier.weight(1f), fontSize = 14.sp)
-        Text(trans.documentNo.toString(), Modifier.weight(0.8f), fontSize = 14.sp)
-        Text(trans.transactionType, Modifier.weight(1f), fontSize = 14.sp)
-        Text("R ${trans.grossTransactionValue}", Modifier.weight(1f), fontSize = 14.sp)
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(dateFormat.format(trans.date), Modifier.weight(0.7f), fontSize = 12.sp)
+            Text(trans.documentNum.toString(), Modifier.weight(0.6f), fontSize = 12.sp)
+            Text(trans.transactionType, Modifier.weight(0.7f), fontSize = 12.sp)
+            Text(String.format("R%.2f", trans.value), Modifier.weight(0.6f), fontSize = 12.sp, textAlign = TextAlign.End)
+            Text(
+                text = trans.items ?: "N/A",
+                modifier = Modifier.weight(1f),
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center,
+                maxLines = if (expanded) Int.MAX_VALUE else 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
     }
 }

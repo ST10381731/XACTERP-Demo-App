@@ -6,10 +6,12 @@ import com.example.stellarstocks.data.db.dao.InvoiceHeaderDao
 import com.example.stellarstocks.data.db.dao.StockDao
 import com.example.stellarstocks.data.db.models.DebtorMaster
 import com.example.stellarstocks.data.db.models.DebtorTransaction
+import com.example.stellarstocks.data.db.models.DebtorTransactionInfo
 import com.example.stellarstocks.data.db.models.InvoiceDetail
 import com.example.stellarstocks.data.db.models.InvoiceHeader
 import com.example.stellarstocks.data.db.models.StockMaster
 import com.example.stellarstocks.data.db.models.StockTransaction
+import com.example.stellarstocks.data.db.models.TransactionInfo
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -35,6 +37,9 @@ class StellarStocksRepositoryImpl @Inject constructor(
 
 
     override fun getDebtorTransactions(code: String): Flow<List<DebtorTransaction>> = debtorDao.getDebtorTransactions(code)
+    override fun getDebtorTransactionInfo(accountCode: String): Flow<List<DebtorTransactionInfo>> {
+        return debtorDao.getDebtorTransactionInfo(accountCode)
+    }
 
 
     override suspend fun insertStock(stock: StockMaster) = stockDao.insertStock(stock)
@@ -52,6 +57,15 @@ class StellarStocksRepositoryImpl @Inject constructor(
     }
 
     override fun getStockTransactions(code: String): Flow<List<StockTransaction>> = stockDao.getStockTransactions(code)
+
+    override suspend fun getMostRecentDebtorForStock(code: String): String?
+    {
+        return stockDao.getMostRecentDebtorForStock(code)
+    }
+
+    override fun getTransactionInfoForStock(stockCode: String): Flow<List<TransactionInfo>> {
+        return stockDao.getTransactionInfoForStock(stockCode)
+    }
 
     override suspend fun adjustStock(transaction: StockTransaction) {
         stockDao.performAdjustment(transaction)
