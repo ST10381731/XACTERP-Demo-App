@@ -56,17 +56,17 @@ import com.example.stellarstocks.viewmodel.StockViewModel
 
 @Composable
 fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: NavController) {
-    val isEditMode by viewModel.isEditMode.collectAsState()
-    val stockCode by viewModel.stockCode.collectAsState()
-    val description by viewModel.description.collectAsState()
-    val cost by viewModel.cost.collectAsState()
-    val sellingPrice by viewModel.sellingPrice.collectAsState()
+    val isEditMode by viewModel.isEditMode.collectAsState() // Check if in edit mode
+    val stockCode by viewModel.stockCode.collectAsState() // variable to hold the stock code
+    val description by viewModel.description.collectAsState() // variable to hold the description
+    val cost by viewModel.cost.collectAsState() // variable to hold the cost
+    val sellingPrice by viewModel.sellingPrice.collectAsState() // variable to hold the selling price
     val toastMessage by viewModel.toastMessage.collectAsState()
     val context = LocalContext.current
 
-    val scrollState = rememberScrollState()
+    val scrollState = rememberScrollState() // Scroll state for the column
 
-    var showSearchDialog by remember { mutableStateOf(false) }
+    var showSearchDialog by remember { mutableStateOf(false) } // State to control the search dialog visibility
 
     LaunchedEffect(toastMessage) {
         toastMessage?.let {
@@ -78,7 +78,7 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
     LaunchedEffect(Unit) {
         viewModel.navigationChannel.collect { shouldNavigate ->
             if (shouldNavigate) {
-                navController.navigate(Screen.StockEnquiry.route) {
+                navController.navigate(Screen.StockEnquiry.route) { // Navigate to the stock enquiry screen after creation/edit
                     popUpTo(Screen.StockMenu.route) { inclusive = false }
                 }
             }
@@ -86,19 +86,19 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
     }
 
     LaunchedEffect(Unit) {
-        if (!isEditMode) viewModel.generateNewCode()
+        if (!isEditMode) viewModel.generateNewCode() // Generate a new stockCode if not in edit mode
     }
 
-    if (showSearchDialog) {
+    if (showSearchDialog) { // Show the search dialog if it's true
         StockCreationSearchDialog(
             viewModel = viewModel,
             onDismiss = { showSearchDialog = false },
             onStockSelected = { stock ->
                 // Populate the form with selected data
-                viewModel.onStockCodeChange(stock.stockCode)
-                viewModel.onDescriptionChange(stock.stockDescription)
-                viewModel.onCostChange(stock.cost)
-                viewModel.onSellingPriceChange(stock.sellingPrice)
+                viewModel.onStockCodeChange(stock.stockCode) // Set the stock code
+                viewModel.onDescriptionChange(stock.stockDescription) // Set the description
+                viewModel.onCostChange(stock.cost) // Set the cost
+                viewModel.onSellingPriceChange(stock.sellingPrice) // Set the selling price
                 showSearchDialog = false
             }
         )
@@ -117,11 +117,11 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
     ) {
         IconButton(onClick = { navController.popBackStack() }) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Orange
-            )
+            ) // Back button to go back to the previous screen
         }
     }
         Text(
-            text = if (isEditMode) "Edit Mode" else "Creation Mode",
+            text = if (isEditMode) "Edit Mode" else "Creation Mode", // change text depending on mode
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             color = Orange,
@@ -139,7 +139,7 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            OutlinedTextField(
+            OutlinedTextField( // Text field for stock code
                 value = stockCode,
                 onValueChange = { if (isEditMode) viewModel.onStockCodeChange(it) },
                 label = { Text(if (isEditMode) "Select a Stock Code via the Search Button" else "Auto Account Code") },
@@ -149,7 +149,7 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
                 readOnly = true
             )
 
-            if (isEditMode) {
+            if (isEditMode) { // If in edit mode, show the search button
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(
                     onClick = { showSearchDialog = true },
@@ -163,7 +163,7 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
         }
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
+        OutlinedTextField( // Text field for description
             value = description,
             onValueChange = { viewModel.onDescriptionChange(it) },
             label = { Text("Stock Description *") },
@@ -173,7 +173,7 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
+        OutlinedTextField( // Text field for cost
             value = cost.toString(),
             onValueChange = { viewModel.onCostChange(it.toDoubleOrNull() ?: 0.0) },
             label = { Text("Cost of Item * ") },
@@ -184,7 +184,7 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
+        OutlinedTextField( // Text field for selling price
             value = sellingPrice.toString(),
             onValueChange = { viewModel.onSellingPriceChange(it.toDoubleOrNull() ?: 0.0) },
             label = { Text("Selling Price * ") },
@@ -199,7 +199,7 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Button(
+            Button( // Button to save or update the stock
                 onClick = { viewModel.saveStock() },
                 colors = ButtonDefaults.buttonColors(containerColor = DarkGreen),
                 modifier = Modifier.weight(1f)
@@ -207,7 +207,7 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
                 Text(if (isEditMode) "Update Details" else "Confirm Creation")
             }
 
-            if (isEditMode) {
+            if (isEditMode) { // If in edit mode, show the delete button
                 Button(
                     onClick = { viewModel.deleteStock() },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
@@ -221,15 +221,15 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
 }
 
 @Composable
-fun StockCreationSearchDialog(
+fun StockCreationSearchDialog( // Search dialog for selecting a stock item
     viewModel: StockViewModel,
     onDismiss: () -> Unit,
     onStockSelected: (StockMaster) -> Unit
 ) {
-    val searchQuery by viewModel.searchQuery.collectAsState()
-    val filteredStock by viewModel.filteredStock.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState() // State to hold the search query
+    val filteredStock by viewModel.filteredStock.collectAsState() // State to hold the filtered stock items
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(onDismissRequest = onDismiss) { // Dialog to show the search results
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -238,13 +238,13 @@ fun StockCreationSearchDialog(
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {
-                Text(
+                Text( // header for the search dialog
                     text = "Select Stock Item",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
-                OutlinedTextField(
+                OutlinedTextField( // Text field for searching by code or description
                     value = searchQuery,
                     onValueChange = { viewModel.onSearchQueryChange(it) },
                     label = { Text("Search by code or description") },
@@ -253,7 +253,7 @@ fun StockCreationSearchDialog(
                     leadingIcon = { Icon(Icons.Default.Search, null) }
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                LazyColumn {
+                LazyColumn { // Lazy column to display the filtered stock items
                     items(filteredStock) { stock ->
                         Row(
                             modifier = Modifier

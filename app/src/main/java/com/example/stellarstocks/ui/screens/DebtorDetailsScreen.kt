@@ -59,17 +59,17 @@ fun DebtorDetailsScreen(
     viewModel: DebtorViewModel,
     navController: NavHostController
 ) {
-    val debtor by viewModel.selectedDebtor.collectAsState()
-    val transactions by viewModel.visibleTransactions.collectAsState()
-    val currentSort by viewModel.currentSort.collectAsState()
+    val debtor by viewModel.selectedDebtor.collectAsState() // Debtor object to hold details
+    val transactions by viewModel.visibleTransactions.collectAsState() // List of transactions to display
+    val currentSort by viewModel.currentSort.collectAsState() // Current sort option
 
-    var expanded by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) } // variable to control dropdown menu
 
     LaunchedEffect(accountCode) {
-        viewModel.selectDebtorForDetails(accountCode)
+        viewModel.selectDebtorForDetails(accountCode) // Fetch debtor details
     }
 
-    if (debtor == null) {
+    if (debtor == null) { // if debtor is not found, show loading screen
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
@@ -86,7 +86,7 @@ fun DebtorDetailsScreen(
         IconButton(onClick = { navController.popBackStack() }) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = DarkGreen)
         }
-        Text(
+        Text( // Debtor Details Header
             text = "Debtor Details",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
@@ -94,7 +94,7 @@ fun DebtorDetailsScreen(
             modifier = Modifier.padding(bottom = 16.dp)
         )
     }
-        Card(
+        Card( // Debtor Details Card
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
             modifier = Modifier.fillMaxWidth()
@@ -133,7 +133,7 @@ fun DebtorDetailsScreen(
                     Icon(Icons.Default.ArrowDropDown, contentDescription = "Sort", tint = Color.Black)
                 }
 
-                DropdownMenu(
+                DropdownMenu( // Sort Dropdown Menu
                     expanded = expanded,
                     onDismissRequest = { expanded = false }
                 ) {
@@ -176,7 +176,7 @@ fun DebtorDetailsScreen(
                 .fillMaxWidth()
                 .background(LightGreen)
                 .padding(8.dp)
-        ) {
+        ) { // Transaction History Header
             Text("Date", Modifier.weight(0.7f), fontWeight = FontWeight.Bold, fontSize = 12.sp)
             Text("Doc", Modifier.weight(0.5f), fontWeight = FontWeight.Bold, fontSize = 12.sp)
             Text("Type", Modifier.weight(0.7f), fontWeight = FontWeight.Bold, fontSize = 12.sp)
@@ -191,7 +191,7 @@ fun DebtorDetailsScreen(
         }
     }
 }
-fun getSortLabel(option: SortOption): String {
+fun getSortLabel(option: SortOption): String { // Helper function to get sort label based on option
     return when(option) {
         SortOption.FULL_LIST -> "Full List"
         SortOption.RECENT_ITEM_SOLD -> "Recent Item Sold"
@@ -201,7 +201,7 @@ fun getSortLabel(option: SortOption): String {
 }
 
 @Composable
-fun DebtorDetailRow(label: String, value: String) {
+fun DebtorDetailRow(label: String, value: String) { // Helper function to display a row of debtor details
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -214,9 +214,9 @@ fun DebtorDetailRow(label: String, value: String) {
 }
 
 @Composable
-fun DebtorTransactionRow(trans: DebtorTransactionInfo) {
+fun DebtorTransactionRow(trans: DebtorTransactionInfo) { // Helper function to display a row of debtor transactions
     val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-    var expanded by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) } // variable to control dropdown menu
 
     Row(
         Modifier

@@ -63,17 +63,17 @@ import com.example.stellarstocks.viewmodel.StockViewModel
 
 @Composable
 fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController: NavController) {
-    val isEditMode by viewModel.isEditMode.collectAsState()
-    val accountCode by viewModel.accountCode.collectAsState()
-    val name by viewModel.name.collectAsState()
-    val address1 by viewModel.address1.collectAsState()
-    val address2 by viewModel.address2.collectAsState()
+    val isEditMode by viewModel.isEditMode.collectAsState() // variable to determine if in edit mode
+    val accountCode by viewModel.accountCode.collectAsState() // variable to hold account code
+    val name by viewModel.name.collectAsState() // variable to hold name
+    val address1 by viewModel.address1.collectAsState() // variable to hold address
+    val address2 by viewModel.address2.collectAsState() // variable to hold address
     val toastMessage by viewModel.toastMessage.collectAsState()
     val context = LocalContext.current
 
-    val scrollState = rememberScrollState()
+    val scrollState = rememberScrollState() // default scroll state for the column
 
-    var showSearchDialog by remember { mutableStateOf(false) }
+    var showSearchDialog by remember { mutableStateOf(false) } // variable to determine if search dialog should be shown
 
     LaunchedEffect(toastMessage) {
         toastMessage?.let {
@@ -83,7 +83,7 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
     }
 
     LaunchedEffect(Unit) {
-        if (!isEditMode) viewModel.generateNewCode()
+        if (!isEditMode) viewModel.generateNewCode() // if not in edit mode, generate a new code
     }
 
     LaunchedEffect(Unit) {
@@ -96,7 +96,7 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
         }
     }
 
-    if (showSearchDialog) {
+    if (showSearchDialog) { // determines if search dialog should be shown
         DebtorCreationSearchDialog(
             viewModel = viewModel,
             onDismiss = { showSearchDialog = false },
@@ -121,20 +121,20 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
             modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = { navController.popBackStack() }) {
+            IconButton(onClick = { navController.popBackStack() }) { // navigate back to debtor menu
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Orange
                 )
             }
         }
             Text(
-                text = if (isEditMode) "Edit Mode" else "Creation Mode",
+                text = if (isEditMode) "Edit Mode" else "Creation Mode", // change text based on mode
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = Orange,
                 modifier = Modifier
                     .padding(start = 16.dp)
-                    .clickable { viewModel.toggleMode() }
+                    .clickable { viewModel.toggleMode() } // toggle between edit and creation mode on click
             )
 
         Text(
@@ -158,7 +158,7 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
                 readOnly = true
             )
 
-            if (isEditMode) {
+            if (isEditMode) { // if in edit mode, show search button
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(
                     onClick = { showSearchDialog = true },
@@ -173,7 +173,7 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
+        OutlinedTextField( // text field for name
             value = name,
             onValueChange = { viewModel.onNameChange(it) },
             label = { Text("Client Name *") },
@@ -183,7 +183,7 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
+        OutlinedTextField( // text field for address
             value = address1,
             onValueChange = { viewModel.onAddress1Change(it) },
             label = { Text("Primary Address (Required)") },
@@ -195,7 +195,7 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
+        OutlinedTextField( // text field for address 2
             value = address2,
             onValueChange = { viewModel.onAddress2Change(it) },
             label = { Text("Secondary Address (Optional)") },
@@ -219,7 +219,7 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
                 Text(if (isEditMode) "Update Details" else "Confirm Creation")
             }
 
-            if (isEditMode) {
+            if (isEditMode) { // if in edit mode, show delete button
                 Button(
                     onClick = { viewModel.deleteDebtor() },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
@@ -233,15 +233,15 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
 }
 
 @Composable
-fun DebtorCreationSearchDialog(
+fun DebtorCreationSearchDialog( // search dialog for selecting debtor
     viewModel: DebtorViewModel,
     onDismiss: () -> Unit,
     onDebtorSelected: (DebtorMaster) -> Unit
 ) {
-    val searchQuery by viewModel.searchQuery.collectAsState()
-    val filteredDebtor by viewModel.filteredDebtors.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState() // variable to hold search query
+    val filteredDebtor by viewModel.filteredDebtors.collectAsState() // variable to hold filtered debtors
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(onDismissRequest = onDismiss) { // dialog box
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -250,13 +250,13 @@ fun DebtorCreationSearchDialog(
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {
-                Text(
+                Text( // title of dialog
                     text = "Select Debtor",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
-                OutlinedTextField(
+                OutlinedTextField( // text field for search
                     value = searchQuery,
                     onValueChange = { viewModel.onSearchQueryChange(it) },
                     label = { Text("Search by account code or name") },
@@ -265,7 +265,7 @@ fun DebtorCreationSearchDialog(
                     leadingIcon = { Icon(Icons.Default.Search, null) }
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                LazyColumn {
+                LazyColumn { // Table to hold list of debtors
                     items(filteredDebtor) { debtor ->
                         Row(
                             modifier = Modifier

@@ -57,17 +57,17 @@ fun StockDetailsScreen(
     viewModel: StockViewModel,
     navController: NavHostController
 ) {
-    val stock by viewModel.selectedStock.collectAsState()
-    val transactions by viewModel.visibleTransactions.collectAsState()
-    val currentSort by viewModel.currentSort.collectAsState()
+    val stock by viewModel.selectedStock.collectAsState() // variable to manage stockViewModel state
+    val transactions by viewModel.visibleTransactions.collectAsState() // variable to manage transaction table
+    val currentSort by viewModel.currentSort.collectAsState() // variable to manage sort option
 
-    var expanded by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) } // variable to manage dropdown menu
 
     LaunchedEffect(stockCode) {
-        viewModel.selectStockForDetails(stockCode)
+        viewModel.selectStockForDetails(stockCode) // update selected stock
     }
 
-    if (stock == null) {
+    if (stock == null) { // if stock is null, show loading screen
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
@@ -80,25 +80,27 @@ fun StockDetailsScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-    ) {Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 16.dp)) {
-        IconButton(onClick = { navController.popBackStack() }) {
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 16.dp)) {
+        IconButton(onClick = { navController.popBackStack() }) { // back button to return to previous screen
             Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = DarkGreen)
         }
+
         Text("Stock Details", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = DarkGreen)
     }
 
-        Card(
+        Card( // stock details card
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Column(Modifier.padding(16.dp)) {
+            Column(Modifier.padding(16.dp)) { // table to display all stock details
                 StockDetailRow("Stock Code:", currentStock.stockCode)
                 StockDetailRow("Description:", currentStock.stockDescription)
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
                 StockDetailRow("Qty On Hand:", currentStock.stockOnHand.toString())
                 StockDetailRow("Cost Price:", "R ${currentStock.cost}")
-                StockDetailRow("Selling Price:", "R ${currentStock.sellingPrice}") // Correct field name
+                StockDetailRow("Selling Price:", "R ${currentStock.sellingPrice}")
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
                 StockDetailRow("Total Sales (Ex VAT):", "R ${currentStock.totalSalesExclVat}")
                 StockDetailRow("Total Purchases (Ex VAT):", "R ${currentStock.totalPurchasesExclVat}")
@@ -107,8 +109,7 @@ fun StockDetailsScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // filter
-        Row(
+        Row( // row to display transaction history
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
@@ -174,7 +175,7 @@ fun StockDetailsScreen(
                 .background(LightGreen)
                 .padding(vertical = 8.dp, horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically
-        ) {
+        ) { // header for transaction table
             Text("Date", Modifier.weight(0.8f), fontWeight = FontWeight.Bold, fontSize = 11.sp)
             Text("Acc", Modifier.weight(0.6f), fontWeight = FontWeight.Bold, fontSize = 11.sp)
             Text("Doc", Modifier.weight(0.5f), fontWeight = FontWeight.Bold, fontSize = 11.sp)
@@ -183,7 +184,7 @@ fun StockDetailsScreen(
             Text("Value", Modifier.weight(0.7f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End, fontSize = 11.sp)
         }
 
-        LazyColumn {
+        LazyColumn { // transaction table
             items(transactions) { trans ->
                 StockTransactionRow(trans)
             }
@@ -191,8 +192,7 @@ fun StockDetailsScreen(
     }
 }
 
-// for filter labels
-fun getStockSortLabel(option: StockSortOption): String {
+fun getStockSortLabel(option: StockSortOption): String { // function to get sort option label
     return when(option) {
         StockSortOption.FULL_LIST -> "Full List"
         StockSortOption.RECENT_DEBTOR_ONLY -> "Recent Debtor"
@@ -202,7 +202,7 @@ fun getStockSortLabel(option: StockSortOption): String {
 }
 
 @Composable
-fun StockDetailRow(label: String, value: String) {
+fun StockDetailRow(label: String, value: String) { // function to display stock details
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -215,7 +215,7 @@ fun StockDetailRow(label: String, value: String) {
 }
 
 @Composable
-fun StockTransactionRow(trans: TransactionInfo) {
+fun StockTransactionRow(trans: TransactionInfo) { // function to display transaction details
     val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
 
     Row(
@@ -226,13 +226,13 @@ fun StockTransactionRow(trans: TransactionInfo) {
         verticalAlignment = Alignment.CenterVertically
     ) {
 
-        Text(
+        Text( // display transaction date
             text = dateFormat.format(trans.date),
             modifier = Modifier.weight(0.8f),
             fontSize = 11.sp
         )
 
-        Text(
+        Text( // display account code
             text = trans.accountCode ?: "-",
             modifier = Modifier.weight(0.6f),
             fontSize = 11.sp,
@@ -240,14 +240,14 @@ fun StockTransactionRow(trans: TransactionInfo) {
             overflow = TextOverflow.Ellipsis
         )
 
-        Text(
+        Text( // display document number
             text = trans.documentNum.toString(),
             modifier = Modifier.weight(0.5f),
             fontSize = 11.sp,
             maxLines = 1
         )
 
-        Text(
+        Text( // display transaction type
             text = trans.transactionType,
             modifier = Modifier.weight(0.7f),
             fontSize = 11.sp,
@@ -255,14 +255,14 @@ fun StockTransactionRow(trans: TransactionInfo) {
             overflow = TextOverflow.Ellipsis
         )
 
-        Text(
+        Text( // display transaction quantity
             text = trans.qty.toString(),
             modifier = Modifier.weight(0.4f),
             fontSize = 11.sp,
             textAlign = TextAlign.End,
             maxLines = 1
         )
-        Text(
+        Text( // display transaction value
             text = String.format("R%.2f", trans.value),
             modifier = Modifier.weight(0.7f),
             fontSize = 11.sp,

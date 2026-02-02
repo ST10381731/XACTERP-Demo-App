@@ -30,12 +30,12 @@ import kotlin.math.roundToInt
 
 @Composable
 fun StockAdjustmentScreen(viewModel: StockViewModel = viewModel(), navController: NavController) {
-    val searchCode by viewModel.adjustmentSearchCode.collectAsState()
-    val foundStock by viewModel.foundAdjustmentStock.collectAsState()
-    val adjustmentQty by viewModel.adjustmentQty.collectAsState()
+    val searchCode by viewModel.adjustmentSearchCode.collectAsState() //search code variable
+    val foundStock by viewModel.foundAdjustmentStock.collectAsState() //found stock variable
+    val adjustmentQty by viewModel.adjustmentQty.collectAsState() //adjustment quantity variable
     val toastMessage by viewModel.toastMessage.collectAsState()
     val context = LocalContext.current
-    var showSearchDialog by remember { mutableStateOf(false) }
+    var showSearchDialog by remember { mutableStateOf(false) } //search dialog variable
 
     LaunchedEffect(toastMessage) {
         toastMessage?.let {
@@ -44,7 +44,7 @@ fun StockAdjustmentScreen(viewModel: StockViewModel = viewModel(), navController
         }
     }
 
-    if (showSearchDialog) {
+    if (showSearchDialog) { //determine if search dialog should be shown
         StockSearchDialog(
             viewModel = viewModel,
             onDismiss = { showSearchDialog = false },
@@ -54,38 +54,37 @@ fun StockAdjustmentScreen(viewModel: StockViewModel = viewModel(), navController
             }
         )
     }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
-    ) {Row(
+    ) {
+        Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 24.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = { navController.popBackStack() }) {
+        IconButton(onClick = { navController.popBackStack() }) { //back button with navigation to previous screen
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Back",
                 tint = DarkGreen
             )
         }
-        Text(
+        Text( //screen header
             text = "Stock Adjustment",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             color = DarkGreen,
-            modifier = Modifier.padding(bottom = 24.dp)
         )
     }
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            OutlinedTextField(
+            OutlinedTextField(// search field with search button
                 value = searchCode,
                 onValueChange = { viewModel.onAdjustmentSearchChange(it) },
                 label = { Text("Select a Stock Code via the Search Button") },
@@ -94,8 +93,8 @@ fun StockAdjustmentScreen(viewModel: StockViewModel = viewModel(), navController
                 readOnly = true
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Button(
-                onClick = { showSearchDialog = true },
+            Button( //search button with icon
+                onClick = { showSearchDialog = true }, //show search dialog on button click
                 colors = ButtonDefaults.buttonColors(containerColor = LightGreen),
                 shape = MaterialTheme.shapes.small,
                 modifier = Modifier.height(56.dp)
@@ -106,13 +105,13 @@ fun StockAdjustmentScreen(viewModel: StockViewModel = viewModel(), navController
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        if (foundStock != null) {
+        if (foundStock != null) { //display stock details if stock is found
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(Modifier.padding(16.dp)) {
+                Column(Modifier.padding(16.dp)) { //stock details card
                     Text("Stock Details", fontWeight = FontWeight.Bold, color = DarkGreen, fontSize = 18.sp)
                     Spacer(modifier = Modifier.height(8.dp))
                     StockDetailRow("Code:", foundStock!!.stockCode)
@@ -126,8 +125,8 @@ fun StockAdjustmentScreen(viewModel: StockViewModel = viewModel(), navController
 
             Text("Adjust Quantity", fontWeight = FontWeight.SemiBold)
 
-            // Slider
-            Slider(
+
+            Slider(// Slider for adjusting quantity on hand
                 value = adjustmentQty.toFloat(),
                 onValueChange = { viewModel.onAdjustmentQtyChange(it.roundToInt()) },
                 valueRange = -50f..50f,
@@ -141,7 +140,8 @@ fun StockAdjustmentScreen(viewModel: StockViewModel = viewModel(), navController
                     val num = it.toIntOrNull()
                     if (num != null) {// Only update if it's a valid number
                         viewModel.onAdjustmentQtyChange(num)
-                    } else if (it.isEmpty() || it == "-") { // Allow negative numbers
+                    } else if (it.isEmpty() || it == "-") { // Allow clearing and negative values
+                        viewModel.onAdjustmentQtyChange(0)
                     }
                 },
                 label = { Text("Adjustment Amount (+/-)") },
@@ -169,15 +169,15 @@ fun StockAdjustmentScreen(viewModel: StockViewModel = viewModel(), navController
 }
 
 @Composable
-fun StockSearchDialog(
+fun StockSearchDialog( //search dialog for selecting stock
     viewModel: StockViewModel,
     onDismiss: () -> Unit,
     onStockSelected: (StockMaster) -> Unit
 ) {
-    val searchQuery by viewModel.searchQuery.collectAsState()
-    val filteredStock by viewModel.filteredStock.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState() //search query variable
+    val filteredStock by viewModel.filteredStock.collectAsState() //filtered stock variable
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(onDismissRequest = onDismiss) { //dialog box
         Card(
             modifier = Modifier
                 .fillMaxWidth()
