@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -21,6 +22,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -28,7 +32,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AddShoppingCart
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -36,6 +42,8 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -254,7 +262,6 @@ fun MainApp() {
             NavigationBar {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestination = navBackStackEntry?.destination
-
                 navItems.forEach { item ->
                     NavigationBarItem(
                         selected = currentDestination?.hierarchy?.any { it.route == item.route } == true,
@@ -268,7 +275,7 @@ fun MainApp() {
                             }
                         },
                         icon = { Icon(item.icon, contentDescription = item.label) },
-                        label = { Text(item.label) }
+                        label = { Text(item.label) },
                     )
                 }
             }
@@ -651,34 +658,130 @@ class TicketShape(
 
 }
 
+data class DebtorMenuItemData(
+    val title: String,
+    val description: String,
+    val icon: ImageVector,
+    val route: String
+)
 
+val debtorMenuItems = listOf(
+    DebtorMenuItemData(
+        title = "Debtor Enquiry",
+        description = "Search and view debtors",
+        icon = Icons.Default.Search,
+        route = Screen.DebtorEnquiry.route
+    ),
+    DebtorMenuItemData(
+        title = "Debtor Maintenance",
+        description = "Create and edit debtors",
+        icon = Icons.Default.Edit,
+        route = Screen.DebtorCreation.route
+    )
+)
+
+@Composable
+fun DebtorMenuTile(item: DebtorMenuItemData, navController: NavController) {
+    Card(
+        modifier = Modifier
+            .padding(8.dp)
+            .clickable { navController.navigate(item.route) },
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = LightGreen)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .size(160.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(item.icon, contentDescription = item.title, modifier = Modifier.size(48.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(item.title, fontWeight = FontWeight.Bold, fontSize = 16.sp, textAlign = TextAlign.Center)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(item.description, textAlign = TextAlign.Center, fontSize = 12.sp, color = Color.Gray)
+        }
+    }
+}
+
+
+data class StockMenuItemData(
+    val title: String,
+    val description: String,
+    val icon: ImageVector,
+    val route: String
+)
+
+val stockMenuItems = listOf(
+    StockMenuItemData(
+        title = "Stock Enquiry",
+        description = "Search and view stock items",
+        icon = Icons.Default.Search,
+        route = Screen.StockEnquiry.route
+    ),
+    StockMenuItemData(
+        title = "Stock Maintenance",
+        description = "Create and edit stock items",
+        icon = Icons.Default.Edit,
+        route = Screen.StockCreation.route
+    ),
+    StockMenuItemData(
+        title = "Stock Adjustment",
+        description = "Adjust stock levels",
+        icon = Icons.Default.AddShoppingCart,
+        route = Screen.StockAdjustment.route
+    )
+)
+
+@Composable
+fun StockMenuTile(item: StockMenuItemData, navController: NavController) {
+    Card(
+        modifier = Modifier
+            .padding(8.dp)
+            .clickable { navController.navigate(item.route) },
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = LightGreen)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .size(160.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(item.icon, contentDescription = item.title, modifier = Modifier.size(48.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(item.title, fontWeight = FontWeight.Bold, fontSize = 16.sp, textAlign = TextAlign.Center)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(item.description, textAlign = TextAlign.Center, fontSize = 12.sp, color = Color.Gray)
+        }
+    }
+}
 
 @Composable
 fun StockMenuScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .padding(16.dp)
     ) {
-        Button(
-            onClick = { navController.navigate(Screen.StockEnquiry.route) },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = LightGreen)
-        ) { Text("Stock Enquiry") }
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(
-            onClick = { navController.navigate(Screen.StockCreation.route) },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = LightGreen)
-        ) { Text("Stock Maintenance") }
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(
-            onClick = { navController.navigate(Screen.StockAdjustment.route) },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = LightGreen)
-        ) { Text("Stock Adjustment") }
+        Text(
+            "Stocks Menu",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = DarkGreen,
+            modifier = Modifier.padding(bottom = 16.dp).fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            contentPadding = PaddingValues(8.dp)
+        ) {
+            items(stockMenuItems) { item ->
+                StockMenuTile(item = item, navController = navController)
+            }
+        }
     }
 }
 
@@ -687,21 +790,24 @@ fun DebtorMenuScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .padding(16.dp)
     ) {
-        Button(
-            onClick = { navController.navigate(Screen.DebtorEnquiry.route) },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = LightGreen)
-        ) { Text("Debtor Enquiry") }
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(
-            onClick = { navController.navigate(Screen.DebtorCreation.route) },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = LightGreen)
-        ) { Text("Debtor Maintenance") }
+        Text(
+            "Debtors Menu",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = DarkGreen,
+            modifier = Modifier.padding(bottom = 16.dp).fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            contentPadding = PaddingValues(8.dp)
+        ) {
+            items(debtorMenuItems) { item ->
+                DebtorMenuTile(item = item, navController = navController)
+            }
+        }
     }
 }
 
