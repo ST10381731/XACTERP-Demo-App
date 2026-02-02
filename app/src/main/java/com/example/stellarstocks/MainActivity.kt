@@ -117,13 +117,13 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-data class BottomNavItem(
+data class BottomNavItem( // bottom navigation bar
     val label: String,
     val icon: ImageVector,
     val route: String
 )
 
-fun createWavePath(
+fun createWavePath( // image for landing page
     width: Float,
     height: Float,
     waveHeight: Float
@@ -167,7 +167,7 @@ fun RowScope.TableCell(
 fun AppEntryPoint() {
     val pagerState = rememberPagerState(pageCount = { 2 })
 
-    VerticalPager(
+    VerticalPager( //view pager for landing page and main app
         state = pagerState,
         modifier = Modifier.fillMaxSize()
     ) { page ->
@@ -179,7 +179,7 @@ fun AppEntryPoint() {
 }
 
 @Composable
-fun LandingPage() {
+fun LandingPage() { //landing page for app
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -239,18 +239,18 @@ fun LandingPage() {
 
 @Composable
 fun MainApp() {
-    val navController = rememberNavController()
-    val context = LocalContext.current
+    val navController = rememberNavController() // navigation controller
+    val context = LocalContext.current // context for database
 
-    val app = context.applicationContext as StellarStocksApplication
+    val app = context.applicationContext as StellarStocksApplication // application context
     app.database
-    val repository = app.repository
+    val repository = app.repository // repository for database
 
 
-    val debtorViewModel: DebtorViewModel = viewModel(factory = DebtorViewModelFactory(repository))
-    val stockViewModel: StockViewModel = viewModel(factory = StockViewModelFactory(repository))
+    val debtorViewModel: DebtorViewModel = viewModel(factory = DebtorViewModelFactory(repository)) // view model for debtor
+    val stockViewModel: StockViewModel = viewModel(factory = StockViewModelFactory(repository)) // view model for stock
 
-    val navItems = listOf(
+    val navItems = listOf( // bottom navigation bar items
         BottomNavItem("Home", Icons.Default.Home, Screen.Home.route),
         BottomNavItem("Stocks", Icons.Default.Inventory, Screen.StockMenu.route),
         BottomNavItem("Invoices", Icons.Default.Description, Screen.Invoice.route),
@@ -259,15 +259,16 @@ fun MainApp() {
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentDestination = navBackStackEntry?.destination
-                navItems.forEach { item ->
+            NavigationBar { // bottom navigation bar
+                val navBackStackEntry by navController.currentBackStackEntryAsState() // current back stack entry
+                val currentDestination = navBackStackEntry?.destination // current destination
+
+                navItems.forEach { item ->// loop through navigation items
                     NavigationBarItem(
-                        selected = currentDestination?.hierarchy?.any { it.route == item.route } == true,
+                        selected = currentDestination?.hierarchy?.any { it.route == item.route } == true, // check if current destination is the same as the item
                         onClick = {
                             navController.navigate(item.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
+                                popUpTo(navController.graph.findStartDestination().id) { // pop up to start destination
                                     saveState = true
                                 }
                                 launchSingleTop = true
@@ -281,47 +282,47 @@ fun MainApp() {
             }
         }
     ) { innerPadding ->
-        NavHost(
+        NavHost( // navigation host
             navController = navController,
             startDestination = Screen.Home.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(Screen.Home.route) { HomeScreen() }
+            composable(Screen.Home.route) { HomeScreen() } // home screen
 
-            composable(Screen.Invoice.route) { InvoiceScreen(stockViewModel, debtorViewModel) }
+            composable(Screen.Invoice.route) { InvoiceScreen(stockViewModel, debtorViewModel) } // invoice screen
 
-            composable(Screen.StockMenu.route) { StockMenuScreen(navController) }
+            composable(Screen.StockMenu.route) { StockMenuScreen(navController) } // stock menu screen
 
             composable(Screen.StockEnquiry.route) {
-                StockEnquiryScreen(stockViewModel, navController)
+                StockEnquiryScreen(stockViewModel, navController) // stock enquiry screen
             }
 
-            composable(Screen.StockDetails.route) { backStackEntry ->
+            composable(Screen.StockDetails.route) { backStackEntry -> // stock details screen
                 val stockCode = backStackEntry.arguments?.getString("stockCode")
                 if (stockCode != null) {
                     StockDetailsScreen(stockCode, stockViewModel, navController)
                 }
             }
 
-            composable(Screen.StockCreation.route) {
+            composable(Screen.StockCreation.route) { // stock creation screen
                 StockCreationScreen(stockViewModel, navController)
             }
 
-            composable(Screen.StockAdjustment.route) {
+            composable(Screen.StockAdjustment.route) { // stock adjustment screen
                 StockAdjustmentScreen(viewModel = stockViewModel, navController = navController)
             }
 
-            composable(Screen.DebtorMenu.route) { DebtorMenuScreen(navController) }
+            composable(Screen.DebtorMenu.route) { DebtorMenuScreen(navController) } // debtor menu screen
 
-            composable(Screen.DebtorEnquiry.route) {
+            composable(Screen.DebtorEnquiry.route) { // debtor enquiry screen
                 DebtorEnquiryScreen(debtorViewModel, navController)
             }
 
-            composable(Screen.DebtorCreation.route) {
+            composable(Screen.DebtorCreation.route) { // debtor creation screen
                 DebtorCreationScreen(debtorViewModel, navController)
             }
 
-            composable(Screen.DebtorDetails.route) { backStackEntry ->
+            composable(Screen.DebtorDetails.route) { backStackEntry -> // debtor details screen
                 val accountCode = backStackEntry.arguments?.getString("accountCode")
                 if (accountCode != null) {
                     DebtorDetailsScreen(accountCode, debtorViewModel, navController)
@@ -332,19 +333,19 @@ fun MainApp() {
 }
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen() { // home screen
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text("Home Screen. Need to research graphing")
     }
 }
 
 @Composable
-fun InvoiceScreen(stockViewModel: StockViewModel, debtorViewModel: DebtorViewModel) {
-    var showStockSearchDialog by remember { mutableStateOf(false) }
-    var showDebtorSearchDialog by remember { mutableStateOf(false) }
-    val scrollState = rememberScrollState()
-    val selectedDebtor by debtorViewModel.selectedDebtor.collectAsState()
-    val selectedStock  by stockViewModel.selectedStock.collectAsState()
+fun InvoiceScreen(stockViewModel: StockViewModel, debtorViewModel: DebtorViewModel) { // invoice screen
+    var showStockSearchDialog by remember { mutableStateOf(false) } // variable to manage pop-out search for stock
+    var showDebtorSearchDialog by remember { mutableStateOf(false) } // variable to manage pop-out search for debtor
+    val scrollState = rememberScrollState() // scroll state for scrollable content
+    val selectedDebtor by debtorViewModel.selectedDebtor.collectAsState() // selected debtor from view model
+    val selectedStock  by stockViewModel.selectedStock.collectAsState() // selected stock from view model
 
     if (showStockSearchDialog) { //stock pop-out search
         StockSearchDialog(
@@ -398,23 +399,23 @@ fun InvoiceScreen(stockViewModel: StockViewModel, debtorViewModel: DebtorViewMod
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
-        TicketView(
+        TicketView( // ticket view background for invoice
             content = {
                 Column {
-                    Text(
+                    Text( // invoice title
                         "Invoice",
                         fontWeight = FontWeight.Bold,
                         color = Black,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Text(
+                    Text( // invoice date
                         "Date: " + LocalDate.now().toString(),
                         fontWeight = FontWeight.Bold,
                         color = Black
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(
+                    Text( // invoice number
                         "Invoice Number: ",
                         fontWeight = FontWeight.Bold,
                         color = Black,
@@ -423,14 +424,14 @@ fun InvoiceScreen(stockViewModel: StockViewModel, debtorViewModel: DebtorViewMod
                     )
                     if (selectedDebtor != null) {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text(
+                        Text( // debtor name
                             "Debtor: ${selectedDebtor!!.name}",
                             fontWeight = FontWeight.Bold,
                             color = DarkGreen,
                             textAlign = TextAlign.End,
                             modifier = Modifier.fillMaxWidth()
                         )
-                        Text(
+                        Text( // debtor address
                             "Address 1:",
                             color = Black,
                             textAlign = TextAlign.End,
@@ -443,7 +444,7 @@ fun InvoiceScreen(stockViewModel: StockViewModel, debtorViewModel: DebtorViewMod
                             textAlign = TextAlign.End,
                             modifier = Modifier.fillMaxWidth()
                         )
-                        Text(
+                        Text( // debtor optional address
                             "Address 2(optional):",
                             color = Black,
                             textAlign = TextAlign.End,
@@ -457,32 +458,32 @@ fun InvoiceScreen(stockViewModel: StockViewModel, debtorViewModel: DebtorViewMod
                             modifier = Modifier.fillMaxWidth()
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Total Cost Excl. VAT: ", fontWeight = FontWeight.Bold, color = Black)
-                        Text("VAT: ", fontWeight = FontWeight.Bold, color = Black)
+                        Text("Total Cost Excl. VAT: ", fontWeight = FontWeight.Bold, color = Black) // Cost total excl. VAT header
+                        Text("VAT: ", fontWeight = FontWeight.Bold, color = Black) // VAT header
                         HorizontalDivider()
-                        Text("Total Cost: ", fontWeight = FontWeight.Bold, color = DarkGreen)
+                        Text("Total Cost: ", fontWeight = FontWeight.Bold, color = DarkGreen) // Total cost header
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(20.dp))
                     } else {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("No debtor selected", color = Black)
                     }
-                    if (selectedStock != null) {
+                    if (selectedStock != null) { // stock details
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Stock: ${selectedStock!!.stockCode}", fontWeight = FontWeight.Bold, color = DarkGreen)
-                        Text(
+                        Text("Stock: ${selectedStock!!.stockCode}", fontWeight = FontWeight.Bold, color = DarkGreen) // Stock header
+                        Text( // Description
                             "Description: ${selectedStock!!.stockDescription}",
                             fontWeight = FontWeight.Bold,
                             color = DarkGreen,
                             textAlign = TextAlign.End
                         )
-                        Text(
+                        Text( // Quantity
                             "Qty: ${selectedStock!!.stockOnHand}",
                             fontWeight = FontWeight.Bold,
                             color = DarkGreen,
                             textAlign = TextAlign.End
                         )
-                        Text(
+                        Text( // Cost
                             "Cost: R${selectedStock!!.cost}",
                             fontWeight = FontWeight.Bold,
                             color = DarkGreen,
@@ -504,7 +505,7 @@ fun InvoiceScreen(stockViewModel: StockViewModel, debtorViewModel: DebtorViewMod
 
 @Preview
 @Composable
-private fun TicketView(
+private fun TicketView( // custom background for invoice
     content: @Composable () -> Unit = {
         Text("Ticket View")
     }
@@ -532,6 +533,12 @@ private fun TicketView(
     }
 }
 
+/*
+* Title- Make a Ticket View with Jetpack Compose
+* Author- Kush Saini
+* Accessed- 30/01/2026
+* URL- https://medium.com/@kushsaini/make-a-ticketview-with-jetpack-compose-ea0c8f7a00a8
+* */
 class TicketShape(
     private val teethWidthDp: Float,
     private val teethHeightDp: Float
@@ -658,14 +665,14 @@ class TicketShape(
 
 }
 
-data class DebtorMenuItemData(
+data class DebtorMenuItemData( // data class for debtor menu tiles
     val title: String,
     val description: String,
     val icon: ImageVector,
     val route: String
 )
 
-val debtorMenuItems = listOf(
+val debtorMenuItems = listOf( // list of debtor menu tiles
     DebtorMenuItemData(
         title = "Debtor Enquiry",
         description = "Search and view debtors",
@@ -681,7 +688,7 @@ val debtorMenuItems = listOf(
 )
 
 @Composable
-fun DebtorMenuTile(item: DebtorMenuItemData, navController: NavController) {
+fun DebtorMenuTile(item: DebtorMenuItemData, navController: NavController) { // debtor menu tile layouts
     Card(
         modifier = Modifier
             .padding(8.dp)
@@ -706,14 +713,14 @@ fun DebtorMenuTile(item: DebtorMenuItemData, navController: NavController) {
 }
 
 
-data class StockMenuItemData(
+data class StockMenuItemData( // data class for stock menu tiles
     val title: String,
     val description: String,
     val icon: ImageVector,
     val route: String
 )
 
-val stockMenuItems = listOf(
+val stockMenuItems = listOf( // list of stock menu tiles
     StockMenuItemData(
         title = "Stock Enquiry",
         description = "Search and view stock items",
@@ -735,7 +742,7 @@ val stockMenuItems = listOf(
 )
 
 @Composable
-fun StockMenuTile(item: StockMenuItemData, navController: NavController) {
+fun StockMenuTile(item: StockMenuItemData, navController: NavController) { // stock menu tile layouts
     Card(
         modifier = Modifier
             .padding(8.dp)
@@ -760,7 +767,7 @@ fun StockMenuTile(item: StockMenuItemData, navController: NavController) {
 }
 
 @Composable
-fun StockMenuScreen(navController: NavController) {
+fun StockMenuScreen(navController: NavController) { // stock menu screen
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -786,7 +793,7 @@ fun StockMenuScreen(navController: NavController) {
 }
 
 @Composable
-fun DebtorMenuScreen(navController: NavController) {
+fun DebtorMenuScreen(navController: NavController) { // debtor menu screen
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -812,9 +819,9 @@ fun DebtorMenuScreen(navController: NavController) {
 }
 
 @Composable
-fun DebtorEnquiryScreen(debtorViewModel: DebtorViewModel, navController: NavController) {
-    val debtorList by debtorViewModel.filteredDebtors.collectAsState()
-    val searchQuery by debtorViewModel.searchQuery.collectAsState()
+fun DebtorEnquiryScreen(debtorViewModel: DebtorViewModel, navController: NavController) { // debtor enquiry screen
+    val debtorList by debtorViewModel.filteredDebtors.collectAsState() // list of debtors
+    val searchQuery by debtorViewModel.searchQuery.collectAsState() // search query to filter debtors
 
     Column(
         modifier = Modifier
