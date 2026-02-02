@@ -151,10 +151,11 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
             OutlinedTextField(
                 value = accountCode,
                 onValueChange = { if (isEditMode) viewModel.onSearchCodeChange(it) },
-                label = { Text(if (isEditMode) "Search Account Code" else "Auto Account Code") },
+                label = { Text(if (isEditMode) "Select an Account Code via the Search Button" else "Auto Account Code") },
                 enabled = isEditMode,
                 modifier = Modifier.weight(1f),
-                singleLine = true
+                singleLine = true,
+                readOnly = true
             )
 
             if (isEditMode) {
@@ -261,7 +262,6 @@ fun DebtorCreationSearchDialog(
                     label = { Text("Search by account code or name") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    readOnly = true,
                     leadingIcon = { Icon(Icons.Default.Search, null) }
                 )
                 Spacer(modifier = Modifier.height(16.dp))

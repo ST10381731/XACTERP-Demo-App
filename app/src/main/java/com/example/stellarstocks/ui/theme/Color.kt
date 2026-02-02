@@ -21,3 +21,7 @@ val Orange = Color(0xffff9800)
 val DarkGreen = Color(0xff00c853)
 
 val LightGreen = Color(0xff64dd17)
+
+val Black = Color(0xff000000)
+
+val White = Color(0xffffffff)

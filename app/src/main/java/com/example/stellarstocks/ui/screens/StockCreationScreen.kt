@@ -142,7 +142,7 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
             OutlinedTextField(
                 value = stockCode,
                 onValueChange = { if (isEditMode) viewModel.onStockCodeChange(it) },
-                label = { Text(if (isEditMode) "Search Stock Code" else "Auto Account Code") },
+                label = { Text(if (isEditMode) "Select a Stock Code via the Search Button" else "Auto Account Code") },
                 enabled = isEditMode,
                 modifier = Modifier.weight(1f),
                 singleLine = true,

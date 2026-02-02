@@ -163,19 +163,6 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
         }
     }
 
-    fun searchStock() {
-        viewModelScope.launch {
-            val code = _stockCode.value.trim()
-            val stock = repository.getStock(code)
-            if (stock != null) {
-                _description.value = stock.stockDescription
-                _cost.value = stock.cost
-                _sellingPrice.value = stock.sellingPrice
-                _toastMessage.value = "Stock Found"
-            } else { _toastMessage.value = "Stock not found" }
-        }
-    }
-
     fun saveStock() {
         viewModelScope.launch {
             if (_description.value.isBlank() || _description.value.isDigitsOnly() ||_cost.value == 0.0 || _sellingPrice.value == 0.0) { _toastMessage.value = "Please fill in the required fields (*)"; return@launch }
@@ -206,23 +193,6 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
         _foundAdjustmentStock.value = stock
         _adjustmentSearchCode.value = stock.stockCode
         _adjustmentQty.value = 0
-    }
-
-    fun searchForAdjustment() {
-        viewModelScope.launch {
-            val code = _adjustmentSearchCode.value.trim()
-            if (code.isNotEmpty()) {
-                val result = repository.getStock(code)
-                if (result != null) {
-                    _foundAdjustmentStock.value = result
-                    _adjustmentQty.value = 0
-                    _toastMessage.value = "Stock Found"
-                } else {
-                    _foundAdjustmentStock.value = null
-                    _toastMessage.value = "Stock Code not found"
-                }
-            }
-        }
     }
 
     fun onAdjustmentQtyChange(newQty: Int) {

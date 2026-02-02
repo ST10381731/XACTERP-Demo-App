@@ -186,12 +186,19 @@ fun StockSearchDialog(
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {
+                Text(
+                    text = "Select Stock",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { viewModel.onSearchQueryChange(it) },
                     label = { Text("Search by code or description") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    leadingIcon = { Icon(Icons.Default.Search, null) }
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 LazyColumn {
@@ -205,13 +212,10 @@ fun StockSearchDialog(
                             Text(stock.stockCode, modifier = Modifier.weight(1f))
                             Text(stock.stockDescription, modifier = Modifier.weight(2f))
                         }
+                        HorizontalDivider()
                     }
                 }
             }
         }
     }
 }
-
-/*add fully fledged pop up search for edit mode of stock creation screen where the
-        search is similar to stock enquiry and auto fills the details upon selecting a stock. This should use the
-        same search logic and layout as the stock adjustment page*/
