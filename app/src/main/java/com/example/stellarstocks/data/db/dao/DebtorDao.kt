@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.Flow
 interface DebtorDao {
     // Debtor Master File
     @Query("SELECT accountCode FROM debtor_master ORDER BY accountCode DESC LIMIT 1")
-    suspend fun getHighestAccountCode(): String?
+    suspend fun getHighestAccountCode(): String? // Get the highest accountCode
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDebtor(debtor: DebtorMaster) // Insert a new Debtor
 
@@ -28,8 +28,14 @@ interface DebtorDao {
     @Query("SELECT * FROM debtor_master WHERE accountCode = :code")
     suspend fun getDebtor(code: String): DebtorMaster? // Get a Debtor by accountCode
 
-    @Query("UPDATE debtor_master SET balance = balance + :amount, salesYearToDate = salesYearToDate + :amount WHERE accountCode = :code")
-    suspend fun updateBalance(code: String, amount: Double) // Update balance and salesYearToDate
+    @Query("""
+        UPDATE debtor_master 
+        SET balance = balance + :totalInclVat, 
+            salesYearToDate = salesYearToDate + :salesExVat, 
+            costYearToDate = costYearToDate + :totalCost 
+        WHERE accountCode = :code
+    """)
+    suspend fun updateDebtorFinancials(code: String, totalInclVat: Double, salesExVat: Double, totalCost: Double) // Update debtor master when invoice confirmed
 
     // Debtor Transaction
     @Insert
@@ -44,5 +50,5 @@ interface DebtorDao {
     FROM debtor_transaction dt
     WHERE dt.accountCode = :accountCode
     """)
-    fun getDebtorTransactionInfo(accountCode: String): Flow<List<DebtorTransactionInfo>>
+    fun getDebtorTransactionInfo(accountCode: String): Flow<List<DebtorTransactionInfo>> // Get transaction info for a debtor
 }

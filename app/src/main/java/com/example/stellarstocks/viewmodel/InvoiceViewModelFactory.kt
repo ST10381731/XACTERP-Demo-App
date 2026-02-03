@@ -4,11 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.stellarstocks.data.db.repository.StellarStocksRepository
 
-class StockViewModelFactory(private val repository: StellarStocksRepository) : ViewModelProvider.Factory { // factory for view model to pass repository
+class InvoiceViewModelFactory(private val repository: StellarStocksRepository) : ViewModelProvider.Factory {// factory for view model to pass repository
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(StockViewModel::class.java)) {
+        if (modelClass.isAssignableFrom(InvoiceViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return StockViewModel(repository) as T
+            return InvoiceViewModel(repository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

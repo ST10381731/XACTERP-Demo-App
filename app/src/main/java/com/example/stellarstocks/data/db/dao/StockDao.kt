@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.Flow
 interface StockDao {
     // Stock Master File
     @Query("SELECT stockCode FROM stock_master ORDER BY stockCode DESC LIMIT 1")
-    suspend fun getHighestStockCode(): String?
+    suspend fun getHighestStockCode(): String? // Get the highest stockCode
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertStock(stock: StockMaster) // Insert a new Stock
@@ -65,4 +65,13 @@ interface StockDao {
         updateStockQty(transaction.stockCode, transaction.qty)
         insertTransaction(transaction)
     }
+
+    @Query("""
+        UPDATE stock_master 
+        SET stockOnHand = stockOnHand - :qtySold, 
+            qtySold = qtySold + :qtySold, 
+            totalSalesExclVat = totalSalesExclVat + :saleAmount 
+        WHERE stockCode = :code
+    """)
+    suspend fun recordStockSale(code: String, qtySold: Int, saleAmount: Double) // Record invoice data
 }

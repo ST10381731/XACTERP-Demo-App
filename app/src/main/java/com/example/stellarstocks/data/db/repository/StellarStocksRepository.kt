@@ -11,7 +11,6 @@ interface StellarStocksRepository {
     suspend fun getDebtor(code: String): DebtorMaster?
     suspend fun getLastDebtorCode(): String?
     //Debtor Transaction
-    fun getDebtorTransactions(code: String): Flow<List<DebtorTransaction>>
     fun getDebtorTransactionInfo(accountCode: String): Flow<List<DebtorTransactionInfo>>
 
     // Stock
@@ -26,8 +25,8 @@ interface StellarStocksRepository {
     fun getStockTransactions(code: String): Flow<List<StockTransaction>>
     suspend fun adjustStock(transaction: StockTransaction)
 
+    //join table data
     suspend fun getMostRecentDebtorForStock(code: String): String?
-
     fun getTransactionInfoForStock(stockCode: String): Flow<List<TransactionInfo>>
 
     // Invoicing

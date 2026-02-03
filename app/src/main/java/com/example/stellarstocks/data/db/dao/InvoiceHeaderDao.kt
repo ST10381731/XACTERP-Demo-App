@@ -9,5 +9,8 @@ import com.example.stellarstocks.data.db.models.InvoiceHeader
 interface InvoiceHeaderDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertInvoiceHeaders(invoiceHeaders: List<InvoiceHeader>) // Create an invoice header
+    suspend fun insertInvoiceHeader(header: InvoiceHeader): Long // returns the id of the inserted row
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertInvoiceHeaders(invoiceHeaders: List<InvoiceHeader>) // inserts a list of invoice headers
 }
