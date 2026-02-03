@@ -41,7 +41,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -82,7 +81,8 @@ fun DebtorDetailsScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-    ) {Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 16.dp)) {
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 16.dp)) {
         IconButton(onClick = { navController.popBackStack() }) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = DarkGreen)
         }
@@ -118,7 +118,7 @@ fun DebtorDetailsScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Transaction History",
+                text = "Debtor Transaction History",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = DarkGreen

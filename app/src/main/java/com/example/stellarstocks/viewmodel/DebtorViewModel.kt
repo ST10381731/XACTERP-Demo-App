@@ -96,10 +96,10 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
 
     fun selectDebtorForDetails(code: String) {
         viewModelScope.launch {
-            // Get Master Details
+            // Get Debtor Master Details
             _selectedDebtor.value = repository.getDebtor(code)
 
-            // Get Transaction History
+            // Get Debtor Transaction History
             repository.getDebtorTransactionInfo(code).collect { transactions ->
                 _selectedTransactions.value = transactions
             }
@@ -134,19 +134,6 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
                     _accountCode.value = "ACC001"
                 }
             }
-        }
-    }
-
-    fun searchDebtor() {
-        viewModelScope.launch {
-            val code = _accountCode.value.trim()
-            val debtor = repository.getDebtor(code)
-            if (debtor != null) {
-                _name.value = debtor.name
-                _address1.value = debtor.address1
-                _address2.value = debtor.address2
-                _toastMessage.value = "Debtor Found"
-            } else { _toastMessage.value = "Debtor not found" }
         }
     }
 

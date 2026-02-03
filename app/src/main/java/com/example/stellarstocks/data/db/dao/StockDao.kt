@@ -31,6 +31,14 @@ interface StockDao {
     @Query("UPDATE stock_master SET stockOnHand = stockOnHand + :qty WHERE stockCode = :code")
     suspend fun updateStockQty(code: String, qty: Int) // Update stockOnHand
 
+    @Query("""
+        UPDATE stock_master
+        SET totalPurchasesExclVat = totalPurchasesExclVat + :purchaseAmount,
+            qtyPurchased = qtyPurchased + :qty
+        WHERE stockCode = :code
+    """)
+    suspend fun updatePurchaseMetrics(code: String, qty: Int, purchaseAmount: Double)
+
     // Stock Transaction
     @Insert
     suspend fun insertTransaction(transaction: StockTransaction) // Insert a new Stock Transaction
@@ -38,31 +46,45 @@ interface StockDao {
     @Query("SELECT * FROM stock_transaction WHERE stockCode = :code")
     fun getStockTransactions(code: String): Flow<List<StockTransaction>> // Get Stock Transactions by stockCode
 
-    @Query(
-        """
-    SELECT ih.accountCode
-    FROM stock_transaction st
-    JOIN invoice_items id ON st.documentNum = id.invoiceNum
-    JOIN invoice_header ih ON id.invoiceNum = ih.invoiceNum
-    WHERE st.stockCode = :stockCode
-    ORDER BY st.date DESC
-    LIMIT 1
-"""
-    )
-    suspend fun getMostRecentDebtorForStock(stockCode: String): String? // Get most recent debtor for a stock
+    @Query("""
+        SELECT h.accountCode 
+        FROM stock_transaction t
+        JOIN invoice_items i ON t.documentNum = i.invoiceNum AND t.stockCode = i.stockCode
+        JOIN invoice_header h ON i.invoiceNum = h.invoiceNum
+        WHERE t.stockCode = :code AND t.transactionType = 'Invoice'
+        ORDER BY t.date DESC LIMIT 1
+    """)
+    suspend fun getMostRecentDebtorForStock(code: String): String? // Get most recent debtor for a stock
 
     @Query("""
-    SELECT st.date, ih.accountCode, st.documentNum, st.transactionType, st.qty, st.unitSell * st.qty AS value
-    FROM stock_transaction st
-    LEFT JOIN invoice_items ii ON st.documentNum = ii.invoiceNum
-    LEFT JOIN invoice_header ih ON ii.invoiceNum = ih.invoiceNum
-    WHERE st.stockCode = :stockCode
+        SELECT t.id AS transactionId, t.date, h.accountCode, t.documentNum, t.transactionType, t.qty, 
+               CASE WHEN t.transactionType = 'Purchase' THEN t.unitCost ELSE t.unitSell END as value
+        FROM stock_transaction t
+        LEFT JOIN invoice_items i ON t.documentNum = i.invoiceNum AND t.stockCode = i.stockCode
+        LEFT JOIN invoice_header h ON i.invoiceNum = h.invoiceNum
+        WHERE t.stockCode = :stockCode
+        GROUP BY t.id  
+        ORDER BY t.date DESC
     """)
     fun getTransactionInfoForStock(stockCode: String): Flow<List<TransactionInfo>> // Get transaction info for a stock
 
+    @Query("""
+        UPDATE stock_master 
+        SET stockOnHand = stockOnHand + :qty, 
+            qtyPurchased = qtyPurchased + :qty, 
+            totalPurchasesExclVat = totalPurchasesExclVat + :purchaseValue
+        WHERE stockCode = :code
+    """)
+    suspend fun recordStockPurchase(code: String, qty: Int, purchaseValue: Double)
+
     @Transaction
-    suspend fun performAdjustment(transaction: StockTransaction) { // Perform a quantity adjustment on a stock
-        updateStockQty(transaction.stockCode, transaction.qty)
+    suspend fun performAdjustment(transaction: StockTransaction) {
+        if (transaction.qty > 0) {
+            val purchaseValue = transaction.qty * transaction.unitCost
+            recordStockPurchase(transaction.stockCode, transaction.qty, purchaseValue)
+        } else {
+            updateStockQty(transaction.stockCode, transaction.qty)
+        }
         insertTransaction(transaction)
     }
 
@@ -70,8 +92,8 @@ interface StockDao {
         UPDATE stock_master 
         SET stockOnHand = stockOnHand - :qtySold, 
             qtySold = qtySold + :qtySold, 
-            totalSalesExclVat = totalSalesExclVat + :saleAmount 
+            totalSalesExclVat = totalSalesExclVat + :saleValue
         WHERE stockCode = :code
     """)
-    suspend fun recordStockSale(code: String, qtySold: Int, saleAmount: Double) // Record invoice data
+    suspend fun recordStockSale(code: String, qtySold: Int, saleValue: Double)
 }

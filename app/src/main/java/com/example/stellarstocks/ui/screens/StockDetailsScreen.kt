@@ -2,6 +2,7 @@ package com.example.stellarstocks.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -115,7 +116,7 @@ fun StockDetailsScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Transaction History",
+                text = "Stock Transaction History",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = DarkGreen
@@ -217,10 +218,12 @@ fun StockDetailRow(label: String, value: String) { // function to display stock 
 @Composable
 fun StockTransactionRow(trans: TransactionInfo) { // function to display transaction details
     val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    var expanded by remember { mutableStateOf(false) } // variable to control dropdown menu
 
     Row(
         Modifier
             .fillMaxWidth()
+            .clickable { expanded = !expanded }
             .border(width = 0.5.dp, color = Color.LightGray)
             .padding(vertical = 8.dp, horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically

@@ -129,6 +129,7 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
     fun selectStockForDetails(code: String) {
         viewModelScope.launch {
             _selectedStock.value = repository.getStock(code)
+
             repository.getTransactionInfoForStock(code).collect { transactions ->
                 _selectedTransactions.value = transactions
             }

@@ -373,6 +373,8 @@ fun InvoiceScreen(
     val vat by invoiceViewModel.vat.collectAsState() // VAT state
     val grandTotal by invoiceViewModel.grandTotal.collectAsState() // grand total
     val toastMessage by invoiceViewModel.toastMessage.collectAsState()
+    val invoiceNum by invoiceViewModel.invoiceNum.collectAsState()
+
 
     LaunchedEffect(toastMessage) {
         toastMessage?.let {
@@ -468,7 +470,7 @@ fun InvoiceScreen(
         TicketView( // ticket view background for invoice
             content = {
                 Column {
-                    Text("INVOICE", fontWeight = FontWeight.Bold, fontSize = 20.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                    Text("INVOICE #${invoiceNum}", fontWeight = FontWeight.Bold, fontSize = 20.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                     Text(LocalDate.now().toString(), textAlign = TextAlign.Center, color = Color.Gray, modifier = Modifier.fillMaxWidth()) // date of invoice
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -508,7 +510,7 @@ fun InvoiceScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Invoice Header
+                    // Invoice Details separator
                     Row(
                         modifier = Modifier.fillMaxWidth().background(Color(0xff000000)).padding(4.dp),
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -1038,7 +1040,7 @@ fun DebtorEnquiryScreen(debtorViewModel: DebtorViewModel, navController: NavCont
                     ) {
                         TableCell(text = debtor.accountCode, weight = .25f)
                         TableCell(text = debtor.name, weight = .5f)
-                        TableCell(text = "R${debtor.balance}", weight = .25f)
+                        TableCell(text = String.format("R%.2f", debtor.balance) , weight = .25f)
                     }
                 }
             }

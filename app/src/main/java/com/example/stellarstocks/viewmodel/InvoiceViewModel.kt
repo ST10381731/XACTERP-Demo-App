@@ -42,6 +42,9 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
     private val _toastMessage = MutableStateFlow<String?>(null)
     val toastMessage = _toastMessage.asStateFlow()
 
+    private val _invoiceNum = MutableStateFlow((System.currentTimeMillis() % 1000000).toInt()) // Invoice number
+    val invoiceNum = _invoiceNum.asStateFlow()
+
     fun setDebtor(debtor: DebtorMaster) { // Set debtor for invoice
         _selectedDebtor.value = debtor
     }
@@ -102,7 +105,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
         }
 
         viewModelScope.launch {
-            val invoiceNum = (System.currentTimeMillis() % 1000000).toInt() // Generate invoice number
+            val invoiceNum = _invoiceNum.value // Generate invoice number
 
             val calculatedTotalCost = items.sumOf { it.qty * it.stock.cost } // Calculate total line cost
 
@@ -138,6 +141,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
     private fun clearInvoice() { // Clear invoice
         _invoiceItems.value = emptyList()
         _selectedDebtor.value = null
+        _invoiceNum.value = (System.currentTimeMillis() % 1000000).toInt()
         calculateTotals()
     }
 
