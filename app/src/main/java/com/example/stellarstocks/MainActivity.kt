@@ -549,7 +549,6 @@ fun InvoiceScreen(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(String.format("R%.2f", item.lineTotal), fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 12.dp), color= Black) // per line total
 
-
                                     Icon( // clickable delete icon
                                         imageVector = Icons.Default.Delete,
                                         contentDescription = "Remove",

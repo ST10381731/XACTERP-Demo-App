@@ -12,27 +12,27 @@ object SeedData {
     private fun daysAgo(days: Int): Date = Date(System.currentTimeMillis() - (days * 24 * 60 * 60 * 1000L))
 
     val debtors = listOf(
-        DebtorMaster("ACC001", "Tech Solutions KZN", "12 West Street", "Durban", 15000.0, 45000.0, 30000.0, true),
-        DebtorMaster("ACC002", "Jozi Jola Consulting", "88 Maude Ave", "Sandton", 4000.0, 12000.0, 8000.0, true),
-        DebtorMaster("ACC003", "Cape Logistics", "45 Port Road", "Cape Town", 10000.0, 25000.0, 15000.0, true),
-        DebtorMaster("ACC004", "Waltons Stationery", "101 Croftdene Dr", "Chatsworth", 1500.0, 5000.0, 3500.0, true),
+        DebtorMaster("ACC001", "Tech Solutions KZN", "12 West Street", "Durban", 3830.0, 4830.0, 1200.0, true),
+        DebtorMaster("ACC002", "Jozi Jola Consulting", "88 Maude Ave", "Sandton", 1380.0, 1380.0, 800.0, true),
+        DebtorMaster("ACC003", "Cape Logistics", "45 Port Road", "Cape Town", 4025.0, 4025.0, 2500.0, true),
+        DebtorMaster("ACC004", "Waltons Stationery", "101 Croftdene Dr", "Chatsworth", 632.2, 632.2, 300.0, true),
         DebtorMaster("ACC005", "Page Automation IT", "5 Main Road", "Howick", 0.0, 0.0, 0.0, true)
     )
 
     val stock = listOf(
-        StockMaster("STK001", "Ergonomic Office Chair", 1200.0, 1800.0, 12000.0, 18000.0, 10, 10, 0, true),
-        StockMaster("STK002", "Wireless Mechanical Keyboard", 800.0, 1200.0, 16000.0, 12000.0, 20, 10, 10, true),
-        StockMaster("STK003", "24-inch IPS Monitor", 2500.0, 3500.0, 25000.0, 0.0, 10, 0, 10, true),
-        StockMaster("STK004", "USB-C Docking Station", 1500.0, 2200.0, 15000.0, 4400.0, 10, 2, 8, true),
-        StockMaster("STK005", "Laptop Stand", 300.0, 550.0, 6000.0, 2750.0, 20, 5, 15, true)
+        StockMaster("STK001", "Ergonomic Office Chair", 1200.0, 1800.0, 1200.0, 1800.0, 10, 1, 9, true),
+        StockMaster("STK002", "Wireless Mechanical Keyboard", 800.0, 1200.0, 1600.0, 2400.0, 10, 2, 8, true),
+        StockMaster("STK003", "24-inch IPS Monitor", 2500.0, 3500.0, 2500.0, 3500.0, 1, 0, 0, true),
+        StockMaster("STK004", "USB-C Docking Station", 1500.0, 2200.0, 0.0, 0.0, 0, 0, 0, true),
+        StockMaster("STK005", "Laptop Stand", 300.0, 550.0, 300.0, 550.0, 0, 0, 0, true)
     )
 
     val invoiceHeaders = listOf(
-        InvoiceHeader(1001, "ACC001", daysAgo(10), 1800.0, 270.0, 1200.0),
-        InvoiceHeader(1002, "ACC001", daysAgo(2), 2400.0, 360.0, 1600.0),
-        InvoiceHeader(1003, "ACC004", daysAgo(1), 550.0, 82.5, 300.0),
-        InvoiceHeader(1004, "ACC002", daysAgo(5), 1200.0, 180.0, 800.0),
-        InvoiceHeader(1005, "ACC003", daysAgo(8), 3500.0, 525.0, 2500.0)
+        InvoiceHeader(1001, "ACC001", daysAgo(10), 1800.0, 270.0, 2070.0),
+        InvoiceHeader(1002, "ACC001", daysAgo(9), 2400.0, 360.0, 2760.0),
+        InvoiceHeader(1003, "ACC004", daysAgo(1), 550.0, 82.5, 632.2),
+        InvoiceHeader(1004, "ACC002", daysAgo(5), 1200.0, 180.0, 1380.0),
+        InvoiceHeader(1005, "ACC003", daysAgo(8), 3500.0, 525.0, 4025.0),
     )
 
     val invoiceDetails = listOf(
@@ -40,22 +40,26 @@ object SeedData {
         InvoiceDetail(1002, 1, "STK002", 2, 800.0, 1200.0, 0.0, 2400.0),
         InvoiceDetail(1003, 1, "STK005", 1, 300.0, 550.0, 0.0, 550.0),
         InvoiceDetail(1004, 1, "STK002", 1, 800.0, 1200.0, 0.0, 1200.0),
-        InvoiceDetail(1005, 1, "STK003", 1, 2500.0, 3500.0, 0.0, 3500.0)
+        InvoiceDetail(1005, 1, "STK003", 1, 2500.0, 3500.0, 0.0, 3500.0),
     )
 
     val debtorTransactions = listOf(
         DebtorTransaction(1, "ACC001", daysAgo(10), "Invoice", 1001, 2070.0, 270.0),
         DebtorTransaction(2, "ACC001", daysAgo(5), "Payment", 9999, -1000.0, 0.0),
-        DebtorTransaction(3, "ACC002", daysAgo(20), "Invoice", 1003, 750.0, 0.0),
+        DebtorTransaction(3, "ACC001", daysAgo(9), "Invoice", 1002, 2760.0, 360.0),
         DebtorTransaction(4, "ACC002", daysAgo(5), "Invoice", 1004, 1380.0, 180.0),
-        DebtorTransaction(5, "ACC003", daysAgo(8), "Invoice", 1005, 4025.0, 525.0)
+        DebtorTransaction(5, "ACC003", daysAgo(8), "Invoice", 1005, 4025.0, 525.0),
+        DebtorTransaction(6, "ACC004", daysAgo(1), "Invoice", 1003, 632.2, 82.5)
     )
 
     val stockTransactions = listOf(
-        StockTransaction(1, "STK001", daysAgo(30), "Purchase", 9001, 10, 1200.0, 0.0),
-        StockTransaction(2, "STK001", daysAgo(10), "Sale", 1001, -1, 0.0, 1800.0),
-        StockTransaction(3, "STK002", daysAgo(15), "Purchase", 9002, 20, 800.0, 0.0),
-        StockTransaction(4, "STK002", daysAgo(2), "Sale", 1002, -2, 0.0, 1200.0),
-        StockTransaction(5, "STK003", daysAgo(8), "Sale", 1005, -1, 0.0, 3500.0)
+        StockTransaction(1, "STK001", daysAgo(30), "Adjustment", 9001, 10, 1200.0, 0.0),
+        StockTransaction(2, "STK001", daysAgo(10), "Invoice", 1001, -1, 0.0, 1800.0),
+        StockTransaction(3, "STK002", daysAgo(15), "Adjustment", 9002, 10, 800.0, 0.0),
+        StockTransaction(4, "STK002", daysAgo(2), "Invoice", 1002, -2, 0.0, 1200.0),
+        StockTransaction(5, "STK003", daysAgo(8), "Adjustment", 9003, 1, 2500.0, 0.0),
+        StockTransaction(6, "STK003", daysAgo(8), "Invoice", 1005, -1, 0.0, 3500.0),
+        StockTransaction(7, "STK005", daysAgo(5), "Adjustment", 9004, 1, 1500.0, 0.0),
+        StockTransaction(8, "STK005", daysAgo(1), "Invoice", 1003, -1, 0.0, 550.0)
     )
 }
