@@ -92,7 +92,9 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
     if (showSearchDialog) { // Show the search dialog if it's true
         StockCreationSearchDialog(
             viewModel = viewModel,
-            onDismiss = { showSearchDialog = false },
+            onDismiss = {
+                showSearchDialog = false
+                viewModel.resetSearch()},
             onStockSelected = { stock ->
                 // Populate the form with selected data
                 viewModel.onStockCodeChange(stock.stockCode) // Set the stock code
@@ -100,6 +102,7 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
                 viewModel.onCostChange(stock.cost) // Set the cost
                 viewModel.onSellingPriceChange(stock.sellingPrice) // Set the selling price
                 showSearchDialog = false
+                viewModel.resetSearch()
             }
         )
     }

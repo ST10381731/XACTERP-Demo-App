@@ -99,13 +99,16 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
     if (showSearchDialog) { // determines if search dialog should be shown
         DebtorCreationSearchDialog(
             viewModel = viewModel,
-            onDismiss = { showSearchDialog = false },
+            onDismiss = {
+                showSearchDialog = false
+                viewModel.resetSearch()},
             onDebtorSelected = { debtor ->
                 viewModel.onSearchCodeChange(debtor.accountCode)
                 viewModel.onNameChange(debtor.name)
                 viewModel.onAddress1Change(debtor.address1)
                 viewModel.onAddress2Change(debtor.address2)
                 showSearchDialog = false
+                viewModel.resetSearch()
             }
         )
     }

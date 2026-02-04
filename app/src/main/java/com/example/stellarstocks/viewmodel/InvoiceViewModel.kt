@@ -50,7 +50,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
     }
 
     fun addToInvoice(stock: StockMaster, qty: Int, discountPercent: Double) { // Add item to invoice, qty, and discount percent
-        if (qty <= 0) return // If qty is 0 or less, do not add to Invoice
+        if (qty <= 0 || discountPercent<0 || discountPercent>100) return // If qty is 0 or less, do not add to Invoice
 
         val grossTotal = stock.sellingPrice * qty // Calculate totalSellAmt
         val discountAmt = grossTotal * (discountPercent / 100) // Calculate discount amount
@@ -80,7 +80,6 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
         _invoiceItems.value = currentList
         calculateTotals()
     }
-
     private fun calculateTotals() { // Calculate final totals for invoice
         val exVat = _invoiceItems.value.sumOf { it.lineTotal }
         val vatCalc = exVat * 0.15 // 15% VAT

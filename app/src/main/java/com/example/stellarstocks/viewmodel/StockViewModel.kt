@@ -84,6 +84,9 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
     private val _adjustmentQty = MutableStateFlow(0)
     val adjustmentQty = _adjustmentQty.asStateFlow()
 
+    private val _adjustmentType = MutableStateFlow("Adjustment")
+    val adjustmentType = _adjustmentType.asStateFlow()
+
     private val _isEditMode = MutableStateFlow(false)
     val isEditMode = _isEditMode.asStateFlow()
 
@@ -119,6 +122,10 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
 
     fun onSearchQueryChange(query: String) {
         _searchQuery.value = query
+    }
+
+    fun resetSearch() {
+        _searchQuery.value = ""
     }
 
     fun updateSort(option: StockSortOption) {
@@ -165,26 +172,49 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
 
     fun saveStock() {
         viewModelScope.launch {
-            if (_description.value.isBlank() || _description.value.isDigitsOnly() ||_cost.value == 0.0 || _sellingPrice.value == 0.0) { _toastMessage.value = "Please fill in the required fields (*)"; return@launch }
+            if (_description.value.isBlank()) {
+                _toastMessage.value = "Description required"
+                return@launch
+            }
+
             val stock = StockMaster(
-                stockCode = _stockCode.value, stockDescription = _description.value,
-                cost = _cost.value, sellingPrice = _sellingPrice.value, stockOnHand = 0
-            , qtyPurchased = 0, qtySold = 0, totalPurchasesExclVat = 0.0, totalSalesExclVat = 0.0)
+                stockCode = _stockCode.value,
+                stockDescription = _description.value,
+                cost = _cost.value,
+                sellingPrice = _sellingPrice.value,
+                stockOnHand = 0,
+                qtyPurchased = 0,
+                qtySold = 0,
+                totalPurchasesExclVat = 0.0,
+                totalSalesExclVat = 0.0
+            )
+
             if (_isEditMode.value) {
                 val existing = repository.getStock(_stockCode.value)
-                if (existing != null) repository.insertStock(stock.copy(stockOnHand = existing.stockOnHand, qtyPurchased = existing.qtyPurchased,
-                    qtySold = existing.qtySold, totalPurchasesExclVat = existing.totalPurchasesExclVat, totalSalesExclVat = existing.totalSalesExclVat))
-                _toastMessage.value = "Debtor Updated"
+                if (existing != null) {
+                    repository.updateStock(stock.copy(
+                        stockOnHand = existing.stockOnHand,
+                        qtyPurchased = existing.qtyPurchased,
+                        qtySold = existing.qtySold,
+                        totalPurchasesExclVat = existing.totalPurchasesExclVat,
+                        totalSalesExclVat = existing.totalSalesExclVat,
+                        isActive = existing.isActive
+                    ))
+                    _toastMessage.value = "Stock Updated"
+                    _navigationChannel.send(true)
+                }
+            } else {
+                repository.insertStock(stock)
+                _toastMessage.value = "Stock Created"
                 _navigationChannel.send(true)
-            } else { repository.insertStock(stock)
-                _toastMessage.value = "Debtor Created"
-
-                _navigationChannel.send(true)
-                clearForm()
-
             }
         }
     }
+
+    fun setAdjustmentType(type: String) {
+        _adjustmentType.value = type
+    }
+
     fun onAdjustmentSearchChange(query: String) {
         _adjustmentSearchCode.value = query
     }
@@ -202,9 +232,15 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
     fun confirmAdjustment() {
         val stock = _foundAdjustmentStock.value ?: return
         val qty = _adjustmentQty.value
+        val type = _adjustmentType.value
 
         if (qty == 0) {
             _toastMessage.value = "Quantity cannot be zero"
+            return
+        }
+
+        if (type == "Purchase" && qty < 0) {// Purchases cannot be negative
+            _toastMessage.value = "Purchase quantity must be positive"
             return
         }
 
@@ -212,7 +248,7 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
             val transaction = StockTransaction(
                 stockCode = stock.stockCode,
                 date = Date(),
-                transactionType = "Adjustment",
+                transactionType = type,
                 documentNum = (System.currentTimeMillis() % 100000).toInt(),
                 qty = qty,
                 unitCost = stock.cost,
@@ -221,11 +257,12 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
 
             repository.adjustStock(transaction)
 
-            _toastMessage.value = "Adjustment Processed"
+            _toastMessage.value = "$type Processed"
             _foundAdjustmentStock.value = null
             _adjustmentSearchCode.value = ""
             _adjustmentQty.value = 0
 
+            _adjustmentType.value = "Adjustment"
         }
     }
 

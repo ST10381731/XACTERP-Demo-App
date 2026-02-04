@@ -393,7 +393,9 @@ fun InvoiceScreen(
     if (showStockSearchDialog) { //show search stock dialog
         StockSearchDialog(
             viewModel = stockViewModel,
-            onDismiss = { showStockSearchDialog = false },
+            onDismiss = {
+                showStockSearchDialog = false
+                stockViewModel.resetSearch()},
             onStockSelected = { stock ->
                 tempSelectedStock = stock // set stock added to invoice
                 isEditMode = false
@@ -401,6 +403,7 @@ fun InvoiceScreen(
                 editInitialDiscount = 0.0
                 showStockSearchDialog = false
                 showQtyDialog = true
+                stockViewModel.resetSearch()
             }
         )
     }
@@ -429,10 +432,13 @@ fun InvoiceScreen(
     if (showDebtorSearchDialog) { //show search debtor dialog
         DebtorCreationSearchDialog(
             viewModel = debtorViewModel,
-            onDismiss = { showDebtorSearchDialog = false },
+            onDismiss = {
+                showDebtorSearchDialog = false
+                debtorViewModel.resetSearch()},
             onDebtorSelected = { debtor ->
                 invoiceViewModel.setDebtor(debtor)
                 showDebtorSearchDialog = false
+                debtorViewModel.resetSearch()
             }
         )
     }
@@ -1095,7 +1101,7 @@ fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavControl
             TableCell(text = "Code", weight = .4f, isHeader = true)
             TableCell(text = "Description", weight = .6f, isHeader = true)
             TableCell(text = "Qty", weight = .4f, isHeader = true)
-            TableCell(text = "Cost", weight = .5f, isHeader = true)
+            TableCell(text = "Unit Cost", weight = .5f, isHeader = true)
         }
 
         if (stockList.isEmpty()) { // if no stock found, display message

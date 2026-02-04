@@ -95,6 +95,10 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
         _searchQuery.value = query
     }
 
+    fun resetSearch() {
+        _searchQuery.value = ""
+    }
+
     fun selectDebtorForDetails(code: String) {
         viewModelScope.launch {
             // Get Debtor Master Details
@@ -140,17 +144,23 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
 
     fun saveDebtor() {
         viewModelScope.launch {
-            if (_name.value.isBlank() || _name.value.isDigitsOnly() || _address1.value.isBlank()) { _toastMessage.value = "Name is required"; return@launch }
+            if (_name.value.isBlank()) {
+                _toastMessage.value = "Name is required"
+                return@launch
+            }
 
             val debtor = DebtorMaster(
-                accountCode = _accountCode.value, name = _name.value,
-                address1 = _address1.value, address2 = _address2.value, balance = 0.0
+                accountCode = _accountCode.value,
+                name = _name.value,
+                address1 = _address1.value,
+                address2 = _address2.value,
+                balance = 0.0
             )
 
             if (_isEditMode.value) {
                 val existing = repository.getDebtor(_accountCode.value)
                 if (existing != null) {
-                    repository.insertDebtor(debtor.copy(
+                    repository.updateDebtor(debtor.copy(
                         balance = existing.balance,
                         salesYearToDate = existing.salesYearToDate,
                         costYearToDate = existing.costYearToDate
@@ -161,9 +171,7 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
             } else {
                 repository.insertDebtor(debtor)
                 _toastMessage.value = "Debtor Created"
-
                 _navigationChannel.send(true)
-
                 clearForm()
             }
         }

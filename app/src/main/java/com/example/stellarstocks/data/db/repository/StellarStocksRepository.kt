@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.Flow
 interface StellarStocksRepository {
     // Debtors
     suspend fun insertDebtor(debtor: DebtorMaster)
+    suspend fun updateDebtor(debtor: DebtorMaster)
     suspend fun deleteDebtor(code: String)
     fun getAllDebtors(): Flow<List<DebtorMaster>>
     suspend fun getDebtor(code: String): DebtorMaster?
@@ -15,6 +16,7 @@ interface StellarStocksRepository {
 
     // Stock
     suspend fun insertStock(stock: StockMaster)
+    suspend fun updateStock(stock: StockMaster)
     fun getAllStock(): Flow<List<StockMaster>>
     suspend fun getStock(code: String): StockMaster?
     suspend fun deleteStock(code: String)

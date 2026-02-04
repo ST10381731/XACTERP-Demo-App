@@ -25,6 +25,8 @@ class StellarStocksRepositoryImpl @Inject constructor(
     // Debtors
     override suspend fun insertDebtor(debtor: DebtorMaster) =
         debtorDao.insertDebtor(debtor) // inserts a debtor
+    override suspend fun updateDebtor(debtor: DebtorMaster) =
+        debtorDao.updateDebtor(debtor)
 
     override suspend fun deleteDebtor(code: String) { // deletes a debtor
         debtorDao.deleteDebtor(code)
@@ -48,6 +50,8 @@ class StellarStocksRepositoryImpl @Inject constructor(
     override suspend fun insertStock(stock: StockMaster) =
         stockDao.insertStock(stock) // inserts a stock
 
+    override suspend fun updateStock(stock: StockMaster) =
+        stockDao.updateStock(stock)
 
     override suspend fun deleteStock(code: String) { // deletes a stock according to stockCode
         stockDao.deleteStock(code)
@@ -112,7 +116,7 @@ class StellarStocksRepositoryImpl @Inject constructor(
                 stockDao.recordStockSale(
                     code = item.stockCode,
                     qtySold = item.qtySold,
-                    saleValue = item.total
+                    saleAmount = item.total
                 )
 
                 val stockTrans = StockTransaction(

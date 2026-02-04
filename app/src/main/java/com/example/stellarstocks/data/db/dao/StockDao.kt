@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Update
 import com.example.stellarstocks.data.db.models.StockMaster
 import com.example.stellarstocks.data.db.models.StockTransaction
 import com.example.stellarstocks.data.db.models.TransactionInfo
@@ -18,6 +19,9 @@ interface StockDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertStock(stock: StockMaster) // Insert a new Stock
+
+    @Update
+    suspend fun updateStock(stock: StockMaster)
 
     @Query("UPDATE stock_master SET isActive = 0 WHERE stockCode = :code")
     suspend fun deleteStock(code: String) // Delete a Stock
@@ -58,7 +62,7 @@ interface StockDao {
 
     @Query("""
         SELECT t.id AS transactionId, t.date, h.accountCode, t.documentNum, t.transactionType, t.qty, 
-               CASE WHEN t.transactionType = 'Purchase' THEN t.unitCost ELSE t.unitSell END as value
+               (t.qty * CASE WHEN t.transactionType = 'Invoice' THEN t.unitSell ELSE t.unitCost END) as value
         FROM stock_transaction t
         LEFT JOIN invoice_items i ON t.documentNum = i.invoiceNum AND t.stockCode = i.stockCode
         LEFT JOIN invoice_header h ON i.invoiceNum = h.invoiceNum
@@ -78,13 +82,14 @@ interface StockDao {
     suspend fun recordStockPurchase(code: String, qty: Int, purchaseValue: Double) // Record a stock purchase
 
     @Transaction
-    suspend fun performAdjustment(transaction: StockTransaction) { // Perform a stock adjustment
-        if (transaction.qty > 0) {
-            val purchaseValue = transaction.qty * transaction.unitCost //update stock master purchase and stock on hand if quantity is positive
+    suspend fun performAdjustment(transaction: StockTransaction) {
+        if (transaction.transactionType == "Purchase") {
+            val purchaseValue = transaction.qty * transaction.unitCost
             recordStockPurchase(transaction.stockCode, transaction.qty, purchaseValue)
         } else {
-            updateStockQty(transaction.stockCode, transaction.qty)  //only update quantity on hand
+            updateStockQty(transaction.stockCode, transaction.qty)
         }
+        // Always record history
         insertTransaction(transaction)
     }
 
@@ -92,8 +97,8 @@ interface StockDao {
         UPDATE stock_master 
         SET stockOnHand = stockOnHand - :qtySold, 
             qtySold = qtySold + :qtySold, 
-            totalSalesExclVat = totalSalesExclVat + :saleValue
+            totalSalesExclVat = totalSalesExclVat + :saleAmount 
         WHERE stockCode = :code
     """)
-    suspend fun recordStockSale(code: String, qtySold: Int, saleValue: Double) // Update the stock master total sales and qty sold per invoice item
+    suspend fun recordStockSale(code: String, qtySold: Int, saleAmount: Double) // Update the stock master total sales and qty sold per invoice item
 }
