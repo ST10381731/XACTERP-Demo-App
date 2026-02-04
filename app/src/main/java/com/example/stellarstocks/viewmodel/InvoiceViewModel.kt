@@ -118,16 +118,16 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
                 totalCost = calculatedTotalCost
             )
 
-            val detailItems = items.mapIndexed { index, cartItem ->
+            val detailItems = items.mapIndexed { index, invoiceItem ->
                 InvoiceDetail( // Create invoice details
                     invoiceNum = invoiceNum,
                     itemNum = index + 1,
-                    stockCode = cartItem.stock.stockCode,
-                    qtySold = cartItem.qty,
-                    unitCost = cartItem.stock.cost,
-                    unitSell = cartItem.stock.sellingPrice,
-                    discount = cartItem.discountAmount,
-                    total = cartItem.lineTotal
+                    stockCode = invoiceItem.stock.stockCode,
+                    qtySold = invoiceItem.qty,
+                    unitCost = invoiceItem.stock.cost,
+                    unitSell = invoiceItem.stock.sellingPrice,
+                    discount = invoiceItem.discountAmount,
+                    total = invoiceItem.lineTotal
                 )
             }
 
@@ -145,7 +145,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
         calculateTotals()
     }
 
-    fun updateInvoiceItem(stock: StockMaster, newQty: Int, newDiscount: Double) { // Update cart item
+    fun updateInvoiceItem(stock: StockMaster, newQty: Int, newDiscount: Double) { // Update invoice item
         if (newQty <= 0) {
             val itemToRemove = _invoiceItems.value.find { it.stock.stockCode == stock.stockCode }
             if (itemToRemove != null) removeFromInvoice(itemToRemove)// If user sets qty to 0, remove it

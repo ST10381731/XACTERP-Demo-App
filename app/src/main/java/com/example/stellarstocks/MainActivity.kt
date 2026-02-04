@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -22,6 +23,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -69,6 +72,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
@@ -76,6 +81,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -516,7 +522,7 @@ fun InvoiceScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Item (Tap to Edit)", fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                        Text("Total", fontWeight = FontWeight.Bold, fontSize = 12.sp) //per line item total
+                        Text("Total (Excl VAT)", fontWeight = FontWeight.Bold, fontSize = 12.sp) //per line item total
                     }
 
                     // Invoice Items List
@@ -585,7 +591,7 @@ fun InvoiceScreen(
 @Composable
 fun AddStockDialog(// Dialog to add a stock item
     stock: com.example.stellarstocks.data.db.models.StockMaster,
-    initialQty: Int = 1,
+    initialQty: Int = 0,
     initialDiscount: Double = 0.0,
     isEditMode: Boolean = false,
     onDismiss: () -> Unit,
@@ -593,6 +599,7 @@ fun AddStockDialog(// Dialog to add a stock item
 ) {
     var qtyText by remember { mutableStateOf(initialQty.toString()) } // quantity state
     var discountText by remember { mutableStateOf(initialDiscount.toString()) } // discount state
+    val focusRequester = remember { FocusRequester() }
 
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) { //dialog for adding a stock item
         Card( //card to display items
@@ -617,6 +624,7 @@ fun AddStockDialog(// Dialog to add a stock item
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
+                    .focusRequester(focusRequester)
                 )
 
                 Spacer(Modifier.height(8.dp))
@@ -628,6 +636,7 @@ fun AddStockDialog(// Dialog to add a stock item
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
+                    .focusRequester(focusRequester)
                 )
 
                 Spacer(Modifier.height(24.dp))
@@ -638,7 +647,7 @@ fun AddStockDialog(// Dialog to add a stock item
                         onClick = {
                             val qty = qtyText.toIntOrNull() ?: 0 // get quantity from text field
                             val disc = discountText.toDoubleOrNull() ?: 0.0 // get discount from text field
-                            if (qty > 0) onConfirm(qty, disc) // check if quantity is greater than 0
+                            if (qty > 0 && disc>=0) onConfirm(qty, disc) // check if quantity is greater than 0
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = DarkGreen)
                     ) { Text(if (isEditMode) "Update" else "Add") } // change button based on mode
@@ -1086,7 +1095,7 @@ fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavControl
             TableCell(text = "Code", weight = .4f, isHeader = true)
             TableCell(text = "Description", weight = .6f, isHeader = true)
             TableCell(text = "Qty", weight = .4f, isHeader = true)
-            TableCell(text = "Cost", weight = .4f, isHeader = true)
+            TableCell(text = "Cost", weight = .5f, isHeader = true)
         }
 
         if (stockList.isEmpty()) { // if no stock found, display message
@@ -1103,6 +1112,7 @@ fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavControl
                 items(stockList) { stock ->
                     Row(
                         modifier = Modifier
+                            .weight(1f)
                             .fillMaxWidth()
                             .clickable {
                                 navController.navigate(Screen.StockDetails.createRoute(stock.stockCode))
@@ -1111,7 +1121,7 @@ fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavControl
                         TableCell(text = stock.stockCode, weight = .4f)
                         TableCell(text = stock.stockDescription, weight = .6f)
                         TableCell(text = stock.stockOnHand.toString(), weight = .4f)
-                        TableCell(text = String.format("R%.2f", stock.cost), weight = .4f)
+                        TableCell(text = String.format("R%.2f", stock.cost), weight = .5f)
                     }
                 }
             }

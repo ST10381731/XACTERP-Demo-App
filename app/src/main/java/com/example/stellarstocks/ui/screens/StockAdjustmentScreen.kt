@@ -125,15 +125,6 @@ fun StockAdjustmentScreen(viewModel: StockViewModel = viewModel(), navController
 
             Text("Adjust Quantity", fontWeight = FontWeight.SemiBold)
 
-
-            Slider(// Slider for adjusting quantity on hand
-                value = adjustmentQty.toFloat(),
-                onValueChange = { viewModel.onAdjustmentQtyChange(it.roundToInt()) },
-                valueRange = -50f..50f,
-                colors = SliderDefaults.colors(thumbColor = DarkGreen, activeTrackColor = LightGreen),
-                modifier = Modifier.fillMaxWidth()
-            )
-
             OutlinedTextField(
                 value = adjustmentQty.toString(),
                 onValueChange = {

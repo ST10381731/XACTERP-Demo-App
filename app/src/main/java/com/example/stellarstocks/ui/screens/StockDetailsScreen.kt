@@ -102,17 +102,17 @@ fun StockDetailsScreen(
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
                 StockDetailRow("Qty On Hand:", currentStock.stockOnHand.toString())
-                StockDetailRow("Quantity Sold:", currentStock.qtySold.toString())
+                StockDetailRow("Qty Sold:", currentStock.qtySold.toString())
 
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
-                StockDetailRow("Cost Price:", "R ${currentStock.cost}")
-                StockDetailRow("Selling Price:", "R ${currentStock.sellingPrice}")
+                StockDetailRow("Cost Price:", String.format("R%.2f", currentStock.cost))
+                StockDetailRow("Selling Price:", String.format("R%.2f", currentStock.sellingPrice))
 
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
                 StockDetailRow("Total Sales (Ex VAT):", "R ${currentStock.totalSalesExclVat}")
-                StockDetailRow("Total Purchases (Ex VAT):", "R ${currentStock.totalPurchasesExclVat}")
+                StockDetailRow("Total Purchases (Ex VAT):",  String.format("R%.2f", currentStock.totalPurchasesExclVat))
             }
         }
 
@@ -131,48 +131,50 @@ fun StockDetailsScreen(
             )
 
             // Sort Dropdown
-            Box {
-                Button(
-                    onClick = { expanded = true },
-                    colors = ButtonDefaults.buttonColors(containerColor = LightGreen)
-                ) {
-                    Text("Sort By: ${getStockSortLabel(currentSort)}", color = Color.Black)
-                    Icon(Icons.Default.ArrowDropDown, contentDescription = "Sort", tint = Color.Black)
-                }
 
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("Full List") },
-                        onClick = {
-                            viewModel.updateSort(StockSortOption.FULL_LIST)
-                            expanded = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Recent Debtor") },
-                        onClick = {
-                            viewModel.updateSort(StockSortOption.RECENT_DEBTOR_ONLY)
-                            expanded = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Highest Quantity") },
-                        onClick = {
-                            viewModel.updateSort(StockSortOption.HIGHEST_QUANTITY)
-                            expanded = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Lowest Quantity") },
-                        onClick = {
-                            viewModel.updateSort(StockSortOption.LOWEST_QUANTITY)
-                            expanded = false
-                        }
-                    )
-                }
+        }
+
+        Box {
+            Button(
+                onClick = { expanded = true },
+                colors = ButtonDefaults.buttonColors(containerColor = LightGreen)
+            ) {
+                Text("Sort By: ${getStockSortLabel(currentSort)}", color = Color.Black)
+                Icon(Icons.Default.ArrowDropDown, contentDescription = "Sort", tint = Color.Black)
+            }
+
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Full List") },
+                    onClick = {
+                        viewModel.updateSort(StockSortOption.FULL_LIST)
+                        expanded = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Recent Debtor") },
+                    onClick = {
+                        viewModel.updateSort(StockSortOption.RECENT_DEBTOR_ONLY)
+                        expanded = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Highest Quantity") },
+                    onClick = {
+                        viewModel.updateSort(StockSortOption.HIGHEST_QUANTITY)
+                        expanded = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Lowest Quantity") },
+                    onClick = {
+                        viewModel.updateSort(StockSortOption.LOWEST_QUANTITY)
+                        expanded = false
+                    }
+                )
             }
         }
 

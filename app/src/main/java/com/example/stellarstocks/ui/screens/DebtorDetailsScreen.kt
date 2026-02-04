@@ -126,51 +126,51 @@ fun DebtorDetailsScreen(
                 color = DarkGreen
             )
             // Sort Dropdown
-            Box {
-                Button(
-                    onClick = { expanded = true },
-                    colors = ButtonDefaults.buttonColors(containerColor = LightGreen)
-                ) {
-                    Text("Sort By: ${getSortLabel(currentSort)}", color = Color.Black)
-                    Icon(Icons.Default.ArrowDropDown, contentDescription = "Sort", tint = Color.Black)
-                }
 
-                DropdownMenu( // Sort Dropdown Menu
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("Full List") },
-                        onClick = {
-                            viewModel.updateSort(SortOption.FULL_LIST)
-                            expanded = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Recent Item Sold") },
-                        onClick = {
-                            viewModel.updateSort(SortOption.RECENT_ITEM_SOLD)
-                            expanded = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Highest Value") },
-                        onClick = {
-                            viewModel.updateSort(SortOption.HIGHEST_VALUE)
-                            expanded = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Lowest Value") },
-                        onClick = {
-                            viewModel.updateSort(SortOption.LOWEST_VALUE)
-                            expanded = false
-                        }
-                    )
-                }
+        }
+        Box {
+            Button(
+                onClick = { expanded = true },
+                colors = ButtonDefaults.buttonColors(containerColor = LightGreen)
+            ) {
+                Text("Sort By: ${getSortLabel(currentSort)}", color = Color.Black)
+                Icon(Icons.Default.ArrowDropDown, contentDescription = "Sort", tint = Color.Black)
+            }
+
+            DropdownMenu( // Sort Dropdown Menu
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Full List") },
+                    onClick = {
+                        viewModel.updateSort(SortOption.FULL_LIST)
+                        expanded = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Recent Item Sold") },
+                    onClick = {
+                        viewModel.updateSort(SortOption.RECENT_ITEM_SOLD)
+                        expanded = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Highest Value") },
+                    onClick = {
+                        viewModel.updateSort(SortOption.HIGHEST_VALUE)
+                        expanded = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Lowest Value") },
+                    onClick = {
+                        viewModel.updateSort(SortOption.LOWEST_VALUE)
+                        expanded = false
+                    }
+                )
             }
         }
-
         Spacer(modifier = Modifier.height(8.dp))
 
         Row(

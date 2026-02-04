@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.collections.emptyList
+import kotlin.math.abs
 
 enum class SortOption {
     FULL_LIST,
@@ -60,8 +61,8 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
         when (sortOption) {
             SortOption.FULL_LIST -> transactions.sortedByDescending { it.date }
             SortOption.RECENT_ITEM_SOLD -> transactions.filter { it.items != null }.sortedByDescending { it.date }
-            SortOption.HIGHEST_VALUE -> transactions.sortedByDescending { it.value }
-            SortOption.LOWEST_VALUE -> transactions.sortedBy { it.value }
+            SortOption.HIGHEST_VALUE -> transactions.sortedByDescending { abs(it.value) }
+            SortOption.LOWEST_VALUE -> transactions.sortedBy { abs(it.value) }
         }
     }.stateIn(
         scope = viewModelScope,

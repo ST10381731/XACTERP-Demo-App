@@ -3,7 +3,6 @@ package com.example.stellarstocks.viewmodel
 import androidx.core.text.isDigitsOnly
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.stellarstocks.data.db.models.DebtorMaster
 import com.example.stellarstocks.data.db.models.StockMaster
 import com.example.stellarstocks.data.db.models.StockTransaction
 import com.example.stellarstocks.data.db.models.TransactionInfo
@@ -20,7 +19,7 @@ import kotlinx.coroutines.launch
 import java.util.Date
 import kotlin.math.abs
 
-enum class StockSortOption {
+enum class StockSortOption { // Sort options for stock
     FULL_LIST,
     RECENT_DEBTOR_ONLY,
     HIGHEST_QUANTITY,
@@ -67,8 +66,8 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
         when (sortOption) {
             StockSortOption.FULL_LIST -> transactions.sortedByDescending { it.date }
             StockSortOption.RECENT_DEBTOR_ONLY -> transactions.filter { it.accountCode != null }.sortedByDescending { it.date }
-            StockSortOption.HIGHEST_QUANTITY -> transactions.sortedByDescending { it.qty }
-            StockSortOption.LOWEST_QUANTITY -> transactions.sortedBy { it.qty }
+            StockSortOption.HIGHEST_QUANTITY -> transactions.sortedByDescending { abs(it.qty) }
+            StockSortOption.LOWEST_QUANTITY -> transactions.sortedBy { abs(it.qty) }
         }
     }.stateIn(
         scope = viewModelScope,
@@ -197,7 +196,7 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
     }
 
     fun onAdjustmentQtyChange(newQty: Int) {
-        _adjustmentQty.value = newQty.coerceIn(-100, 100)
+        _adjustmentQty.value = newQty
     }
 
     fun confirmAdjustment() {
