@@ -37,7 +37,7 @@ interface StockDao {
             qtyPurchased = qtyPurchased + :qty
         WHERE stockCode = :code
     """)
-    suspend fun updatePurchaseMetrics(code: String, qty: Int, purchaseAmount: Double)
+    suspend fun updatePurchaseMetrics(code: String, qty: Int, purchaseAmount: Double) // Update stock master purchase and cost metrics
 
     // Stock Transaction
     @Insert
@@ -75,15 +75,15 @@ interface StockDao {
             totalPurchasesExclVat = totalPurchasesExclVat + :purchaseValue
         WHERE stockCode = :code
     """)
-    suspend fun recordStockPurchase(code: String, qty: Int, purchaseValue: Double)
+    suspend fun recordStockPurchase(code: String, qty: Int, purchaseValue: Double) // Record a stock purchase
 
     @Transaction
-    suspend fun performAdjustment(transaction: StockTransaction) {
+    suspend fun performAdjustment(transaction: StockTransaction) { // Perform a stock adjustment
         if (transaction.qty > 0) {
-            val purchaseValue = transaction.qty * transaction.unitCost
+            val purchaseValue = transaction.qty * transaction.unitCost //update stock master purchase and stock on hand if quantity is positive
             recordStockPurchase(transaction.stockCode, transaction.qty, purchaseValue)
         } else {
-            updateStockQty(transaction.stockCode, transaction.qty)
+            updateStockQty(transaction.stockCode, transaction.qty)  //only update quantity on hand
         }
         insertTransaction(transaction)
     }
@@ -95,5 +95,5 @@ interface StockDao {
             totalSalesExclVat = totalSalesExclVat + :saleValue
         WHERE stockCode = :code
     """)
-    suspend fun recordStockSale(code: String, qtySold: Int, saleValue: Double)
+    suspend fun recordStockSale(code: String, qtySold: Int, saleValue: Double) // Update the stock master total sales and qty sold per invoice item
 }

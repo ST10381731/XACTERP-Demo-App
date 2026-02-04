@@ -1111,7 +1111,7 @@ fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavControl
                         TableCell(text = stock.stockCode, weight = .4f)
                         TableCell(text = stock.stockDescription, weight = .6f)
                         TableCell(text = stock.stockOnHand.toString(), weight = .4f)
-                        TableCell(text = stock.cost.toString(), weight = .4f)
+                        TableCell(text = String.format("R%.2f", stock.cost), weight = .4f)
                     }
                 }
             }

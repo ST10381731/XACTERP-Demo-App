@@ -103,10 +103,12 @@ fun DebtorDetailsScreen(
                 DebtorDetailRow("Account Code:", currentDebtor.accountCode)
                 DebtorDetailRow("Name:", currentDebtor.name)
                 DebtorDetailRow("Address:", "${currentDebtor.address1}, ${currentDebtor.address2}")
+
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                DebtorDetailRow("Balance:", "R ${currentDebtor.balance}")
-                DebtorDetailRow("Sales YTD:", "R ${currentDebtor.salesYearToDate}")
-                DebtorDetailRow("Cost YTD:", "R ${currentDebtor.costYearToDate}")
+
+                DebtorDetailRow("Balance:", String.format("R%.2f", currentDebtor.balance))
+                DebtorDetailRow("Sales YTD:", String.format("R%.2f", currentDebtor.salesYearToDate))
+                DebtorDetailRow("Cost YTD:", String.format("R%.2f", currentDebtor.costYearToDate))
             }
         }
 

@@ -98,11 +98,19 @@ fun StockDetailsScreen(
             Column(Modifier.padding(16.dp)) { // table to display all stock details
                 StockDetailRow("Stock Code:", currentStock.stockCode)
                 StockDetailRow("Description:", currentStock.stockDescription)
+
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
+
                 StockDetailRow("Qty On Hand:", currentStock.stockOnHand.toString())
+                StockDetailRow("Quantity Sold:", currentStock.qtySold.toString())
+
+                HorizontalDivider(Modifier.padding(vertical = 8.dp))
+
                 StockDetailRow("Cost Price:", "R ${currentStock.cost}")
                 StockDetailRow("Selling Price:", "R ${currentStock.sellingPrice}")
+
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
+
                 StockDetailRow("Total Sales (Ex VAT):", "R ${currentStock.totalSalesExclVat}")
                 StockDetailRow("Total Purchases (Ex VAT):", "R ${currentStock.totalPurchasesExclVat}")
             }
