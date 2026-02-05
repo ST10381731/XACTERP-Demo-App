@@ -379,8 +379,7 @@ fun InvoiceScreen(
     val vat by invoiceViewModel.vat.collectAsState() // VAT state
     val grandTotal by invoiceViewModel.grandTotal.collectAsState() // grand total
     val toastMessage by invoiceViewModel.toastMessage.collectAsState()
-    val invoiceNum by invoiceViewModel.invoiceNum.collectAsState()
-
+    val invoiceNum by invoiceViewModel.invoiceNum.collectAsState() // invoice number
 
     LaunchedEffect(toastMessage) {
         toastMessage?.let {
@@ -388,7 +387,6 @@ fun InvoiceScreen(
             invoiceViewModel.clearToast()
         }
     }
-
 
     if (showStockSearchDialog) { //show search stock dialog
         StockSearchDialog(
@@ -482,7 +480,7 @@ fun InvoiceScreen(
         TicketView( // ticket view background for invoice
             content = {
                 Column {
-                    Text("INVOICE #${invoiceNum}", fontWeight = FontWeight.Bold, fontSize = 20.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                    Text("INVOICE #${invoiceNum}", fontWeight = FontWeight.Bold, fontSize = 20.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) //invoice title
                     Text(LocalDate.now().toString(), textAlign = TextAlign.Center, color = Color.Gray, modifier = Modifier.fillMaxWidth()) // date of invoice
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -491,19 +489,19 @@ fun InvoiceScreen(
 
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Subtotal excl. VAT:", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Black)
-                        Text(String.format("R%.2f", totalExVat), fontSize = 12.sp, color = Black)
+                        Text(String.format("R%.2f", totalExVat), fontSize = 12.sp, color = Black) // subtotal excl vat rounded to 2 decimal places
                     }
 
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("VAT (15%):", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Black)
-                        Text(String.format("R%.2f", vat), fontSize = 12.sp, color = Black)
+                        Text(String.format("R%.2f", vat), fontSize = 12.sp, color = Black) //vat total rounded to 2 decimal places
                     }
 
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("TOTAL:", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = DarkGreen)
-                        Text(String.format("R%.2f", grandTotal), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = DarkGreen)
+                        Text(String.format("R%.2f", grandTotal), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = DarkGreen) // grand total rounded to 2 decimal places
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -513,9 +511,9 @@ fun InvoiceScreen(
                     // Debtor Section
                     if (selectedDebtor != null) { // show debtor details if selected
                         Text("BILL TO:", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.Gray)
-                        Text(selectedDebtor!!.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = DarkGreen)
-                        Text(selectedDebtor!!.accountCode, fontSize = 14.sp, color = Black)
-                        Text(selectedDebtor!!.address1, fontSize = 12.sp, color= Black)
+                        Text(selectedDebtor!!.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = DarkGreen) // debtor name
+                        Text(selectedDebtor!!.accountCode, fontSize = 14.sp, color = Black) // debtor account code
+                        Text(selectedDebtor!!.address1, fontSize = 12.sp, color= Black) // debtor address
                     } else {
                         Text("No Debtor Selected", color = Color.Red, fontWeight = FontWeight.Bold)
                     }
@@ -554,7 +552,7 @@ fun InvoiceScreen(
                                     Text(item.stock.stockDescription, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = DarkGreen) // stock description
                                     Row {
                                         Text("${item.qty} x R${item.stock.sellingPrice}", fontSize = 12.sp, color = Color.Gray) // quantity and price
-                                        if (item.discountPercent > 0) {
+                                        if (item.discountPercent > 0 && item.discountPercent < 100) {
                                             Spacer(Modifier.width(8.dp))
                                             Text("(-${item.discountPercent}%)", fontSize = 12.sp, color = Color.Red) // discount percent
                                         }
@@ -586,7 +584,7 @@ fun InvoiceScreen(
             onClick = { invoiceViewModel.confirmInvoice() },
             colors = ButtonDefaults.buttonColors(containerColor = DarkGreen),
             modifier = Modifier.fillMaxWidth().height(56.dp),
-            enabled = selectedDebtor != null && invoiceItems.isNotEmpty()
+            enabled = selectedDebtor != null && invoiceItems.isNotEmpty() // enable button if debtor is selected and invoice is not empty
         ) {
             Text("CONFIRM & PROCESS INVOICE", fontWeight = FontWeight.Bold)
         }
@@ -951,11 +949,11 @@ fun StockMenuScreen(navController: NavController) { // stock menu screen
             modifier = Modifier.padding(bottom = 16.dp).fillMaxWidth(),
             textAlign = TextAlign.Center
         )
-        LazyVerticalGrid(
+        LazyVerticalGrid( // grid layout for stock menu tiles
             columns = GridCells.Fixed(2),
             contentPadding = PaddingValues(8.dp)
         ) {
-            items(stockMenuItems) { item ->
+            items(stockMenuItems) { item -> // loop through stock menu tiles
                 StockMenuTile(item = item, navController = navController)
             }
         }
@@ -977,11 +975,11 @@ fun DebtorMenuScreen(navController: NavController) { // debtor menu screen
             modifier = Modifier.padding(bottom = 16.dp).fillMaxWidth(),
             textAlign = TextAlign.Center
         )
-        LazyVerticalGrid(
+        LazyVerticalGrid( // grid layout for debtor menu tiles
             columns = GridCells.Fixed(2),
             contentPadding = PaddingValues(8.dp)
         ) {
-            items(debtorMenuItems) { item ->
+            items(debtorMenuItems) { item -> // loop through debtor menu tiles
                 DebtorMenuTile(item = item, navController = navController)
             }
         }
@@ -1027,7 +1025,7 @@ fun DebtorEnquiryScreen(debtorViewModel: DebtorViewModel, navController: NavCont
             singleLine = true
         )
 
-        Row(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth()) { // header row for table
             TableCell(text = "Code", weight = .25f, isHeader = true)
             TableCell(text = "Name", weight = .5f, isHeader = true)
             TableCell(text = "Balance", weight = .25f, isHeader = true)
@@ -1065,8 +1063,8 @@ fun DebtorEnquiryScreen(debtorViewModel: DebtorViewModel, navController: NavCont
 
 @Composable
 fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavController) { // stock enquiry screen
-    val stockList by stockViewModel.filteredStock.collectAsState()
-    val searchQuery by stockViewModel.searchQuery.collectAsState()
+    val stockList by stockViewModel.filteredStock.collectAsState() // list of stock
+    val searchQuery by stockViewModel.searchQuery.collectAsState() // search query to filter stock
 
     Column(
         modifier = Modifier
@@ -1097,7 +1095,7 @@ fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavControl
             singleLine = true
         )
 
-        Row(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth()) { // header row for table
             TableCell(text = "Code", weight = .4f, isHeader = true)
             TableCell(text = "Description", weight = .6f, isHeader = true)
             TableCell(text = "Qty", weight = .4f, isHeader = true)
@@ -1127,7 +1125,7 @@ fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavControl
                         TableCell(text = stock.stockCode, weight = .4f)
                         TableCell(text = stock.stockDescription, weight = .6f)
                         TableCell(text = stock.stockOnHand.toString(), weight = .4f)
-                        TableCell(text = String.format("R%.2f", stock.cost), weight = .5f)
+                        TableCell(text = String.format("R%.2f", stock.cost), weight = .5f) //rounded to 2 decimal places
                     }
                 }
             }

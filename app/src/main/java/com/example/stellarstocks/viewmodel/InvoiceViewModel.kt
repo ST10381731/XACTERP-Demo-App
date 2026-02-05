@@ -1,17 +1,14 @@
 package com.example.stellarstocks.viewmodel
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.stellarstocks.data.db.models.DebtorMaster
 import com.example.stellarstocks.data.db.models.InvoiceDetail
 import com.example.stellarstocks.data.db.models.InvoiceHeader
 import com.example.stellarstocks.data.db.models.StockMaster
 import com.example.stellarstocks.data.db.repository.StellarStocksRepository
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import java.util.Date
 
@@ -36,7 +33,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
     private val _vat = MutableStateFlow(0.0) // VAT amount
     val vat = _vat.asStateFlow()
 
-    private val _grandTotal = MutableStateFlow(0.0) // Grand total amount
+    private val _grandTotal = MutableStateFlow(0.0) // Gross total amount
     val grandTotal = _grandTotal.asStateFlow()
 
     private val _toastMessage = MutableStateFlow<String?>(null)

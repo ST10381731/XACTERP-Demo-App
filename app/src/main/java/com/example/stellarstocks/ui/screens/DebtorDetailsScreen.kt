@@ -106,9 +106,9 @@ fun DebtorDetailsScreen(
 
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
-                DebtorDetailRow("Balance:", String.format("R%.2f", currentDebtor.balance))
                 DebtorDetailRow("Sales YTD:", String.format("R%.2f", currentDebtor.salesYearToDate))
                 DebtorDetailRow("Cost YTD:", String.format("R%.2f", currentDebtor.costYearToDate))
+                DebtorDetailRow("Balance:", String.format("R%.2f", currentDebtor.balance))
             }
         }
 
@@ -125,7 +125,6 @@ fun DebtorDetailsScreen(
                 fontWeight = FontWeight.Bold,
                 color = DarkGreen
             )
-            // Sort Dropdown
 
         }
         Box {
@@ -133,7 +132,7 @@ fun DebtorDetailsScreen(
                 onClick = { expanded = true },
                 colors = ButtonDefaults.buttonColors(containerColor = LightGreen)
             ) {
-                Text("Sort By: ${getSortLabel(currentSort)}", color = Color.Black)
+                Text("Sort By: ${getSortLabel(currentSort)}", color = Color.Black) // Sort Button
                 Icon(Icons.Default.ArrowDropDown, contentDescription = "Sort", tint = Color.Black)
             }
 
@@ -187,13 +186,13 @@ fun DebtorDetailsScreen(
         }
 
         LazyColumn {
-            items(transactions) { trans ->
+            items(transactions) { trans -> // Transaction History List
                 DebtorTransactionRow(trans)
             }
         }
     }
 }
-fun getSortLabel(option: SortOption): String { // Helper function to get sort label based on option
+fun getSortLabel(option: SortOption): String { // function to get sort label based on option
     return when(option) {
         SortOption.FULL_LIST -> "Full List"
         SortOption.RECENT_ITEM_SOLD -> "Recent Item Sold"
@@ -203,7 +202,7 @@ fun getSortLabel(option: SortOption): String { // Helper function to get sort la
 }
 
 @Composable
-fun DebtorDetailRow(label: String, value: String) { // Helper function to display a row of debtor details
+fun DebtorDetailRow(label: String, value: String) { // function to display a row of debtor details
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -216,8 +215,8 @@ fun DebtorDetailRow(label: String, value: String) { // Helper function to displa
 }
 
 @Composable
-fun DebtorTransactionRow(trans: DebtorTransactionInfo) { // Helper function to display a row of debtor transactions
-    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+fun DebtorTransactionRow(trans: DebtorTransactionInfo) { // function to display a row of debtor transactions
+    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()) // Date format
     var expanded by remember { mutableStateOf(false) } // variable to control dropdown menu
 
     Row(
@@ -231,7 +230,7 @@ fun DebtorTransactionRow(trans: DebtorTransactionInfo) { // Helper function to d
         // Date
         Text(dateFormat.format(trans.date), Modifier.weight(0.7f), fontSize = 11.sp)
 
-        // Doc No
+        // Doc Number
         Text(trans.documentNum.toString(), Modifier.weight(0.5f), fontSize = 11.sp)
 
         // Transaction Type

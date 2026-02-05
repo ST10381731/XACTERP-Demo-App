@@ -16,11 +16,12 @@ interface DebtorDao {
     // Debtor Master File
     @Query("SELECT accountCode FROM debtor_master ORDER BY accountCode DESC LIMIT 1")
     suspend fun getHighestAccountCode(): String? // Get the highest accountCode
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDebtor(debtor: DebtorMaster) // Insert a new Debtor
 
     @Update
-    suspend fun updateDebtor(debtor: DebtorMaster)
+    suspend fun updateDebtor(debtor: DebtorMaster) // Update a Debtor
 
     @Query("UPDATE debtor_master SET isActive = 0 WHERE accountCode = :code")
     suspend fun deleteDebtor(code: String) // Delete a Debtor

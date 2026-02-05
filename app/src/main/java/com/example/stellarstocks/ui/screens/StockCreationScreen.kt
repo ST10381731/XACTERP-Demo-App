@@ -93,10 +93,9 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
         StockCreationSearchDialog(
             viewModel = viewModel,
             onDismiss = {
-                showSearchDialog = false
-                viewModel.resetSearch()},
+                showSearchDialog = false // Dismiss the dialog when clicked outside
+                viewModel.resetSearch()}, // Reset the search
             onStockSelected = { stock ->
-                // Populate the form with selected data
                 viewModel.onStockCodeChange(stock.stockCode) // Set the stock code
                 viewModel.onDescriptionChange(stock.stockDescription) // Set the description
                 viewModel.onCostChange(stock.cost) // Set the cost
@@ -120,7 +119,7 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
     ) {
         IconButton(onClick = { navController.popBackStack() }) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Orange
-            ) // Back button to go back to the previous screen
+            ) // Back button to go to the previous screen
         }
     }
         Text(
@@ -133,7 +132,7 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
                 .clickable { viewModel.toggleMode() }
         )
         Text(
-            text = "(Tap text above to switch mode)",
+            text = "(Tap text above to switch mode)", // text to explain switching modes
             fontSize = 12.sp,
             color = Color.Gray,
             modifier = Modifier.padding(bottom = 24.dp)
@@ -155,7 +154,7 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
             if (isEditMode) { // If in edit mode, show the search button
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(
-                    onClick = { showSearchDialog = true },
+                    onClick = { showSearchDialog = true }, // Show the search dialog when clicked
                     colors = ButtonDefaults.buttonColors(containerColor = LightGreen),
                     modifier = Modifier.height(56.dp),
                     shape = MaterialTheme.shapes.extraSmall
@@ -264,8 +263,8 @@ fun StockCreationSearchDialog( // Search dialog for selecting a stock item
                                 .clickable { onStockSelected(stock) }
                                 .padding(vertical = 12.dp)
                         ) {
-                            Text(stock.stockCode, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                            Text(stock.stockDescription, modifier = Modifier.weight(2f))
+                            Text(stock.stockCode, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f)) // Display the stock code
+                            Text(stock.stockDescription, modifier = Modifier.weight(2f)) // Display the stock description
                         }
                         HorizontalDivider()
                     }

@@ -19,28 +19,28 @@ import kotlinx.coroutines.launch
 import kotlin.collections.emptyList
 import kotlin.math.abs
 
-enum class SortOption {
+enum class SortOption { // enum class to hold sort options
     FULL_LIST,
     RECENT_ITEM_SOLD,
     HIGHEST_VALUE,
     LOWEST_VALUE
 }
 class DebtorViewModel(private val repository: StellarStocksRepository) : ViewModel() {
-    private val _searchQuery = MutableStateFlow("")
+    private val _searchQuery = MutableStateFlow("") // variable to hold search query
     val searchQuery = _searchQuery.asStateFlow()
-    private val _currentSort = MutableStateFlow(SortOption.FULL_LIST)
+    private val _currentSort = MutableStateFlow(SortOption.FULL_LIST) // variable to hold current sort option
     val currentSort = _currentSort.asStateFlow()
 
-    val filteredDebtors: StateFlow<List<DebtorMaster>> = combine(
+    val filteredDebtors: StateFlow<List<DebtorMaster>> = combine( // variable to hold filtered debtors
         repository.getAllDebtors(),
         _searchQuery
     ) { debtors, query ->
-        if (query.isBlank()) {
+        if (query.isBlank()) { // if query is blank, return all debtors
             debtors
         } else {
             debtors.filter {
-                it.accountCode.contains(query, ignoreCase = true) ||
-                        it.name.contains(query, ignoreCase = true)
+                it.accountCode.contains(query, ignoreCase = true) || // filter by account code
+                        it.name.contains(query, ignoreCase = true) // filter by name
             }
         }
     }.stateIn(
@@ -49,12 +49,12 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
         initialValue = emptyList()
     )
 
-    private val _selectedDebtor = MutableStateFlow<DebtorMaster?>(null)
+    private val _selectedDebtor = MutableStateFlow<DebtorMaster?>(null) // variable to hold selected debtor
     val selectedDebtor = _selectedDebtor.asStateFlow()
 
-    private val _selectedTransactions = MutableStateFlow<List<DebtorTransactionInfo>>(emptyList())
+    private val _selectedTransactions = MutableStateFlow<List<DebtorTransactionInfo>>(emptyList()) // variable to hold selected debtor transactions
 
-    val visibleTransactions: StateFlow<List<DebtorTransactionInfo>> = combine(
+    val visibleTransactions: StateFlow<List<DebtorTransactionInfo>> = combine( // variable to hold debtor transactions based on sort option
         _selectedTransactions,
         _currentSort
     ) { transactions, sortOption ->
@@ -70,19 +70,19 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
         initialValue = emptyList()
     )
 
-    private val _isEditMode = MutableStateFlow(false)
+    private val _isEditMode = MutableStateFlow(false) // variable to hold edit mode
     val isEditMode = _isEditMode.asStateFlow()
 
-    private val _accountCode = MutableStateFlow("")
+    private val _accountCode = MutableStateFlow("") // variable to hold account code
     val accountCode = _accountCode.asStateFlow()
 
-    private val _name = MutableStateFlow("")
+    private val _name = MutableStateFlow("") // variable to hold name
     val name = _name.asStateFlow()
 
-    private val _address1 = MutableStateFlow("")
+    private val _address1 = MutableStateFlow("") // variable to hold primary address
     val address1 = _address1.asStateFlow()
 
-    private val _address2 = MutableStateFlow("")
+    private val _address2 = MutableStateFlow("") // variable to hold secondary address
     val address2 = _address2.asStateFlow()
 
     private val _toastMessage = MutableStateFlow<String?>(null)
@@ -91,15 +91,15 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
     private val _navigationChannel = Channel<Boolean>()
     val navigationChannel = _navigationChannel.receiveAsFlow()
 
-    fun onSearchQueryChange(query: String) {
+    fun onSearchQueryChange(query: String) { // function to update search query
         _searchQuery.value = query
     }
 
-    fun resetSearch() {
+    fun resetSearch() { // function to reset search query
         _searchQuery.value = ""
     }
 
-    fun selectDebtorForDetails(code: String) {
+    fun selectDebtorForDetails(code: String) { // function to select debtor for details
         viewModelScope.launch {
             // Get Debtor Master Details
             _selectedDebtor.value = repository.getDebtor(code)
@@ -111,29 +111,29 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
         }
     }
 
-    fun updateSort(option: SortOption) {
+    fun updateSort(option: SortOption) { // function to update sort option
         _currentSort.value = option
     }
 
-    fun toggleMode() {
+    fun toggleMode() { // function to toggle edit mode
         _isEditMode.value = !_isEditMode.value
         clearForm()
         if (!_isEditMode.value) generateNewCode()
     }
-    fun onSearchCodeChange(newValue: String) { _accountCode.value = newValue }
-    fun onNameChange(newValue: String) { _name.value = newValue }
-    fun onAddress1Change(newValue: String) { _address1.value = newValue }
-    fun onAddress2Change(newValue: String) { _address2.value = newValue }
+    fun onSearchCodeChange(newValue: String) { _accountCode.value = newValue } // function to update account code
+    fun onNameChange(newValue: String) { _name.value = newValue } // function to update name
+    fun onAddress1Change(newValue: String) { _address1.value = newValue } // function to update primary address
+    fun onAddress2Change(newValue: String) { _address2.value = newValue } // function to update secondary address
 
-    fun generateNewCode() {
+    fun generateNewCode() { // function to generate new account code
         viewModelScope.launch {
-            val lastCode = repository.getLastDebtorCode()
+            val lastCode = repository.getLastDebtorCode() // get last account code
 
-            if (lastCode == null) {
+            if (lastCode == null) { // if no account code, set to ACC001
                 _accountCode.value = "ACC001"
             } else {
                 try {
-                    val number = lastCode.removePrefix("ACC").toIntOrNull() ?: 0
+                    val number = lastCode.removePrefix("ACC").toIntOrNull() ?: 0 // get last number and increment
                     _accountCode.value = "ACC" + String.format("%03d", number + 1)
                 } catch (_: Exception) {
                     _accountCode.value = "ACC001"
@@ -142,14 +142,14 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
         }
     }
 
-    fun saveDebtor() {
+    fun saveDebtor() { // function to save debtor
         viewModelScope.launch {
-            if (_name.value.isBlank()) {
+            if (_name.value.isBlank()) { // if name is blank, show error
                 _toastMessage.value = "Name is required"
                 return@launch
             }
 
-            val debtor = DebtorMaster(
+            val debtor = DebtorMaster( // create debtor object
                 accountCode = _accountCode.value,
                 name = _name.value,
                 address1 = _address1.value,
@@ -157,16 +157,17 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
                 balance = 0.0
             )
 
-            if (_isEditMode.value) {
-                val existing = repository.getDebtor(_accountCode.value)
-                if (existing != null) {
+            if (_isEditMode.value) { // if in edit mode, update debtor
+                val existing = repository.getDebtor(_accountCode.value) // get existing debtor
+                if (existing != null) { // if debtor exists, update
                     repository.updateDebtor(debtor.copy(
                         balance = existing.balance,
                         salesYearToDate = existing.salesYearToDate,
                         costYearToDate = existing.costYearToDate
                     ))
                     _toastMessage.value = "Debtor Updated"
-                    _navigationChannel.send(true)
+                    _navigationChannel.send(true) // navigate back to debtor enquiry screen
+                    clearForm()
                 }
             } else {
                 repository.insertDebtor(debtor)
@@ -183,7 +184,7 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
 
             _toastMessage.value = "Debtor Deleted"
             clearForm()
-            _navigationChannel.send(true)
+            _navigationChannel.send(true)// navigate back to debtor enquiry screen
         }
     }
 

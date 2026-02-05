@@ -25,12 +25,12 @@ class StellarStocksRepositoryImpl @Inject constructor(
     // Debtors
     override suspend fun insertDebtor(debtor: DebtorMaster) =
         debtorDao.insertDebtor(debtor) // inserts a debtor
-    override suspend fun updateDebtor(debtor: DebtorMaster) =
-        debtorDao.updateDebtor(debtor)
 
-    override suspend fun deleteDebtor(code: String) { // deletes a debtor
-        debtorDao.deleteDebtor(code)
-    }
+    override suspend fun updateDebtor(debtor: DebtorMaster) =
+        debtorDao.updateDebtor(debtor) // updates a debtor
+
+    override suspend fun deleteDebtor(code: String) =
+        debtorDao.deleteDebtor(code) // deletes a debtor
 
     override fun getAllDebtors(): Flow<List<DebtorMaster>> =
         debtorDao.getAllDebtors() // gets a list of all debtors
@@ -38,24 +38,23 @@ class StellarStocksRepositoryImpl @Inject constructor(
     override suspend fun getDebtor(code: String): DebtorMaster? =
         debtorDao.getDebtor(code) // gets a debtor by code
 
-    override suspend fun getLastDebtorCode(): String? { // gets the last debtor code
-        return debtorDao.getHighestAccountCode()
+    override suspend fun getLastDebtorCode(): String? {
+        return debtorDao.getHighestAccountCode() // gets the last debtor code added
     }
 
-    override fun getDebtorTransactionInfo(accountCode: String): Flow<List<DebtorTransactionInfo>> { // gets a list of debtor transaction info according to accountCode
-        return debtorDao.getDebtorTransactionInfo(accountCode)
+    override fun getDebtorTransactionInfo(accountCode: String): Flow<List<DebtorTransactionInfo>> {
+        return debtorDao.getDebtorTransactionInfo(accountCode) // gets a list of debtor transaction info according to accountCode
     }
 
     // Stock
     override suspend fun insertStock(stock: StockMaster) =
-        stockDao.insertStock(stock) // inserts a stock
+        stockDao.insertStock(stock) // inserts a stock according to stockCode
 
     override suspend fun updateStock(stock: StockMaster) =
-        stockDao.updateStock(stock)
+        stockDao.updateStock(stock) // updates a stock according to stockCode
 
-    override suspend fun deleteStock(code: String) { // deletes a stock according to stockCode
-        stockDao.deleteStock(code)
-    }
+    override suspend fun deleteStock(code: String) =
+        stockDao.deleteStock(code) // deletes a stock according to stockCode
 
     override fun getAllStock(): Flow<List<StockMaster>> =
         stockDao.getAllStock() // gets a list of all stocks
@@ -63,34 +62,34 @@ class StellarStocksRepositoryImpl @Inject constructor(
     override suspend fun getStock(code: String): StockMaster? =
         stockDao.getStock(code) // gets a stock by stockCode
 
-    override suspend fun getLastStockCode(): String? { // gets the last stock code
-        return stockDao.getHighestStockCode()
+    override suspend fun getLastStockCode(): String? {
+        return stockDao.getHighestStockCode()// gets the last stock code added
     }
 
     override fun getStockTransactions(code: String): Flow<List<StockTransaction>> =
         stockDao.getStockTransactions(code) // gets a list of stock transactions by stockCode
 
 
-    override suspend fun getMostRecentDebtorForStock(code: String): String? // gets the most recent debtor for stock transaction filter
+    override suspend fun getMostRecentDebtorForStock(code: String): String?
     {
-        return stockDao.getMostRecentDebtorForStock(code)
+        return stockDao.getMostRecentDebtorForStock(code)// gets the most recent debtor for stock transaction filter
     }
 
-    override fun getTransactionInfoForStock(stockCode: String): Flow<List<TransactionInfo>> { // gets a list of transaction info by stockCode
-        return stockDao.getTransactionInfoForStock(stockCode)
+    override fun getTransactionInfoForStock(stockCode: String): Flow<List<TransactionInfo>> {
+        return stockDao.getTransactionInfoForStock(stockCode)// gets a list of transaction info by stockCode
     }
 
-    override suspend fun adjustStock(transaction: StockTransaction) { // adjusts a stock transaction
-        stockDao.performAdjustment(transaction)
+    override suspend fun adjustStock(transaction: StockTransaction) {
+        stockDao.performAdjustment(transaction)// adjusts a stock transaction
     }
 
-    override suspend fun processInvoice(header: InvoiceHeader, items: List<InvoiceDetail>) {
+    override suspend fun processInvoice(header: InvoiceHeader, items: List<InvoiceDetail>) { // processes an invoice
 
-        invoiceHeaderDao.insertInvoiceHeaders(listOf(header))
-        invoiceDetailDao.insertInvoiceDetails(items)
+        invoiceHeaderDao.insertInvoiceHeaders(listOf(header)) // inserts an invoice header
+        invoiceDetailDao.insertInvoiceDetails(items) // inserts a list of invoice details
 
 
-        debtorDao.updateDebtorFinancials(
+        debtorDao.updateDebtorFinancials( // updates debtors profile post invoice confirmation
             code = header.accountCode,
             totalInclVat = header.totalSellAmtExVat + header.vat,
             salesExVat = header.totalSellAmtExVat,
@@ -98,7 +97,7 @@ class StellarStocksRepositoryImpl @Inject constructor(
         )
 
 
-        val debtorTrans = DebtorTransaction(
+        val debtorTrans = DebtorTransaction( // inserts a debtor transaction
             accountCode = header.accountCode,
             date = header.date,
             transactionType = "Invoice",
@@ -109,7 +108,7 @@ class StellarStocksRepositoryImpl @Inject constructor(
         debtorDao.insertTransaction(debtorTrans)
 
 
-        items.forEach { item ->
+        items.forEach { item -> // updates stock on hand post invoice confirmation
             val stockItem = stockDao.getStock(item.stockCode)
             if (stockItem != null) {
 
@@ -119,7 +118,7 @@ class StellarStocksRepositoryImpl @Inject constructor(
                     saleAmount = item.total
                 )
 
-                val stockTrans = StockTransaction(
+                val stockTrans = StockTransaction( // inserts a stock transaction based on invoice details
                     stockCode = item.stockCode,
                     date = header.date,
                     transactionType = "Invoice",

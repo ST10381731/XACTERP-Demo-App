@@ -1,6 +1,6 @@
 package com.example.stellarstocks.ui.navigation
 
-sealed class Screen(val route: String) { // sealed class to define all routes for navigation
+sealed class Screen(val route: String) { // class to define all routes for navigation
     object Home : Screen("home")
     object StockMenu : Screen("stock_menu")
     object Invoice : Screen("invoice")
@@ -19,7 +19,6 @@ sealed class Screen(val route: String) { // sealed class to define all routes fo
     object StockEnquiry : Screen("stock_enquiry")
     object StockCreation : Screen("stock_creation")
     object StockAdjustment : Screen("stock_adjustment")
-    object StockEdit : Screen("stock_edit")
 
     // Stock Details
     object StockDetails : Screen("stock_details/{stockCode}") {

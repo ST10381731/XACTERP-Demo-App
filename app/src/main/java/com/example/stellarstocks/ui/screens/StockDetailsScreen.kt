@@ -106,7 +106,7 @@ fun StockDetailsScreen(
 
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
-                StockDetailRow("Cost Price:", String.format("R%.2f", currentStock.cost))
+                StockDetailRow("Cost Price:", String.format("R%.2f", currentStock.cost)) // format cost to 2 decimal places
                 StockDetailRow("Selling Price:", String.format("R%.2f", currentStock.sellingPrice))
 
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
@@ -129,9 +129,6 @@ fun StockDetailsScreen(
                 fontWeight = FontWeight.Bold,
                 color = DarkGreen
             )
-
-            // Sort Dropdown
-
         }
 
         Box {
@@ -143,7 +140,7 @@ fun StockDetailsScreen(
                 Icon(Icons.Default.ArrowDropDown, contentDescription = "Sort", tint = Color.Black)
             }
 
-            DropdownMenu(
+            DropdownMenu( //drop down menu to select sort option
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
@@ -195,7 +192,7 @@ fun StockDetailsScreen(
             Text("Value", Modifier.weight(0.7f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End, fontSize = 11.sp)
         }
 
-        LazyColumn { // transaction table
+        LazyColumn { // transaction table data
             items(transactions) { trans ->
                 StockTransactionRow(trans)
             }

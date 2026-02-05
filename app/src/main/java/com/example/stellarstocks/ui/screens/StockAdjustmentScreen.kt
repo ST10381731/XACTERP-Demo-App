@@ -30,10 +30,10 @@ import kotlin.math.roundToInt
 
 @Composable
 fun StockAdjustmentScreen(viewModel: StockViewModel = viewModel(), navController: NavController) {
-    val searchCode by viewModel.adjustmentSearchCode.collectAsState() //search code variable
-    val foundStock by viewModel.foundAdjustmentStock.collectAsState() //found stock variable
-    val adjustmentQty by viewModel.adjustmentQty.collectAsState() //adjustment quantity variable
-    val adjustmentType by viewModel.adjustmentType.collectAsState()
+    val searchCode by viewModel.adjustmentSearchCode.collectAsState() //search code variable from stock view model
+    val foundStock by viewModel.foundAdjustmentStock.collectAsState() //found stock variable from stock view model
+    val adjustmentQty by viewModel.adjustmentQty.collectAsState() //adjustment quantity variable stock view model
+    val adjustmentType by viewModel.adjustmentType.collectAsState() //adjustment type variable from stock view model
     val toastMessage by viewModel.toastMessage.collectAsState()
     val context = LocalContext.current
     var showSearchDialog by remember { mutableStateOf(false) } //search dialog variable
@@ -49,12 +49,12 @@ fun StockAdjustmentScreen(viewModel: StockViewModel = viewModel(), navController
         StockSearchDialog(
             viewModel = viewModel,
             onDismiss = {
-                showSearchDialog = false
-                viewModel.resetSearch()},
+                showSearchDialog = false // close search dialog on dismiss
+                viewModel.resetSearch()}, // reset search query
             onStockSelected = {
-                viewModel.onStockSelectedForAdjustment(it)
-                showSearchDialog = false
-                viewModel.resetSearch()
+                viewModel.onStockSelectedForAdjustment(it) // set selected stock on stock selection
+                showSearchDialog = false // close search dialog on stock selection
+                viewModel.resetSearch() // reset search query
             }
         )
     }
@@ -118,23 +118,25 @@ fun StockAdjustmentScreen(viewModel: StockViewModel = viewModel(), navController
                 Column(Modifier.padding(16.dp)) { //stock details card
                     Text("Stock Details", fontWeight = FontWeight.Bold, color = DarkGreen, fontSize = 18.sp)
                     Spacer(modifier = Modifier.height(8.dp))
-                    StockDetailRow("Code:", foundStock!!.stockCode)
-                    StockDetailRow("Description:", foundStock!!.stockDescription)
-                    StockDetailRow("Current On Hand:", foundStock!!.stockOnHand.toString())
-                    StockDetailRow("Cost:", "R ${foundStock!!.cost}")
+                    StockDetailRow("Code:", foundStock!!.stockCode) //display stock code
+                    StockDetailRow("Description:", foundStock!!.stockDescription) //display stock description
+                    StockDetailRow("Current On Hand:", foundStock!!.stockOnHand.toString()) //display stock on hand
+                    StockDetailRow("Cost:", "R ${foundStock!!.cost}") //display stock cost
+                    StockDetailRow("Selling Price:", "R ${foundStock!!.sellingPrice}") //display stock selling price
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Text("Transaction Type", fontWeight = FontWeight.SemiBold)
+            Text("Transaction Type", fontWeight = FontWeight.SemiBold) //transaction type card
             Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
+                RadioButton( //radio buttons to change transaction type
                     selected = adjustmentType == "Adjustment",
                     onClick = { viewModel.setAdjustmentType("Adjustment") },
                     colors = RadioButtonDefaults.colors(selectedColor = DarkGreen)
                 )
-                Text("Adjustment", modifier = Modifier.clickable { viewModel.setAdjustmentType("Adjustment") })
+                Text("Adjustment", modifier = Modifier.clickable { viewModel.setAdjustmentType("Adjustment") }) //display selected transaction type
+
 
                 Spacer(Modifier.width(16.dp))
 
@@ -143,25 +145,25 @@ fun StockAdjustmentScreen(viewModel: StockViewModel = viewModel(), navController
                     onClick = { viewModel.setAdjustmentType("Purchase") },
                     colors = RadioButtonDefaults.colors(selectedColor = DarkGreen)
                 )
-                Text("Purchase (Payment)", modifier = Modifier.clickable { viewModel.setAdjustmentType("Purchase") })
+                Text("Purchase", modifier = Modifier.clickable { viewModel.setAdjustmentType("Purchase") }) //display selected transaction type
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // quantity
+            // quantity text field
             Text("Quantity", fontWeight = FontWeight.SemiBold)
             OutlinedTextField(
                 value = adjustmentQty.toString(),
                 onValueChange = {
-                    val num = it.toIntOrNull()
-                    if (num != null) {
-                        viewModel.onAdjustmentQtyChange(num)
-                    } else if (it.isEmpty() || it == "-") {
-                        viewModel.onAdjustmentQtyChange(0)
+                    val num = it.toIntOrNull() // convert quantity input
+                    if (num != null) { // validate quantity input
+                        viewModel.onAdjustmentQtyChange(num) // update quantity
+                    } else if (it.isEmpty() || it == "-") { // if quantity is empty or negative, set to 0
+                        viewModel.onAdjustmentQtyChange(0) // update quantity
                     }
                 },
                 label = { Text(if(adjustmentType == "Purchase") "Quantity (+ only)" else "Quantity (+/-)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), //restrict user input to numbers only
                 modifier = Modifier.width(200.dp)
             )
 
@@ -195,7 +197,7 @@ fun StockSearchDialog( //search dialog for selecting stock
     val filteredStock by viewModel.filteredStock.collectAsState() //filtered stock variable
 
     Dialog(onDismissRequest = onDismiss) { //dialog box
-        Card(
+        Card( // card to list of stock
             modifier = Modifier
                 .fillMaxWidth()
                 .height(500.dp)
@@ -211,7 +213,7 @@ fun StockSearchDialog( //search dialog for selecting stock
                 )
                 OutlinedTextField(
                     value = searchQuery,
-                    onValueChange = { viewModel.onSearchQueryChange(it) },
+                    onValueChange = { viewModel.onSearchQueryChange(it) }, //update search query
                     label = { Text("Search by code or description") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
@@ -223,7 +225,7 @@ fun StockSearchDialog( //search dialog for selecting stock
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onStockSelected(stock)}
+                                .clickable { onStockSelected(stock)} //on click, set selected stock
                                 .padding(vertical = 8.dp)
                         ) {
                             Text(stock.stockCode, modifier = Modifier.weight(1f))

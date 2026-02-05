@@ -21,7 +21,7 @@ interface StockDao {
     suspend fun insertStock(stock: StockMaster) // Insert a new Stock
 
     @Update
-    suspend fun updateStock(stock: StockMaster)
+    suspend fun updateStock(stock: StockMaster) // Update a Stock
 
     @Query("UPDATE stock_master SET isActive = 0 WHERE stockCode = :code")
     suspend fun deleteStock(code: String) // Delete a Stock
@@ -82,14 +82,13 @@ interface StockDao {
     suspend fun recordStockPurchase(code: String, qty: Int, purchaseValue: Double) // Record a stock purchase
 
     @Transaction
-    suspend fun performAdjustment(transaction: StockTransaction) {
+    suspend fun performAdjustment(transaction: StockTransaction) { // Perform a stock adjustment
         if (transaction.transactionType == "Purchase") {
             val purchaseValue = transaction.qty * transaction.unitCost
             recordStockPurchase(transaction.stockCode, transaction.qty, purchaseValue)
         } else {
             updateStockQty(transaction.stockCode, transaction.qty)
         }
-        // Always record history
         insertTransaction(transaction)
     }
 

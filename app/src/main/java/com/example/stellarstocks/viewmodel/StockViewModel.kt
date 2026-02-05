@@ -26,40 +26,41 @@ enum class StockSortOption { // Sort options for stock
     LOWEST_QUANTITY
 }
 
-class StockViewModel(private val repository: StellarStocksRepository) : ViewModel() {
+class StockViewModel(private val repository: StellarStocksRepository) : ViewModel() { // Stock view model
 
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery = _searchQuery.asStateFlow()
-    private val _stock = MutableStateFlow<List<StockMaster>>(emptyList())
-    val stock: StateFlow<List<StockMaster>> = _stock
+    private val _searchQuery = MutableStateFlow("") // Search query for stock
+    val searchQuery = _searchQuery.asStateFlow() //allows other classes to observe changes to the search query
 
-    val filteredStock: StateFlow<List<StockMaster>> = combine(
+    private val _stock = MutableStateFlow<List<StockMaster>>(emptyList()) // List of stock
+    val stock: StateFlow<List<StockMaster>> = _stock //allows list of stock to be observed by other classes
+
+    val filteredStock: StateFlow<List<StockMaster>> = combine( //Combine stock name and search query to filter find stock
         repository.getAllStock(),
         _searchQuery
     ) { stockList, query ->
-        if (query.isBlank()) {
+        if (query.isBlank()) { // If search query is blank, return all stock
             stockList
         } else {
-            stockList.filter {
+            stockList.filter { // Filter stock by description or code
                 it.stockCode.contains(query, ignoreCase = true) ||
                 it.stockDescription.contains(query, ignoreCase = true)
             }
         }
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
+        started = SharingStarted.WhileSubscribed(5000), //continuously collect data from the flow and emit new values to the UI
         initialValue = emptyList()
     )
 
-    private val _selectedStock = MutableStateFlow<StockMaster?>(null)
-    val selectedStock = _selectedStock.asStateFlow()
+    private val _selectedStock = MutableStateFlow<StockMaster?>(null) // Selected stock for details
+    val selectedStock = _selectedStock.asStateFlow()    //allows other classes to observe changes to the selected stock
 
-    private val _selectedTransactions = MutableStateFlow<List<TransactionInfo>>(emptyList())
+    private val _selectedTransactions = MutableStateFlow<List<TransactionInfo>>(emptyList()) // List of transactions for selected stock
 
-    private val _currentSort = MutableStateFlow(StockSortOption.FULL_LIST)
-    val currentSort = _currentSort.asStateFlow()
+    private val _currentSort = MutableStateFlow(StockSortOption.FULL_LIST) // current sort option for transactions
+    val currentSort = _currentSort.asStateFlow() //allows other classes to observe changes to the current sort option
 
-    val visibleTransactions: StateFlow<List<TransactionInfo>> = combine(
+    val visibleTransactions: StateFlow<List<TransactionInfo>> = combine( // Combine transactions and sort option to filter and sort transactions
         _selectedTransactions,
         _currentSort
     ) { transactions, sortOption ->
@@ -71,96 +72,96 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
         }
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
+        started = SharingStarted.WhileSubscribed(5000), //continuously collect data from the flow and emit new values to the UI
         initialValue = emptyList()
     )
 
-    private val _adjustmentSearchCode = MutableStateFlow("")
+    private val _adjustmentSearchCode = MutableStateFlow("") // Search query for stock adjustment
     val adjustmentSearchCode = _adjustmentSearchCode.asStateFlow()
 
-    private val _foundAdjustmentStock = MutableStateFlow<StockMaster?>(null)
+    private val _foundAdjustmentStock = MutableStateFlow<StockMaster?>(null) // Found stock for adjustment
     val foundAdjustmentStock = _foundAdjustmentStock.asStateFlow()
 
-    private val _adjustmentQty = MutableStateFlow(0)
+    private val _adjustmentQty = MutableStateFlow(0) // Adjustment quantity
     val adjustmentQty = _adjustmentQty.asStateFlow()
 
-    private val _adjustmentType = MutableStateFlow("Adjustment")
+    private val _adjustmentType = MutableStateFlow("Adjustment") //Transaction type for adjustment
     val adjustmentType = _adjustmentType.asStateFlow()
 
-    private val _isEditMode = MutableStateFlow(false)
+    private val _isEditMode = MutableStateFlow(false) // Edit mode for stock
     val isEditMode = _isEditMode.asStateFlow()
 
-    private val _stockCode = MutableStateFlow("")
+    private val _stockCode = MutableStateFlow("") // Stock code
     val stockCode = _stockCode.asStateFlow()
 
-    private val _description = MutableStateFlow("")
+    private val _description = MutableStateFlow("") // stock description
     val description = _description.asStateFlow()
 
-    private val _cost = MutableStateFlow(0.0)
+    private val _cost = MutableStateFlow(0.0) // stock cost
     val cost = _cost.asStateFlow()
 
-    private val _sellingPrice = MutableStateFlow(0.0)
+    private val _sellingPrice = MutableStateFlow(0.0) // stock selling price
     val sellingPrice = _sellingPrice.asStateFlow()
 
     private val _toastMessage = MutableStateFlow<String?>(null)
     val toastMessage = _toastMessage.asStateFlow()
 
-    init {
-        fetchStock()
-    }
-
-    private val _navigationChannel = Channel<Boolean>()
+    private val _navigationChannel = Channel<Boolean>() // Channel for navigation
     val navigationChannel = _navigationChannel.receiveAsFlow()
 
-    private fun fetchStock() {
+    private fun fetchStock() { // Fetch stock from repository
         viewModelScope.launch {
-            repository.getAllStock().collect { stockList ->
+            repository.getAllStock().collect { stockList -> // Collect stock list from repository
                 _stock.value = stockList
             }
         }
     }
 
-    fun onSearchQueryChange(query: String) {
+    init {
+        fetchStock() // Fetch stock from repository
+    }
+
+    fun onSearchQueryChange(query: String) { // Update search query
         _searchQuery.value = query
     }
 
-    fun resetSearch() {
+    fun resetSearch() { // Reset search query
         _searchQuery.value = ""
     }
 
-    fun updateSort(option: StockSortOption) {
+    fun updateSort(option: StockSortOption) { // Update sort option
         _currentSort.value = option
     }
 
-    fun selectStockForDetails(code: String) {
+    fun selectStockForDetails(code: String) { // Select stock for details
         viewModelScope.launch {
-            _selectedStock.value = repository.getStock(code)
+            _selectedStock.value = repository.getStock(code) // get stock from repository that matches code
 
-            repository.getTransactionInfoForStock(code).collect { transactions ->
+            repository.getTransactionInfoForStock(code).collect { transactions -> // collect transactions from repository that match code
                 _selectedTransactions.value = transactions
             }
         }
     }
 
-    fun toggleMode() {
+    fun toggleMode() { // Toggle edit mode
         _isEditMode.value = !_isEditMode.value
         clearForm()
-        if (!_isEditMode.value) generateNewCode()
+        if (!_isEditMode.value) generateNewCode() // Generate new code if not in edit mode
     }
 
-    fun onStockCodeChange(newValue: String) { _stockCode.value = newValue }
-    fun onDescriptionChange(newValue: String) { _description.value = newValue }
-    fun onCostChange(newValue: Double) { _cost.value = newValue }
-    fun onSellingPriceChange(newValue: Double) { _sellingPrice.value = newValue }
+    fun onStockCodeChange(newValue: String) { _stockCode.value = newValue } // Update stock code
+    fun onDescriptionChange(newValue: String) { _description.value = newValue } // Update stock description
+    fun onCostChange(newValue: Double) { _cost.value = newValue } // Update stock cost
+    fun onSellingPriceChange(newValue: Double) { _sellingPrice.value = newValue } // Update stock selling price
 
-    fun generateNewCode() {
+    fun generateNewCode() { // Generate new stock code
         viewModelScope.launch {
-            val lastCode = repository.getLastStockCode()
+            val lastCode = repository.getLastStockCode() // Get last stock code from repository
 
-            if (lastCode == null) {
+            if (lastCode == null) { // If no stock code, set to STK001
                 _stockCode.value = "STK001"
             } else {
-                try {
+                try { // Try to parse last code and increment
                     val number = lastCode.removePrefix("STK").toIntOrNull() ?: 0
                     _stockCode.value = "STK" + String.format("%03d", number + 1)
                 } catch (_: Exception) {
@@ -170,14 +171,14 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
         }
     }
 
-    fun saveStock() {
+    fun saveStock() { // Save stock to repository
         viewModelScope.launch {
             if (_description.value.isBlank()) {
                 _toastMessage.value = "Description required"
                 return@launch
             }
 
-            val stock = StockMaster(
+            val stock = StockMaster( // Create new stock
                 stockCode = _stockCode.value,
                 stockDescription = _description.value,
                 cost = _cost.value,
@@ -189,7 +190,7 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
                 totalSalesExclVat = 0.0
             )
 
-            if (_isEditMode.value) {
+            if (_isEditMode.value) { // If in edit mode, update existing stock
                 val existing = repository.getStock(_stockCode.value)
                 if (existing != null) {
                     repository.updateStock(stock.copy(
@@ -201,50 +202,52 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
                         isActive = existing.isActive
                     ))
                     _toastMessage.value = "Stock Updated"
-                    _navigationChannel.send(true)
+                    clearForm()
+                    _navigationChannel.send(true) // Redirect back to stock enquiry page
                 }
             } else {
-                repository.insertStock(stock)
+                repository.insertStock(stock) // If not in edit mode, insert new stock
                 _toastMessage.value = "Stock Created"
-                _navigationChannel.send(true)
+                clearForm()
+                _navigationChannel.send(true) // Redirect back to stock enquiry page
             }
         }
     }
 
-    fun setAdjustmentType(type: String) {
+    fun setAdjustmentType(type: String) { // set adjustment type
         _adjustmentType.value = type
     }
 
-    fun onAdjustmentSearchChange(query: String) {
+    fun onAdjustmentSearchChange(query: String) { // update search query in stock adjustment
         _adjustmentSearchCode.value = query
     }
 
-    fun onStockSelectedForAdjustment(stock: StockMaster) {
+    fun onStockSelectedForAdjustment(stock: StockMaster) { // set selected stock for adjustment
         _foundAdjustmentStock.value = stock
         _adjustmentSearchCode.value = stock.stockCode
         _adjustmentQty.value = 0
     }
 
-    fun onAdjustmentQtyChange(newQty: Int) {
+    fun onAdjustmentQtyChange(newQty: Int) { // update adjustment quantity
         _adjustmentQty.value = newQty
     }
 
-    fun confirmAdjustment() {
-        val stock = _foundAdjustmentStock.value ?: return
+    fun confirmAdjustment() { //confirm adjustment and update stock
+        val stock = _foundAdjustmentStock.value ?: return // If no stock, do nothing
         val qty = _adjustmentQty.value
         val type = _adjustmentType.value
 
-        if (qty == 0) {
+        if (qty == 0) { // Quantity cannot be zero
             _toastMessage.value = "Quantity cannot be zero"
             return
         }
 
-        if (type == "Purchase" && qty < 0) {// Purchases cannot be negative
+        if (type == "Purchase" && qty < 0) { // Purchases cannot be negative
             _toastMessage.value = "Purchase quantity must be positive"
             return
         }
 
-        viewModelScope.launch {
+        viewModelScope.launch { // If valid, adjust stock
             val transaction = StockTransaction(
                 stockCode = stock.stockCode,
                 date = Date(),
@@ -255,10 +258,11 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
                 unitSell = stock.sellingPrice
             )
 
-            repository.adjustStock(transaction)
+            repository.adjustStock(transaction) // Adjust stock in repository
 
             _toastMessage.value = "$type Processed"
-            _foundAdjustmentStock.value = null
+
+            _foundAdjustmentStock.value = null // Clear form
             _adjustmentSearchCode.value = ""
             _adjustmentQty.value = 0
 
@@ -266,7 +270,7 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
         }
     }
 
-    fun deleteStock() {
+    fun deleteStock() { // delete stock
         viewModelScope.launch {
             repository.deleteStock(_stockCode.value)
 

@@ -89,26 +89,26 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
     LaunchedEffect(Unit) {
         viewModel.navigationChannel.collect { shouldNavigate ->
             if (shouldNavigate) {
-                navController.navigate(Screen.DebtorEnquiry.route) {
+                navController.navigate(Screen.DebtorEnquiry.route) { // navigate to debtor enquiry screen
                     popUpTo(Screen.DebtorMenu.route) { inclusive = false }
                 }
             }
         }
     }
 
-    if (showSearchDialog) { // determines if search dialog should be shown
+    if (showSearchDialog) {     // determines if search dialog should be shown
         DebtorCreationSearchDialog(
             viewModel = viewModel,
             onDismiss = {
-                showSearchDialog = false
-                viewModel.resetSearch()},
+                showSearchDialog = false    // dismiss search dialog
+                viewModel.resetSearch()},   // reset search
             onDebtorSelected = { debtor ->
                 viewModel.onSearchCodeChange(debtor.accountCode)
                 viewModel.onNameChange(debtor.name)
                 viewModel.onAddress1Change(debtor.address1)
                 viewModel.onAddress2Change(debtor.address2)
-                showSearchDialog = false
-                viewModel.resetSearch()
+                showSearchDialog = false    // dismiss search dialog
+                viewModel.resetSearch()     // reset search
             }
         )
     }
@@ -151,7 +151,7 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            OutlinedTextField(
+            OutlinedTextField( // text field for account code
                 value = accountCode,
                 onValueChange = { if (isEditMode) viewModel.onSearchCodeChange(it) },
                 label = { Text(if (isEditMode) "Select an Account Code via the Search Button" else "Auto Account Code") },
@@ -215,7 +215,7 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Button(
-                onClick = { viewModel.saveDebtor() },
+                onClick = { viewModel.saveDebtor() }, // save debtor on click
                 colors = ButtonDefaults.buttonColors(containerColor = DarkGreen),
                 modifier = Modifier.weight(1f)
             ) {
@@ -261,7 +261,7 @@ fun DebtorCreationSearchDialog( // search dialog for selecting debtor
                 )
                 OutlinedTextField( // text field for search
                     value = searchQuery,
-                    onValueChange = { viewModel.onSearchQueryChange(it) },
+                    onValueChange = { viewModel.onSearchQueryChange(it) }, // update search query
                     label = { Text("Search by account code or name") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
