@@ -173,8 +173,13 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
 
     fun saveStock() { // Save stock to repository
         viewModelScope.launch {
-            if (_description.value.isBlank()) {
-                _toastMessage.value = "Description required"
+            if (_description.value.isBlank() || description.value.isDigitsOnly()) {
+                _toastMessage.value = "Description cannot be blank or all numbers"
+                return@launch
+            }
+
+            if (_cost.value <=0 || _sellingPrice.value <= 0.0){
+                _toastMessage.value = "Cost and Sell price cannot be zero or negative"
                 return@launch
             }
 

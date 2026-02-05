@@ -363,6 +363,7 @@ fun InvoiceScreen(
     var showDebtorSearchDialog by remember { mutableStateOf(false) } // debtor search dialog state
     var showQtyDialog by remember { mutableStateOf(false) } // quantity dialog state
 
+
     var tempSelectedStock by remember { mutableStateOf<com.example.stellarstocks.data.db.models.StockMaster?>(null) } // temporary selected stock state for invoice preview
 
     var isEditMode by remember { mutableStateOf(false) } // edit mode for quantity dialog
@@ -397,8 +398,8 @@ fun InvoiceScreen(
             onStockSelected = { stock ->
                 tempSelectedStock = stock // set stock added to invoice
                 isEditMode = false
-                editInitialQty = 1
-                editInitialDiscount = 0.0
+                editInitialQty=1
+                editInitialDiscount=0.00
                 showStockSearchDialog = false
                 showQtyDialog = true
                 stockViewModel.resetSearch()
@@ -480,7 +481,7 @@ fun InvoiceScreen(
         TicketView( // ticket view background for invoice
             content = {
                 Column {
-                    Text("INVOICE #${invoiceNum}", fontWeight = FontWeight.Bold, fontSize = 20.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) //invoice title
+                    Text("INVOICE #${invoiceNum}", fontWeight = FontWeight.Bold, fontSize = 20.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(), color = Black) //invoice title
                     Text(LocalDate.now().toString(), textAlign = TextAlign.Center, color = Color.Gray, modifier = Modifier.fillMaxWidth()) // date of invoice
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -603,7 +604,6 @@ fun AddStockDialog(// Dialog to add a stock item
 ) {
     var qtyText by remember { mutableStateOf(initialQty.toString()) } // quantity state
     var discountText by remember { mutableStateOf(initialDiscount.toString()) } // discount state
-    val focusRequester = remember { FocusRequester() }
 
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) { //dialog for adding a stock item
         Card( //card to display items
@@ -622,25 +622,23 @@ fun AddStockDialog(// Dialog to add a stock item
                 Spacer(Modifier.height(16.dp))
 
                 OutlinedTextField( // text field for quantity
+                    modifier = Modifier.fillMaxWidth(),
                     value = qtyText,
                     onValueChange = { qtyText = it },
                     label = { Text("Quantity") },
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                    .focusRequester(focusRequester)
                 )
 
                 Spacer(Modifier.height(8.dp))
 
                 OutlinedTextField( // text field for discount
+                    modifier=Modifier.fillMaxWidth(),
                     value = discountText,
                     onValueChange = { discountText = it },
                     label = { Text("Discount %") },
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                    .focusRequester(focusRequester)
                 )
 
                 Spacer(Modifier.height(24.dp))
@@ -1118,6 +1116,7 @@ fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavControl
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth()
+                            .wrapContentSize()
                             .clickable {
                                 navController.navigate(Screen.StockDetails.createRoute(stock.stockCode))
                             }

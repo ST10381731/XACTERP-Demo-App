@@ -144,8 +144,13 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
 
     fun saveDebtor() { // function to save debtor
         viewModelScope.launch {
-            if (_name.value.isBlank()) { // if name is blank, show error
-                _toastMessage.value = "Name is required"
+            if (_name.value.isBlank()||_name.value.isDigitsOnly()) { // if name is blank or all digits, show error
+                _toastMessage.value = "Name cannot be blank or all digits"
+                return@launch
+            }
+
+            if (_address1.value.isBlank() || _address1.value.isDigitsOnly() || _address2.value.isBlank() || _address2.value.isDigitsOnly()){
+                _toastMessage.value="Address cannot be blank or all digits"
                 return@launch
             }
 

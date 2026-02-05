@@ -167,7 +167,7 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
                     onClick = { showSearchDialog = true },
                     colors = ButtonDefaults.buttonColors(containerColor = LightGreen),
                     modifier = Modifier.height(56.dp),
-                    shape = MaterialTheme.shapes.extraSmall
+                    shape = MaterialTheme.shapes.extraSmall,
                 ) {
                     Icon(Icons.Default.Search, contentDescription = "Search")
                 }
@@ -181,7 +181,8 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
             onValueChange = { viewModel.onNameChange(it) },
             label = { Text("Client Name *") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            enabled= accountCode.isNotBlank()
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -193,7 +194,8 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
             modifier = Modifier.fillMaxWidth(),
             singleLine = false,
             minLines = 3,
-            maxLines = 5
+            maxLines = 5,
+            enabled= accountCode.isNotBlank()
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -205,7 +207,8 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
             modifier = Modifier.fillMaxWidth(),
             singleLine = false,
             minLines = 3,
-            maxLines = 5
+            maxLines = 5,
+            enabled= accountCode.isNotBlank()
         )
 
         Spacer(modifier = Modifier.height(24.dp))

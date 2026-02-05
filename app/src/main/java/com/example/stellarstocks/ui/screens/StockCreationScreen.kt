@@ -170,7 +170,8 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
             onValueChange = { viewModel.onDescriptionChange(it) },
             label = { Text("Stock Description *") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            enabled= stockCode.isNotBlank()
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -181,7 +182,8 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
             label = { Text("Cost of Item * ") },
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            singleLine = true
+            singleLine = true,
+            enabled = stockCode.isNotBlank()
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -192,7 +194,8 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
             label = { Text("Selling Price * ") },
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            singleLine = true
+            singleLine = true,
+            enabled= stockCode.isNotBlank()
         )
 
         Spacer(modifier = Modifier.height(24.dp))

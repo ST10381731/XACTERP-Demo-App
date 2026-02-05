@@ -145,6 +145,12 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
         if (newQty <= 0) {
             val itemToRemove = _invoiceItems.value.find { it.stock.stockCode == stock.stockCode }
             if (itemToRemove != null) removeFromInvoice(itemToRemove)// If user sets qty to 0, remove it
+            _toastMessage.value = "Quantity cannot be 0"
+            return
+        }
+
+        if (newDiscount !in 0.0..100.0){
+            _toastMessage.value = "Discount must be between 0 and 100"
             return
         }
 
