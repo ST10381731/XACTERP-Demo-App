@@ -25,3 +25,5 @@ val LightGreen = Color(0xff64dd17)
 val Black = Color(0xff000000)
 
 val White = Color(0xffffffff)
+
+val Red = Color(0xFFFF0000)

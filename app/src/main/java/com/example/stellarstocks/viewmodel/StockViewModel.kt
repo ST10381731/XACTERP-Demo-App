@@ -173,12 +173,17 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
 
     fun saveStock() { // Save stock to repository
         viewModelScope.launch {
-            if (_description.value.isBlank() || description.value.isDigitsOnly()) {
-                _toastMessage.value = "Description cannot be blank or all numbers"
+            if (_description.value.isBlank()) { // Description cannot be blank
+                _toastMessage.value = "Description cannot be blank"
                 return@launch
             }
 
-            if (_cost.value <=0 || _sellingPrice.value <= 0.0){
+            if (description.value.isDigitsOnly()){ // Description cannot be all numbers
+                _toastMessage.value = "Description cannot be all numbers"
+                return@launch
+            }
+
+            if (_cost.value <=0.0 || _sellingPrice.value <= 0.0){ // Cost and sell price cannot be zero or negative
                 _toastMessage.value = "Cost and Sell price cannot be zero or negative"
                 return@launch
             }
@@ -277,11 +282,14 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
 
     fun deleteStock() { // delete stock
         viewModelScope.launch {
-            repository.deleteStock(_stockCode.value)
+            if (_stockCode.value.isNotBlank()) {
+                repository.deleteStock(_stockCode.value)
 
-            _toastMessage.value = "Stock Deleted"
-            clearForm()
-            _navigationChannel.send(true)
+                _toastMessage.value = "Stock Deleted"
+                clearForm()
+                _navigationChannel.send(true)
+            } else
+            {_toastMessage.value = "No stock selected"}
         }
     }
 

@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.checkScrollableContainerConstraints
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,6 +46,7 @@ import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -54,7 +56,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemColors
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -108,6 +112,9 @@ import com.example.stellarstocks.ui.screens.StockSearchDialog
 import com.example.stellarstocks.ui.theme.Black
 import com.example.stellarstocks.ui.theme.DarkGreen
 import com.example.stellarstocks.ui.theme.LightGreen
+import com.example.stellarstocks.ui.theme.LimeGreen
+import com.example.stellarstocks.ui.theme.Orange
+import com.example.stellarstocks.ui.theme.Red
 import com.example.stellarstocks.ui.theme.StellarStocksTheme
 import com.example.stellarstocks.ui.theme.Yellow
 import com.example.stellarstocks.viewmodel.DebtorViewModel
@@ -273,10 +280,11 @@ fun MainApp() {
 
     Scaffold(
         bottomBar = {
-            NavigationBar { // bottom navigation bar
+            NavigationBar(
+                containerColor = DarkGreen
+            ) { // bottom navigation bar
                 val navBackStackEntry by navController.currentBackStackEntryAsState() // current back stack entry
                 val currentDestination = navBackStackEntry?.destination // current destination
-
                 navItems.forEach { item ->// loop through navigation items
                     NavigationBarItem(
                         selected = currentDestination?.hierarchy?.any { it.route == item.route } == true, // check if current destination is the same as the item
@@ -291,6 +299,8 @@ fun MainApp() {
                         },
                         icon = { Icon(item.icon, contentDescription = item.label) },
                         label = { Text(item.label) },
+                        colors = NavigationBarItemColors(DarkGreen, Yellow, LimeGreen,
+                            Yellow, Black, Black, Black),
                     )
                 }
             }
@@ -362,9 +372,9 @@ fun InvoiceScreen(
     var showStockSearchDialog by remember { mutableStateOf(false) } // stock search dialog state
     var showDebtorSearchDialog by remember { mutableStateOf(false) } // debtor search dialog state
     var showQtyDialog by remember { mutableStateOf(false) } // quantity dialog state
-
-
     var tempSelectedStock by remember { mutableStateOf<com.example.stellarstocks.data.db.models.StockMaster?>(null) } // temporary selected stock state for invoice preview
+
+    var showConfirmationDialog by remember { mutableStateOf(false) } // invoice confirmation dialog state
 
     var isEditMode by remember { mutableStateOf(false) } // edit mode for quantity dialog
     var editInitialQty by remember { mutableIntStateOf(1) } // initial quantity for quantity dialog
@@ -382,11 +392,32 @@ fun InvoiceScreen(
     val toastMessage by invoiceViewModel.toastMessage.collectAsState()
     val invoiceNum by invoiceViewModel.invoiceNum.collectAsState() // invoice number
 
-    LaunchedEffect(toastMessage) {
+    val isInvoiceProcessed by invoiceViewModel.isInvoiceProcessed.collectAsState() // invoice processed state
+
+    LaunchedEffect(toastMessage) { // show toast message
         toastMessage?.let {
             android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_SHORT).show()
             invoiceViewModel.clearToast()
         }
+    }
+
+    if (showConfirmationDialog) { // show dialog to confirm invoice
+        AlertDialog(
+            onDismissRequest = { showConfirmationDialog = false },
+            title = { Text(text = "Confirm Invoice") },
+            text = { Text("Are you sure you want to process this invoice?\n\nTotal: R${String.format("%.2f", grandTotal)}") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        invoiceViewModel.confirmInvoice() //call confirm invoice function
+                        showConfirmationDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = DarkGreen)
+                ) { Text("Yes, Process") }
+            },
+            dismissButton = { TextButton(onClick = { showConfirmationDialog = false }, colors = ButtonDefaults.buttonColors(containerColor = Red)) { Text("Cancel")} },
+            containerColor = Color.White
+        )
     }
 
     if (showStockSearchDialog) { //show search stock dialog
@@ -449,26 +480,25 @@ fun InvoiceScreen(
             .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween // space between buttons
-        ) {
-            Button( // button for selecting a debtor
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Button(
                 onClick = { showDebtorSearchDialog = true },
                 colors = ButtonDefaults.buttonColors(containerColor = LightGreen),
                 modifier = Modifier.weight(1f).padding(end = 8.dp),
-                shape = MaterialTheme.shapes.small
+                shape = MaterialTheme.shapes.small,
+                enabled = !isInvoiceProcessed
             ) {
                 Icon(Icons.Default.People, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text("Select Debtor")
             }
 
-            Button( // button for adding a stock item
+            Button(
                 onClick = { showStockSearchDialog = true },
                 colors = ButtonDefaults.buttonColors(containerColor = LightGreen),
                 modifier = Modifier.weight(1f).padding(start = 8.dp),
-                shape = MaterialTheme.shapes.small
+                shape = MaterialTheme.shapes.small,
+                enabled = !isInvoiceProcessed
             ) {
                 Icon(Icons.Default.Inventory, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
@@ -538,7 +568,7 @@ fun InvoiceScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable {
+                                    .clickable(enabled = !isInvoiceProcessed) {
                                         tempSelectedStock = item.stock
                                         editInitialQty = item.qty
                                         editInitialDiscount = item.discountPercent
@@ -560,16 +590,16 @@ fun InvoiceScreen(
                                     }
                                 }
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(String.format("R%.2f", item.lineTotal), fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 12.dp), color= Black) // per line total
+                                    Text(String.format("R%.2f", item.lineTotal), fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 12.dp))
 
-                                    Icon( // clickable delete icon
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = "Remove",
-                                        tint = Color.Red,
-                                        modifier = Modifier
-                                            .size(20.dp)
-                                            .clickable { invoiceViewModel.removeFromInvoice(item) }
-                                    )
+                                    if (!isInvoiceProcessed) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Remove",
+                                            tint = Color.Red,
+                                            modifier = Modifier.size(20.dp).clickable { invoiceViewModel.removeFromInvoice(item) }
+                                        )
+                                    }
                                 }
                             }
                             HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
@@ -581,13 +611,37 @@ fun InvoiceScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
 
-        Button(// Confirm Button
-            onClick = { invoiceViewModel.confirmInvoice() },
-            colors = ButtonDefaults.buttonColors(containerColor = DarkGreen),
-            modifier = Modifier.fillMaxWidth().height(56.dp),
-            enabled = selectedDebtor != null && invoiceItems.isNotEmpty() // enable button if debtor is selected and invoice is not empty
-        ) {
-            Text("CONFIRM & PROCESS INVOICE", fontWeight = FontWeight.Bold)
+        if (isInvoiceProcessed) {
+
+            Button(
+                onClick = { invoiceViewModel.startNewInvoice() },
+                colors = ButtonDefaults.buttonColors(containerColor = LightGreen),
+                modifier = Modifier.fillMaxWidth().height(56.dp)
+            ) {
+                Text("Start New Invoice", fontWeight = FontWeight.Bold, color = Color.Black)
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+
+            Button(
+                onClick = { },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                enabled = false
+            ) {
+                Text("Invoice Processed", fontWeight = FontWeight.Bold, color = Color.White)
+            }
+        } else {
+
+            Button(
+                onClick = { showConfirmationDialog = true },
+                colors = ButtonDefaults.buttonColors(containerColor = DarkGreen),
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                enabled = selectedDebtor != null && invoiceItems.isNotEmpty()
+            ) {
+                Text("CONFIRM & PROCESS INVOICE", fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
@@ -602,8 +656,8 @@ fun AddStockDialog(// Dialog to add a stock item
     onDismiss: () -> Unit,
     onConfirm: (Int, Double) -> Unit
 ) {
-    var qtyText by remember { mutableStateOf(initialQty.toString()) } // quantity state
-    var discountText by remember { mutableStateOf(initialDiscount.toString()) } // discount state
+    var qtyText by remember { mutableStateOf(if (initialQty > 0) initialQty.toString() else "1") }
+    var discountText by remember { mutableStateOf(initialDiscount.toString()) }
 
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) { //dialog for adding a stock item
         Card( //card to display items
@@ -621,30 +675,42 @@ fun AddStockDialog(// Dialog to add a stock item
 
                 Spacer(Modifier.height(16.dp))
 
-                OutlinedTextField( // text field for quantity
-                    modifier = Modifier.fillMaxWidth(),
+                OutlinedTextField(
                     value = qtyText,
-                    onValueChange = { qtyText = it },
+                    onValueChange = { input ->
+                        if (input.all { it.isDigit() }) {
+                            qtyText = input
+                        }
+                    },
                     label = { Text("Quantity") },
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                    ),
                     singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(Modifier.height(8.dp))
 
-                OutlinedTextField( // text field for discount
-                    modifier=Modifier.fillMaxWidth(),
+                OutlinedTextField(
                     value = discountText,
-                    onValueChange = { discountText = it },
+                    onValueChange = { input ->
+                        if (input.count { it == '.' } <= 2 && input.all { it.isDigit() || it == '.' }) {
+                            discountText = input
+                        }
+                    },
                     label = { Text("Discount %") },
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
+                    ),
                     singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(Modifier.height(24.dp))
 
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = onDismiss) { Text("Cancel") } // cancel button
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    TextButton(onClick = onDismiss, colors = ButtonDefaults.buttonColors(containerColor = Red)) { Text("Cancel") } // cancel button
                     Button(
                         onClick = {
                             val qty = qtyText.toIntOrNull() ?: 0 // get quantity from text field
@@ -1103,6 +1169,7 @@ fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavControl
         if (stockList.isEmpty()) { // if no stock found, display message
             Box(
                 modifier = Modifier
+                    .weight(1f)
                     .fillMaxWidth()
                     .padding(top = 32.dp),
                 contentAlignment = Alignment.Center

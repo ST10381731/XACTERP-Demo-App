@@ -62,7 +62,7 @@ interface StockDao {
 
     @Query("""
         SELECT t.id AS transactionId, t.date, h.accountCode, t.documentNum, t.transactionType, t.qty, 
-               (t.qty * CASE WHEN t.transactionType = 'Invoice' THEN t.unitSell ELSE t.unitCost END) as value
+               (ABS(t.qty) * CASE WHEN t.transactionType = 'Invoice' THEN t.unitSell ELSE t.unitCost END) as value
         FROM stock_transaction t
         LEFT JOIN invoice_items i ON t.documentNum = i.invoiceNum AND t.stockCode = i.stockCode
         LEFT JOIN invoice_header h ON i.invoiceNum = h.invoiceNum

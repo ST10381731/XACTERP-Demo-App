@@ -42,31 +42,40 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
     private val _invoiceNum = MutableStateFlow((System.currentTimeMillis() % 1000000).toInt()) // Invoice number
     val invoiceNum = _invoiceNum.asStateFlow()
 
+    private val _isInvoiceProcessed = MutableStateFlow(false) // Invoice processed flag
+    val isInvoiceProcessed = _isInvoiceProcessed.asStateFlow()
+
     fun setDebtor(debtor: DebtorMaster) { // Set debtor for invoice
         _selectedDebtor.value = debtor
     }
 
-    fun addToInvoice(stock: StockMaster, qty: Int, discountPercent: Double) { // Add item to invoice, qty, and discount percent
-        if (qty <= 0 || discountPercent<0 || discountPercent>100) return // If qty is 0 or less, do not add to Invoice
+    fun addToInvoice(stock: StockMaster, qty: Int, discountPercent: Double) {
+        if (qty <= 0) { // Check if quantity is valid
+            _toastMessage.value = "Quantity must be greater than 0"
+            return
+        }
+        if (discountPercent !in 0.0..100.0) { // discount cannot be greater than 100% or less than 0%
+            _toastMessage.value = "Discount must be between 0% and 100%"
+            return
+        }
 
-        val grossTotal = stock.sellingPrice * qty // Calculate totalSellAmt
+
+        if (stock.stockOnHand < 0) { // Check if stock is available
+            _toastMessage.value = "Warning: Stock is negative! Please request more stock."
+        }
+
+
+        val grossTotal = stock.sellingPrice * qty // Calculate total before discount
         val discountAmt = grossTotal * (discountPercent / 100) // Calculate discount amount
-        val finalTotal = grossTotal - discountAmt // Calculate total before VAT
+        val finalTotal = grossTotal - discountAmt // calculate the final total
 
-        val currentList = _invoiceItems.value.toMutableList() // returns list of items added to invoice
+        val currentList = _invoiceItems.value.toMutableList() // Get current list of items
 
-        currentList.removeAll { it.stock.stockCode == stock.stockCode } // Remove any existing items with the same stockCode
+        currentList.removeAll { it.stock.stockCode == stock.stockCode } // Remove any existing items with the same stock code
 
-        currentList.add( // Add new item to list
-            InvoiceItem(
-                stock = stock,
-                qty = qty,
-                discountPercent = discountPercent,
-                discountAmount = discountAmt,
-                lineTotal = finalTotal
-            )
+        currentList.add(
+            InvoiceItem(stock, qty, discountPercent, discountAmt, finalTotal)
         )
-
         _invoiceItems.value = currentList
         calculateTotals()
     }
@@ -77,7 +86,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
         _invoiceItems.value = currentList
         calculateTotals()
     }
-    private fun calculateTotals() { // Calculate final totals for invoice
+    private fun calculateTotals() { // Calculate final total for invoice
         val exVat = _invoiceItems.value.sumOf { it.lineTotal }
         val vatCalc = exVat * 0.15 // 15% VAT
         val total = exVat + vatCalc
@@ -87,9 +96,38 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
         _grandTotal.value = total
     }
 
-    fun confirmInvoice() { // Confirm invoice and processing to other tables
-        val debtor = _selectedDebtor.value // Debtor selected for invoice
-        val items = _invoiceItems.value // List of items in the Invoice
+    fun updateInvoiceItem(stock: StockMaster, newQty: Int, newDiscount: Double) {
+        if (newQty <= 0) { // Check if quantity is greater than 0
+            val itemToRemove = _invoiceItems.value.find { it.stock.stockCode == stock.stockCode }
+            if (itemToRemove != null) removeFromInvoice(itemToRemove)
+            _toastMessage.value = "Quantity must be greater than 0"
+            return
+        }
+        if (newDiscount !in 0.0..100.0) { // check if discount is less than 100 and more than 0
+            _toastMessage.value = "Discount must be between 0 and 100"
+            return
+        }
+
+        if (stock.stockOnHand < 0) { // check if stock on hand is greater than 0
+            _toastMessage.value = "Warning: Stock is negative! Please request more stock."
+        }
+
+        val grossTotal = stock.sellingPrice * newQty // calculate gross total before discount
+        val discountAmt = grossTotal * (newDiscount / 100)
+        val finalTotal = grossTotal - discountAmt // calculate final total
+
+        val currentList = _invoiceItems.value.toMutableList()
+        val index = currentList.indexOfFirst { it.stock.stockCode == stock.stockCode } // find index of item to update
+
+        if (index != -1) { // if index is found then update the necessary fields
+            currentList[index] = InvoiceItem(stock, newQty, newDiscount, discountAmt, finalTotal)
+            _invoiceItems.value = currentList
+            calculateTotals()
+        }
+    }
+    fun confirmInvoice() { // Confirm invoice and process it
+        val debtor = _selectedDebtor.value
+        val items = _invoiceItems.value
 
         if (debtor == null) {
             _toastMessage.value = "Please select a Debtor"
@@ -101,11 +139,10 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
         }
 
         viewModelScope.launch {
-            val invoiceNum = _invoiceNum.value // Generate invoice number
+            val invoiceNum = _invoiceNum.value // get invoice number
+            val calculatedTotalCost = items.sumOf { it.qty * it.stock.cost } //calculate total cost
 
-            val calculatedTotalCost = items.sumOf { it.qty * it.stock.cost } // Calculate total line cost
-
-            val header = InvoiceHeader( // Create invoice header
+            val header = InvoiceHeader( // create the invoice header
                 invoiceNum = invoiceNum,
                 accountCode = debtor.accountCode,
                 date = Date(),
@@ -114,8 +151,8 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
                 totalCost = calculatedTotalCost
             )
 
-            val detailItems = items.mapIndexed { index, invoiceItem ->
-                InvoiceDetail( // Create invoice details
+            val detailItems = items.mapIndexed { index, invoiceItem -> //create the details for the invoice
+                InvoiceDetail(
                     invoiceNum = invoiceNum,
                     itemNum = index + 1,
                     stockCode = invoiceItem.stock.stockCode,
@@ -127,52 +164,21 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
                 )
             }
 
-            repository.processInvoice(header, detailItems) // Process invoice
+            repository.processInvoice(header, detailItems) // process the invoice
 
-            _toastMessage.value = "Invoice Processed!"
-            clearInvoice()
+            _toastMessage.value = "Invoice Processed Successfully!"
+            _isInvoiceProcessed.value = true // set invoice processed flag to true
         }
     }
 
-    private fun clearInvoice() { // Clear invoice
+
+    fun startNewInvoice() { // Start a new invoice
         _invoiceItems.value = emptyList()
         _selectedDebtor.value = null
         _invoiceNum.value = (System.currentTimeMillis() % 1000000).toInt()
+        _isInvoiceProcessed.value = false
         calculateTotals()
     }
 
-    fun updateInvoiceItem(stock: StockMaster, newQty: Int, newDiscount: Double) { // Update invoice item
-        if (newQty <= 0) {
-            val itemToRemove = _invoiceItems.value.find { it.stock.stockCode == stock.stockCode }
-            if (itemToRemove != null) removeFromInvoice(itemToRemove)// If user sets qty to 0, remove it
-            _toastMessage.value = "Quantity cannot be 0"
-            return
-        }
-
-        if (newDiscount !in 0.0..100.0){
-            _toastMessage.value = "Discount must be between 0 and 100"
-            return
-        }
-
-        val grossTotal = stock.sellingPrice * newQty// Calculate total before VAT
-        val discountAmt = grossTotal * (newDiscount / 100) // Calculate discount amount
-        val finalTotal = grossTotal - discountAmt // Calculate total after VAT
-
-        val currentList = _invoiceItems.value.toMutableList()
-        val index = currentList.indexOfFirst { it.stock.stockCode == stock.stockCode }
-
-        if (index != -1) {
-            // Replace the item with new values
-            currentList[index] = InvoiceItem(
-                stock = stock,
-                qty = newQty,
-                discountPercent = newDiscount,
-                discountAmount = discountAmt,
-                lineTotal = finalTotal
-            )
-            _invoiceItems.value = currentList
-            calculateTotals()
-        }
-    }
     fun clearToast() { _toastMessage.value = null }
 }

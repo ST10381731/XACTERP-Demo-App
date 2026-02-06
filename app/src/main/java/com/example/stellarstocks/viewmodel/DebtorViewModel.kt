@@ -144,13 +144,18 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
 
     fun saveDebtor() { // function to save debtor
         viewModelScope.launch {
-            if (_name.value.isBlank()||_name.value.isDigitsOnly()) { // if name is blank or all digits, show error
-                _toastMessage.value = "Name cannot be blank or all digits"
+            if (_name.value.isBlank()) { // if name is blank throw error
+                _toastMessage.value = "Name cannot be blank"
+                return@launch
+            }
+
+            if (_name.value.isDigitsOnly()){
+                _toastMessage.value="Name cannot be all digits" // if name is all digits throw error
                 return@launch
             }
 
             if (_address1.value.isBlank() || _address1.value.isDigitsOnly() || _address2.value.isBlank() || _address2.value.isDigitsOnly()){
-                _toastMessage.value="Address cannot be blank or all digits"
+                _toastMessage.value="Address cannot be blank or all digits" // if address is blank or all digits throw error
                 return@launch
             }
 
@@ -185,11 +190,15 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
 
     fun deleteDebtor() {
         viewModelScope.launch {
-            repository.deleteDebtor(_accountCode.value)
+            if (_accountCode.value.isNotBlank()) {
+                repository.deleteDebtor(_accountCode.value)
 
-            _toastMessage.value = "Debtor Deleted"
-            clearForm()
-            _navigationChannel.send(true)// navigate back to debtor enquiry screen
+                _toastMessage.value = "Debtor Deleted"
+                clearForm()
+                _navigationChannel.send(true)// navigate back to debtor enquiry screen
+            } else {
+                _toastMessage.value = "No debtor selected"
+            }
         }
     }
 
