@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.example.stellarstocks
 
 import android.os.Bundle
@@ -38,6 +40,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddShoppingCart
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
@@ -51,6 +55,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -114,6 +119,7 @@ import com.example.stellarstocks.ui.theme.DarkGreen
 import com.example.stellarstocks.ui.theme.LightGreen
 import com.example.stellarstocks.ui.theme.LimeGreen
 import com.example.stellarstocks.ui.theme.Orange
+import com.example.stellarstocks.ui.theme.ProfessionalLightBlue
 import com.example.stellarstocks.ui.theme.Red
 import com.example.stellarstocks.ui.theme.StellarStocksTheme
 import com.example.stellarstocks.ui.theme.Yellow
@@ -168,21 +174,6 @@ fun createWavePath( // image for landing page
     }
 }
 
-@Composable
-fun RowScope.TableCell(
-    text: String,
-    weight: Float,
-    isHeader: Boolean = false
-) {
-    Text(
-        text = text,
-        modifier = Modifier
-            .border(1.dp, Color.LightGray)
-            .weight(weight)
-            .padding(8.dp),
-        fontWeight = if (isHeader) FontWeight.Bold else FontWeight.Normal
-    )
-}
 
 @Composable
 fun AppEntryPoint() {
@@ -229,7 +220,7 @@ fun LandingPage() { //landing page for app
             contentAlignment = Alignment.BottomCenter
         ) {
             Text(
-                text = "Name + Logo",
+                text = "Nameless 2.0",
                 fontSize = 40.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color.Black,
@@ -300,7 +291,7 @@ fun MainApp() {
                         icon = { Icon(item.icon, contentDescription = item.label) },
                         label = { Text(item.label) },
                         colors = NavigationBarItemColors(DarkGreen, Yellow, LimeGreen,
-                            Yellow, Black, Black, Black),
+                            Yellow, Yellow, Black, Black),
                     )
                 }
             }
@@ -615,7 +606,7 @@ fun InvoiceScreen(
 
             Button(
                 onClick = { invoiceViewModel.startNewInvoice() },
-                colors = ButtonDefaults.buttonColors(containerColor = LightGreen),
+                colors = ButtonDefaults.buttonColors(containerColor = ProfessionalLightBlue),
                 modifier = Modifier.fillMaxWidth().height(56.dp)
             ) {
                 Text("Start New Invoice", fontWeight = FontWeight.Bold, color = Color.Black)
@@ -1083,13 +1074,29 @@ fun DebtorEnquiryScreen(debtorViewModel: DebtorViewModel, navController: NavCont
             onValueChange = { debtorViewModel.onSearchQueryChange(it) },
             label = { Text("Search Account Code or Name") }, // label for search field
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { debtorViewModel.onSearchQueryChange("") }) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Clear search",
+                            tint = Black
+                        )
+                    }
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp),
             singleLine = true
         )
 
-        Row(Modifier.fillMaxWidth()) { // header row for table
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Max)
+                .border(1.dp, Color.Gray)
+        ) { // header row for table
             TableCell(text = "Code", weight = .25f, isHeader = true)
             TableCell(text = "Name", weight = .5f, isHeader = true)
             TableCell(text = "Balance", weight = .25f, isHeader = true)
@@ -1098,6 +1105,7 @@ fun DebtorEnquiryScreen(debtorViewModel: DebtorViewModel, navController: NavCont
         if (debtorList.isEmpty()) { // if no debtors found, display message
             Box(
                 modifier = Modifier
+                    .weight(1f)
                     .fillMaxWidth()
                     .padding(top = 32.dp),
                 contentAlignment = Alignment.Center
@@ -1109,8 +1117,8 @@ fun DebtorEnquiryScreen(debtorViewModel: DebtorViewModel, navController: NavCont
                 items(debtorList) { debtor ->
                     Row(
                         modifier = Modifier
-                            .weight(1f)
                             .fillMaxWidth()
+                            .height(IntrinsicSize.Max)
                             .clickable {
                                 navController.navigate(Screen.DebtorDetails.createRoute(debtor.accountCode))
                             }
@@ -1126,15 +1134,16 @@ fun DebtorEnquiryScreen(debtorViewModel: DebtorViewModel, navController: NavCont
 }
 
 @Composable
-fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavController) { // stock enquiry screen
-    val stockList by stockViewModel.filteredStock.collectAsState() // list of stock
-    val searchQuery by stockViewModel.searchQuery.collectAsState() // search query to filter stock
+fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavController) {
+    val stockList by stockViewModel.filteredStock.collectAsState()
+    val searchQuery by stockViewModel.searchQuery.collectAsState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
+
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(bottom = 8.dp)
@@ -1148,25 +1157,56 @@ fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavControl
             }
             Text("Stock Enquiry", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DarkGreen)
         }
+
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { stockViewModel.onSearchQueryChange(it) },
             label = { Text("Search Stock Code or Name") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { stockViewModel.onSearchQueryChange("") }) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Clear search",
+                            tint = Black
+                        )
+                    }
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp),
             singleLine = true
         )
 
-        Row(Modifier.fillMaxWidth()) { // header row for table
-            TableCell(text = "Code", weight = .4f, isHeader = true)
-            TableCell(text = "Description", weight = .6f, isHeader = true)
-            TableCell(text = "Qty", weight = .4f, isHeader = true)
-            TableCell(text = "Unit Cost", weight = .5f, isHeader = true)
+        /*IconButton(onClick = { stockViewModel.onSearchQueryChange("") }) {
+                Icon(
+                    imageVector = Icons.Default.Close, // Requires androidx.compose.material.icons.filled.Close
+                    contentDescription = "Clear search"
+                )
+            }
+        }
+    },
+    modifier = Modifier
+        .fillMaxWidth()
+        .padding(bottom = 16.dp),
+    singleLine = true
+)*/
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Max)// ensures header cells are uniform height if titles wrap
+                .border(1.dp, Color.Gray)
+        ) {
+            TableCell(text = "Code", weight = 0.2f, isHeader = true)
+            TableCell(text = "Description", weight = 0.4f, isHeader = true)
+            TableCell(text = "Qty", weight = 0.15f, isHeader = true)
+            TableCell(text = "Unit Cost", weight = 0.25f, isHeader = true)
         }
 
-        if (stockList.isEmpty()) { // if no stock found, display message
+        if (stockList.isEmpty()) {
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -1176,25 +1216,46 @@ fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavControl
             ) {
                 Text("No stock found matching '$searchQuery'", color = Color.Gray)
             }
-        } else { // if stock found, display list of stock
+        } else {
             LazyColumn {
                 items(stockList) { stock ->
                     Row(
                         modifier = Modifier
-                            .weight(1f)
                             .fillMaxWidth()
-                            .wrapContentSize()
+                            .height(IntrinsicSize.Max)
                             .clickable {
                                 navController.navigate(Screen.StockDetails.createRoute(stock.stockCode))
                             }
                     ) {
-                        TableCell(text = stock.stockCode, weight = .4f)
-                        TableCell(text = stock.stockDescription, weight = .6f)
-                        TableCell(text = stock.stockOnHand.toString(), weight = .4f)
-                        TableCell(text = String.format("R%.2f", stock.cost), weight = .5f) //rounded to 2 decimal places
+                        TableCell(text = stock.stockCode, weight = 0.2f) // stock codes
+                        TableCell(text = stock.stockDescription, weight = 0.4f) // stock descriptions
+                        TableCell(text = stock.stockOnHand.toString(), weight = 0.15f) // stock on hand
+                        TableCell(text = String.format("R%.2f", stock.cost), weight = 0.25f) // stock cost
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun RowScope.TableCell( // table cell layout
+    text: String,
+    weight: Float,
+    isHeader: Boolean = false
+) {
+    Box(
+        modifier = Modifier
+            .weight(weight)
+            .fillMaxHeight() // Stretches to fill the Intrinsic Height of the Row
+            .border(0.5.dp, Color.LightGray) // Creates the grid line effect
+            .padding(8.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Text(
+            text = text,
+            fontWeight = if (isHeader) FontWeight.Bold else FontWeight.Normal,
+            fontSize = if (isHeader) 16.sp else 14.sp
+        )
     }
 }
