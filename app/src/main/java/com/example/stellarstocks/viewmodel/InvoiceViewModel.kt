@@ -60,8 +60,9 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
         }
 
 
-        if (stock.stockOnHand < 0) { // Check if stock is available
-            _toastMessage.value = "Warning: Stock is negative! Please request more stock."
+        if (qty > stock.stockOnHand) {
+            _toastMessage.value = "Insufficient stock! Available: ${stock.stockOnHand}"
+            return
         }
 
 
@@ -108,8 +109,9 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
             return
         }
 
-        if (stock.stockOnHand < 0) { // check if stock on hand is greater than 0
-            _toastMessage.value = "Warning: Stock is negative! Please request more stock."
+        if (newQty > stock.stockOnHand) {
+            _toastMessage.value = "Insufficient stock! Available: ${stock.stockOnHand}"
+            return
         }
 
         val grossTotal = stock.sellingPrice * newQty // calculate gross total before discount
@@ -135,6 +137,12 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
         }
         if (items.isEmpty()) {
             _toastMessage.value = "Invoice is empty"
+            return
+        }
+
+        val insufficientItems = items.filter { it.qty > it.stock.stockOnHand }
+        if (insufficientItems.isNotEmpty()) {
+            _toastMessage.value = "Cannot process: Insufficient stock for ${insufficientItems.size} item(s)."
             return
         }
 

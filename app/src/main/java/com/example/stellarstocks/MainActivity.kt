@@ -40,6 +40,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddShoppingCart
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -48,6 +49,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
@@ -55,6 +57,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -123,10 +127,12 @@ import com.example.stellarstocks.ui.theme.ProfessionalLightBlue
 import com.example.stellarstocks.ui.theme.Red
 import com.example.stellarstocks.ui.theme.StellarStocksTheme
 import com.example.stellarstocks.ui.theme.Yellow
+import com.example.stellarstocks.viewmodel.DebtorListSortOption
 import com.example.stellarstocks.viewmodel.DebtorViewModel
 import com.example.stellarstocks.viewmodel.DebtorViewModelFactory
 import com.example.stellarstocks.viewmodel.InvoiceViewModel
 import com.example.stellarstocks.viewmodel.InvoiceViewModelFactory
+import com.example.stellarstocks.viewmodel.StockListSortOption
 import com.example.stellarstocks.viewmodel.StockViewModel
 import com.example.stellarstocks.viewmodel.StockViewModelFactory
 import java.time.LocalDate
@@ -1046,6 +1052,9 @@ fun DebtorEnquiryScreen(debtorViewModel: DebtorViewModel, navController: NavCont
     val debtorList by debtorViewModel.filteredDebtors.collectAsState() // list of debtors
     val searchQuery by debtorViewModel.searchQuery.collectAsState() // search query to filter debtors
 
+    val currentSort by debtorViewModel.debtorListSort.collectAsState()
+    var showSortMenu by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1091,6 +1100,61 @@ fun DebtorEnquiryScreen(debtorViewModel: DebtorViewModel, navController: NavCont
             singleLine = true
         )
 
+        Box(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+            Button(
+                onClick = { showSortMenu = true },
+                colors = ButtonDefaults.buttonColors(containerColor = LightGreen),
+                modifier = Modifier.align(Alignment.Center).fillMaxWidth()
+            ) {
+                Text(
+                    text = "Sort By: ${getDebtorListSortLabel(currentSort)}",
+                    color = Color.Black
+                )
+                Spacer(Modifier.width(8.dp))
+                Icon(
+                    imageVector = Icons.Default.ArrowDropDown,
+                    contentDescription = "Sort",
+                    tint = Color.Black
+                )
+            }
+
+            DropdownMenu(
+                expanded = showSortMenu,
+                onDismissRequest = { showSortMenu = false },
+                modifier = Modifier.background(Color.White)
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Code: Ascending") },
+                    onClick = {
+                        debtorViewModel.updateDebtorListSort(DebtorListSortOption.CODE_ASC)
+                        showSortMenu = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Code: Descending") },
+                    onClick = {
+                        debtorViewModel.updateDebtorListSort(DebtorListSortOption.CODE_DESC)
+                        showSortMenu = false
+                    }
+                )
+                HorizontalDivider()
+                DropdownMenuItem(
+                    text = { Text("Lowest Balance") },
+                    onClick = {
+                        debtorViewModel.updateDebtorListSort(DebtorListSortOption.BALANCE_ASC)
+                        showSortMenu = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Highest Balance") },
+                    onClick = {
+                        debtorViewModel.updateDebtorListSort(DebtorListSortOption.BALANCE_DESC)
+                        showSortMenu = false
+                    }
+                )
+            }
+        }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1133,10 +1197,21 @@ fun DebtorEnquiryScreen(debtorViewModel: DebtorViewModel, navController: NavCont
     }
 }
 
+fun getDebtorListSortLabel(option: DebtorListSortOption): String {
+    return when(option) {
+        DebtorListSortOption.CODE_ASC -> "Code: Asc"
+        DebtorListSortOption.CODE_DESC -> "Code: Desc"
+        DebtorListSortOption.BALANCE_ASC -> "Lowest Balance"
+        DebtorListSortOption.BALANCE_DESC -> "Highest Balance"
+    }
+}
+
 @Composable
 fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavController) {
     val stockList by stockViewModel.filteredStock.collectAsState()
     val searchQuery by stockViewModel.searchQuery.collectAsState()
+    val currentSort by stockViewModel.stockListSort.collectAsState()
+    var showSortMenu by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -1180,19 +1255,75 @@ fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavControl
             singleLine = true
         )
 
-        /*IconButton(onClick = { stockViewModel.onSearchQueryChange("") }) {
+        Box(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+            Button(
+                onClick = { showSortMenu = true },
+                colors = ButtonDefaults.buttonColors(containerColor = LightGreen),
+                modifier = Modifier.align(Alignment.Center).fillMaxWidth()
+            ) {
+                Text(
+                    text = "Sort By: ${getStockListSortLabel(currentSort)}",
+                    color = Color.Black
+                )
+                Spacer(Modifier.width(8.dp))
                 Icon(
-                    imageVector = Icons.Default.Close, // Requires androidx.compose.material.icons.filled.Close
-                    contentDescription = "Clear search"
+                    imageVector = Icons.Default.ArrowDropDown,
+                    contentDescription = "Sort",
+                    tint = Color.Black
+                )
+            }
+
+            DropdownMenu(
+                expanded = showSortMenu,
+                onDismissRequest = { showSortMenu = false },
+                modifier = Modifier.background(Color.White)
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Code: Ascending") },
+                    onClick = {
+                        stockViewModel.updateStockListSort(StockListSortOption.CODE_ASC)
+                        showSortMenu = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Code: Descending") },
+                    onClick = {
+                        stockViewModel.updateStockListSort(StockListSortOption.CODE_DESC)
+                        showSortMenu = false
+                    }
+                )
+                HorizontalDivider()
+                DropdownMenuItem(
+                    text = { Text("Highest Qty") },
+                    onClick = {
+                        stockViewModel.updateStockListSort(StockListSortOption.QTY_DESC)
+                        showSortMenu = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Lowest Qty") },
+                    onClick = {
+                        stockViewModel.updateStockListSort(StockListSortOption.QTY_ASC)
+                        showSortMenu = false
+                    }
+                )
+                HorizontalDivider()
+                DropdownMenuItem(
+                    text = { Text("Highest Cost") },
+                    onClick = {
+                        stockViewModel.updateStockListSort(StockListSortOption.COST_DESC)
+                        showSortMenu = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Lowest Cost") },
+                    onClick = {
+                        stockViewModel.updateStockListSort(StockListSortOption.COST_ASC)
+                        showSortMenu = false
+                    }
                 )
             }
         }
-    },
-    modifier = Modifier
-        .fillMaxWidth()
-        .padding(bottom = 16.dp),
-    singleLine = true
-)*/
 
         Row(
             modifier = Modifier
@@ -1235,6 +1366,17 @@ fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavControl
                 }
             }
         }
+    }
+}
+
+fun getStockListSortLabel(option: StockListSortOption): String {
+    return when(option) {
+        StockListSortOption.CODE_ASC -> "Code: Asc"
+        StockListSortOption.CODE_DESC -> "Code: Desc"
+        StockListSortOption.QTY_DESC -> "Highest Qty"
+        StockListSortOption.QTY_ASC -> "Lowest Qty"
+        StockListSortOption.COST_DESC -> "Highest Cost"
+        StockListSortOption.COST_ASC -> "Lowest Cost"
     }
 }
 

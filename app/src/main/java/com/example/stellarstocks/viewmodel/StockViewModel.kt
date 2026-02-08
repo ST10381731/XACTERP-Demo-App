@@ -26,29 +26,52 @@ enum class StockSortOption { // Sort options for stock
     LOWEST_QUANTITY
 }
 
+enum class StockListSortOption {
+    CODE_ASC,
+    CODE_DESC,
+    QTY_DESC,
+    QTY_ASC,
+    COST_DESC,
+    COST_ASC
+}
+
 class StockViewModel(private val repository: StellarStocksRepository) : ViewModel() { // Stock view model
 
     private val _searchQuery = MutableStateFlow("") // Search query for stock
     val searchQuery = _searchQuery.asStateFlow() //allows other classes to observe changes to the search query
 
+    private val _stockListSort = MutableStateFlow(StockListSortOption.CODE_ASC)
+    val stockListSort = _stockListSort.asStateFlow()
+
     private val _stock = MutableStateFlow<List<StockMaster>>(emptyList()) // List of stock
     val stock: StateFlow<List<StockMaster>> = _stock //allows list of stock to be observed by other classes
 
-    val filteredStock: StateFlow<List<StockMaster>> = combine( //Combine stock name and search query to filter find stock
+    val filteredStock: StateFlow<List<StockMaster>> = combine(
         repository.getAllStock(),
-        _searchQuery
-    ) { stockList, query ->
-        if (query.isBlank()) { // If search query is blank, return all stock
+        _searchQuery,
+        _stockListSort
+    ) { stockList: List<StockMaster>, query: String, sortOption: StockListSortOption ->
+
+        val filtered = if (query.isBlank()) {
             stockList
         } else {
-            stockList.filter { // Filter stock by description or code
+            stockList.filter {
                 it.stockCode.contains(query, ignoreCase = true) ||
-                it.stockDescription.contains(query, ignoreCase = true)
+                        it.stockDescription.contains(query, ignoreCase = true)
             }
+        }
+
+        when (sortOption) {
+            StockListSortOption.CODE_ASC -> filtered.sortedBy { it.stockCode }
+            StockListSortOption.CODE_DESC -> filtered.sortedByDescending { it.stockCode }
+            StockListSortOption.QTY_DESC -> filtered.sortedByDescending { it.stockOnHand }
+            StockListSortOption.QTY_ASC -> filtered.sortedBy { it.stockOnHand }
+            StockListSortOption.COST_DESC -> filtered.sortedByDescending { it.cost }
+            StockListSortOption.COST_ASC -> filtered.sortedBy { it.cost }
         }
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000), //continuously collect data from the flow and emit new values to the UI
+        started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
 
@@ -127,6 +150,10 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
 
     fun resetSearch() { // Reset search query
         _searchQuery.value = ""
+    }
+
+    fun updateStockListSort(option: StockListSortOption) {
+        _stockListSort.value = option
     }
 
     fun updateSort(option: StockSortOption) { // Update sort option
