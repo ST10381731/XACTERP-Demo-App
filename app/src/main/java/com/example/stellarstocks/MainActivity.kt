@@ -269,7 +269,6 @@ fun MainApp() {
     val stockViewModel: StockViewModel = viewModel(factory = StockViewModelFactory(repository)) // view model for stock
 
     val navItems = listOf( // bottom navigation bar items
-        BottomNavItem("Home", Icons.Default.Home, Screen.Home.route),
         BottomNavItem("Stocks", Icons.Default.Inventory, Screen.StockMenu.route),
         BottomNavItem("Invoices", Icons.Default.Description, Screen.Invoice.route),
         BottomNavItem("Debtors", Icons.Default.People, Screen.DebtorMenu.route)
@@ -305,11 +304,9 @@ fun MainApp() {
     ) { innerPadding ->
         NavHost( // navigation host
             navController = navController,
-            startDestination = Screen.Home.route,
+            startDestination = Screen.Invoice.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(Screen.Home.route) { HomeScreen() } // home screen
-
             composable(Screen.Invoice.route) { InvoiceScreen(stockViewModel, debtorViewModel) } // invoice screen
 
             composable(Screen.StockMenu.route) { StockMenuScreen(navController) } // stock menu screen
