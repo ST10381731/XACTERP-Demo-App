@@ -517,6 +517,20 @@ fun InvoiceScreen(
         )
     }
 
+    if (showDebtorSearchDialog) { //show search debtor dialog
+        DebtorCreationSearchDialog(
+            viewModel = debtorViewModel,
+            onDismiss = {
+                showDebtorSearchDialog = false
+                debtorViewModel.resetSearch()},
+            onDebtorSelected = { debtor ->
+                invoiceViewModel.setDebtor(debtor)
+                showDebtorSearchDialog = false
+                debtorViewModel.resetSearch()
+            }
+        )
+    }
+
     if (showStockSearchDialog) { //show search stock dialog
         StockSearchDialog(
             viewModel = stockViewModel,
@@ -552,20 +566,6 @@ fun InvoiceScreen(
                 }
                 showQtyDialog = false
                 tempSelectedStock = null
-            }
-        )
-    }
-
-    if (showDebtorSearchDialog) { //show search debtor dialog
-        DebtorCreationSearchDialog(
-            viewModel = debtorViewModel,
-            onDismiss = {
-                showDebtorSearchDialog = false
-                debtorViewModel.resetSearch()},
-            onDebtorSelected = { debtor ->
-                invoiceViewModel.setDebtor(debtor)
-                showDebtorSearchDialog = false
-                debtorViewModel.resetSearch()
             }
         )
     }
@@ -641,7 +641,14 @@ fun InvoiceScreen(
                         Text("BILL TO:", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.Gray)
                         Text(selectedDebtor!!.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = DarkGreen) // debtor name
                         Text(selectedDebtor!!.accountCode, fontSize = 14.sp, color = Black) // debtor account code
-                        Text(selectedDebtor!!.address1, fontSize = 12.sp, color= Black) // debtor address
+
+                        Text("Primary Address:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
+                        Text(selectedDebtor!!.address1.replace(", ", "\n"), fontSize = 12.sp, color= Black)// debtor address
+
+                        if(selectedDebtor!!.address2.isNotBlank()){
+                            Text("Secondary Address:", modifier = Modifier.fillMaxWidth(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Gray, textAlign = TextAlign.End)
+                            Text(selectedDebtor!!.address2.replace(", ", "\n"), modifier = Modifier.fillMaxWidth(), fontSize = 12.sp, color= Black, textAlign = TextAlign.End)
+                        }
                     } else {
                         Text("No Debtor Selected", color = Color.Red, fontWeight = FontWeight.Bold)
                     }
@@ -653,7 +660,7 @@ fun InvoiceScreen(
                         modifier = Modifier.fillMaxWidth().background(Color(0xff000000)).padding(4.dp),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Item (Tap to Edit)", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Text("Item (Tap to Edit Added Items)", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         Text("Total (Excl VAT)", fontWeight = FontWeight.Bold, fontSize = 12.sp) //per line item total
                     }
 

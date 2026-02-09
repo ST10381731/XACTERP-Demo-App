@@ -216,6 +216,11 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
                 return@launch
             }
 
+            if (_cost.value > _sellingPrice.value){ // Cost cannot be greater than sell price
+                _toastMessage.value = "Selling price must be higher than cost"
+                return@launch
+            }
+
             val stock = StockMaster( // Create new stock
                 stockCode = _stockCode.value,
                 stockDescription = _description.value,
