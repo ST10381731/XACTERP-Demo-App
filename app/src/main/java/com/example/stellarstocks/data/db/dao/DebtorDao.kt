@@ -55,4 +55,8 @@ interface DebtorDao {
     WHERE dt.accountCode = :accountCode
     """)
     fun getDebtorTransactionInfo(accountCode: String): Flow<List<DebtorTransactionInfo>> // Get transaction info for a debtor
+
+    // query needed for graph
+    @Query("SELECT * FROM debtor_transaction ORDER BY date ASC")
+    fun getAllTransactions(): Flow<List<DebtorTransaction>>
 }

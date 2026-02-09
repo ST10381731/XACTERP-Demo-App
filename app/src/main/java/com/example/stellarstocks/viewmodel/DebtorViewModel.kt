@@ -6,17 +6,20 @@ import androidx.lifecycle.viewModelScope
 import com.example.stellarstocks.data.db.models.DebtorMaster
 import com.example.stellarstocks.data.db.models.DebtorTransaction
 import com.example.stellarstocks.data.db.models.DebtorTransactionInfo
-import com.example.stellarstocks.data.db.models.StockMaster
 import com.example.stellarstocks.data.db.repository.StellarStocksRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.Calendar
 import kotlin.collections.emptyList
 import kotlin.math.abs
 
@@ -383,4 +386,28 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
         _addr2Suburb.value = ""
         _addr2PostalCode.value = ""
     }
+
+    val topDebtors = repository.getAllDebtors().map { list -> //for graphing
+        list.sortedByDescending { it.salesYearToDate }.take(5)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val monthlySales: StateFlow<List<Pair<Float, Float>>> = repository.getAllDebtorTransactions() //for graphing
+        .map { transactions ->
+            if (transactions.isEmpty()) return@map emptyList<Pair<Float, Float>>()
+
+            val calendar = Calendar.getInstance()
+
+            // Group by Month
+            transactions
+                .groupBy {
+                    calendar.time = it.date
+                    calendar.get(Calendar.MONTH)
+                }
+                .map { (month, trans) ->
+                    month.toFloat() to trans.sumOf { it.grossTransactionValue }.toFloat()
+                }
+                .sortedBy { it.first } // chronological order
+        }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 }

@@ -9,7 +9,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.checkScrollableContainerConstraints
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,8 +25,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -41,15 +38,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddShoppingCart
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
@@ -65,7 +59,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemColors
 import androidx.compose.material3.OutlinedTextField
@@ -85,8 +78,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
@@ -94,7 +85,6 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -122,7 +112,6 @@ import com.example.stellarstocks.ui.theme.Black
 import com.example.stellarstocks.ui.theme.DarkGreen
 import com.example.stellarstocks.ui.theme.LightGreen
 import com.example.stellarstocks.ui.theme.LimeGreen
-import com.example.stellarstocks.ui.theme.Orange
 import com.example.stellarstocks.ui.theme.ProfessionalLightBlue
 import com.example.stellarstocks.ui.theme.Red
 import com.example.stellarstocks.ui.theme.StellarStocksTheme
@@ -197,46 +186,75 @@ fun AppEntryPoint() {
 }
 
 @Composable
-fun LandingPage() { //landing page for app
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-    ) {
+fun LandingPage() { //landing page for app with graph and analytics
+    val context = LocalContext.current
+    val app = context.applicationContext as StellarStocksApplication
+
+    val debtorViewModel: DebtorViewModel =
+        viewModel(factory = DebtorViewModelFactory(app.repository))
+    val stockViewModel: StockViewModel = viewModel(factory = StockViewModelFactory(app.repository))
+
+    val monthlySales by debtorViewModel.monthlySales.collectAsState()
+    val topDebtors by debtorViewModel.topDebtors.collectAsState()
+    val popularStock by stockViewModel.popularStock.collectAsState()
+
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F5))) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val wavePath = createWavePath(
-                width = size.width,
-                height = size.height * 0.45f,
-                waveHeight = 100f
-            )
-            drawPath(path = wavePath, color = Yellow)
+            val wavePath =
+                createWavePath(width = size.width, height = size.height * 0.25f, waveHeight = 80f)
+            drawPath(path = wavePath, color = Yellow.copy(alpha = 0.5f))
         }
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val wavePath = createWavePath(
-                width = size.width,
-                height = size.height * 0.32f,
-                waveHeight = 100f
-            )
-            drawPath(path = wavePath, color = DarkGreen)
-        }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.48f),
-            contentAlignment = Alignment.BottomCenter
+
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 100.dp)
         ) {
-            Text(
-                text = "Nameless 2.0",
-                fontSize = 40.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color.Black,
-                modifier = Modifier.padding(bottom = 40.dp)
-            )
+            item {
+                Text(
+                    text = "Business Analytics",
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = DarkGreen,
+                    modifier = Modifier.padding(start = 16.dp, top = 48.dp, bottom = 16.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+            item {
+                SimpleLineChart(dataPoints = monthlySales)
+            }
+            item {
+                DashboardTable(
+                    title = "Top Debtors",
+                    headers = listOf("Name", "Code", "Sales"),
+                    data = topDebtors.map {
+                        listOf(
+                            it.name,
+                            it.accountCode,
+                            "R${String.format("%.2f", it.salesYearToDate)}"
+                        )
+                    }
+                )
+            }
+            item {
+                DashboardTable(
+                    title = "Popular Stock",
+                    headers = listOf("Item", "Sold", "On Hand"),
+                    data = popularStock.map {
+                        listOf(
+                            it.stockDescription,
+                            it.qtySold.toString(),
+                            it.stockOnHand.toString()
+                        )
+                    }
+                )
+            }
         }
+
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 50.dp),
+                .padding(bottom = 30.dp)
+                .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
@@ -245,15 +263,107 @@ fun LandingPage() { //landing page for app
                 tint = DarkGreen,
                 modifier = Modifier.size(32.dp)
             )
-            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Swipe to continue",
+                text = "Swipe to Enter App",
                 color = DarkGreen,
-                fontSize = 16.sp
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold
             )
         }
     }
 }
+
+@Composable
+fun SimpleLineChart(
+    dataPoints:List<Pair<Float, Float>>,
+    lineColor: Color = DarkGreen
+) {
+    if (dataPoints.isEmpty()) {
+        Box(
+            modifier = Modifier.fillMaxWidth().height(200.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("No Sales Data yet", color = Color.Gray)
+        }
+        return
+    }
+
+    Column(
+        modifier = Modifier.fillMaxWidth()
+            .padding(16.dp)
+            .background(Color.White, shape = MaterialTheme.shapes.medium)
+            .padding(16.dp)
+    ) {
+        Text("Total Sales (Yearly Trend)", fontWeight = FontWeight.Bold, color = DarkGreen)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Canvas(modifier = Modifier.fillMaxWidth().height(200.dp)) {
+            val maxX = 11f
+            val maxY = (dataPoints.maxOfOrNull { it.second } ?: 100f) * 1.2f
+
+            val path = Path()
+
+            dataPoints.forEachIndexed { index, point ->
+                val x = (point.first / maxX) * size.width
+                val y = size.height - ((point.second / maxY) * size.height)
+
+                if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                drawCircle(
+                    color = lineColor,
+                    radius = 8f,
+                    center = androidx.compose.ui.geometry.Offset(x, y)
+                )
+            }
+            drawPath(
+                path = path,
+                color = lineColor,
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 5f)
+            )
+            drawLine(
+                color = Color.Gray,
+                start = androidx.compose.ui.geometry.Offset(0f, size.height),
+                end = androidx.compose.ui.geometry.Offset(size.width, size.height),
+                strokeWidth = 2f
+            )
+        }
+    }
+}
+
+@Composable
+fun DashboardTable(title: String, headers: List<String>, data: List<List<String>>) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = DarkGreen)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Header
+            Row(Modifier.background(LightGreen.copy(alpha = 0.3f))) {
+                headers.forEach { header ->
+                    Text(header, Modifier.weight(1f).padding(8.dp), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                }
+            }
+
+            // Data Rows
+            if (data.isEmpty()) {
+                Text("No data available", modifier = Modifier.padding(8.dp), fontSize = 12.sp, color = Color.Gray)
+            } else {
+                data.forEach { row ->
+                    Row {
+                        row.forEach { cell ->
+                            Text(cell, Modifier.weight(1f).padding(8.dp), fontSize = 12.sp)
+                        }
+                    }
+                    HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 fun MainApp() {
@@ -347,13 +457,6 @@ fun MainApp() {
                 }
             }
         }
-    }
-}
-
-@Composable
-fun HomeScreen() { // home screen
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Home Screen. Need to research graphing")
     }
 }
 
@@ -584,7 +687,7 @@ fun InvoiceScreen(
                                     }
                                 }
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(String.format("R%.2f", item.lineTotal), fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 12.dp))
+                                    Text(String.format("R%.2f", item.lineTotal), fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 12.dp), color = Black)
 
                                     if (!isInvoiceProcessed) {
                                         Icon(

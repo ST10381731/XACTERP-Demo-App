@@ -11,6 +11,7 @@ interface StellarStocksRepository { // Interface for StellarStocksRepository act
     fun getAllDebtors(): Flow<List<DebtorMaster>> // gets a list of all debtors
     suspend fun getDebtor(code: String): DebtorMaster? // gets a debtor by code
     suspend fun getLastDebtorCode(): String? // gets the last debtor code added
+    fun getAllDebtorTransactions(): Flow<List<DebtorTransaction>> // gets a list of all debtor transactions for graph
 
     //Debtor Transaction
     fun getDebtorTransactionInfo(accountCode: String): Flow<List<DebtorTransactionInfo>> // gets a list of debtor transaction info according to accountCode

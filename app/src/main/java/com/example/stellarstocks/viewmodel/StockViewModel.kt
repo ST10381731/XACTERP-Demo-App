@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -322,5 +323,14 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
 
     fun clearToast() { _toastMessage.value = null }
 
-    private fun clearForm() { _description.value = ""; _cost.value = 0.0; _sellingPrice.value = 0.0; _stockCode.value = "" }
+    private fun clearForm() {
+    _description.value = ""
+    _cost.value = 0.0
+    _sellingPrice.value = 0.0
+    _stockCode.value = "" }
+
+    val popularStock= repository.getAllStock().map { list -> //for graphinh
+        list.sortedByDescending { it.qtySold }.take(5)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
 }

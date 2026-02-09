@@ -12,11 +12,11 @@ object SeedData {
     private fun daysAgo(days: Int): Date = Date(System.currentTimeMillis() - (days * 24 * 60 * 60 * 1000L))
 
     val debtors = listOf(
-        DebtorMaster("ACC001", "Tech Solutions KZN", "12 West Street", "Durban", 4830.0, 4830.0, 1200.0, true),
-        DebtorMaster("ACC002", "Jozi Jola Consulting", "88 Maude Ave", "Sandton", 1380.0, 1380.0, 800.0, true),
-        DebtorMaster("ACC003", "Cape Logistics", "45 Port Road", "Cape Town", 4025.0, 4025.0, 2500.0, true),
-        DebtorMaster("ACC004", "Waltons Stationery", "101 Croftdene Dr", "Chatsworth", 632.2, 632.2, 300.0, true),
-        DebtorMaster("ACC005", "Page Automation IT", "5 Main Road", "Howick", 0.0, 0.0, 0.0, true)
+        DebtorMaster("ACC001", "Tech Solutions KZN", "12, West Street, Phoenix, 4002", "", 4830.0, 4830.0, 1200.0, true),
+        DebtorMaster("ACC002", "Jozi Jola Consulting", "88, Maude Ave, Sandton, 4060", "", 1380.0, 1380.0, 800.0, true),
+        DebtorMaster("ACC003", "Cape Logistics", "45, Port Road, Bayview, 4001", "", 4025.0, 4025.0, 2500.0, true),
+        DebtorMaster("ACC004", "Waltons Stationery", "101, Croftdene Dr, Chatsworth, 4092", "", 632.2, 632.2, 300.0, true),
+        DebtorMaster("ACC005", "Page Automation IT", "5, Main Road, Nandi Dr, 4015", "", 0.0, 0.0, 0.0, true)
     )
 
     val stock = listOf(

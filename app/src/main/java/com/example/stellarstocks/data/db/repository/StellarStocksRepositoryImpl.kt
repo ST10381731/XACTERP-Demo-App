@@ -46,6 +46,10 @@ class StellarStocksRepositoryImpl @Inject constructor(
         return debtorDao.getDebtorTransactionInfo(accountCode) // gets a list of debtor transaction info according to accountCode
     }
 
+    override fun getAllDebtorTransactions(): Flow<List<DebtorTransaction>> {
+        return debtorDao.getAllTransactions() //for graphing
+    }
+
     // Stock
     override suspend fun insertStock(stock: StockMaster) =
         stockDao.insertStock(stock) // inserts a stock according to stockCode
