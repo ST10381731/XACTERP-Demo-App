@@ -769,7 +769,7 @@ fun AddStockDialog(// Dialog to add a stock item
                 )
                 Text(stock.stockDescription, fontWeight = FontWeight.Medium, color = DarkGreen) // stock description
                 Text("Price: R${stock.sellingPrice}", color = Color.Gray, fontSize = 12.sp) //stock selling price
-
+                Text("Stock on Hand: ${stock.stockOnHand}", color = Color.Gray, fontSize = 12.sp)
                 Spacer(Modifier.height(16.dp))
 
                 OutlinedTextField(
