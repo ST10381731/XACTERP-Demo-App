@@ -82,13 +82,18 @@ fun StockDetailsScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 16.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = { navController.popBackStack() }) { // back button to return to previous screen
             Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = DarkGreen)
         }
 
-        Text("Stock Details", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = DarkGreen)
+        Text("Stock Details",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = DarkGreen
+        )
     }
+        Spacer(modifier = Modifier.height(16.dp))
 
         Card( // stock details card
             colors = CardDefaults.cardColors(containerColor = Color.White),

@@ -294,7 +294,7 @@ fun SimpleLineChart(
             .background(Color.White, shape = MaterialTheme.shapes.medium)
             .padding(16.dp)
     ) {
-        Text("Total Sales (Yearly Trend)", fontWeight = FontWeight.Bold, color = DarkGreen)
+        Text("Total Sales per Month", fontWeight = FontWeight.Bold, color = DarkGreen)
         Spacer(modifier = Modifier.height(16.dp))
 
         Canvas(modifier = Modifier.fillMaxWidth().height(200.dp)) {

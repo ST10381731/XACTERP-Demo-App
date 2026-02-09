@@ -82,7 +82,7 @@ fun DebtorDetailsScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 16.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = { navController.popBackStack() }) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = DarkGreen)
         }
@@ -91,9 +91,10 @@ fun DebtorDetailsScreen(
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             color = DarkGreen,
-            modifier = Modifier.padding(bottom = 16.dp)
         )
     }
+        Spacer(modifier = Modifier.height(16.dp))
+
         Card( // Debtor Details Card
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
@@ -102,8 +103,12 @@ fun DebtorDetailsScreen(
             Column(Modifier.padding(16.dp)) {
                 DebtorDetailRow("Account Code:", currentDebtor.accountCode)
                 DebtorDetailRow("Name:", currentDebtor.name)
-                DebtorDetailRow("Address:", "${currentDebtor.address1}, ${currentDebtor.address2}")
+                HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
+                DebtorDetailRow("Primary Address: ", currentDebtor.address1)
+                HorizontalDivider(Modifier.padding(vertical = 8.dp))
+
+                DebtorDetailRow("Secondary Address: ", currentDebtor.address2)
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
                 DebtorDetailRow("Sales YTD:", String.format("R%.2f", currentDebtor.salesYearToDate))
@@ -207,10 +212,10 @@ fun DebtorDetailRow(label: String, value: String) { // function to display a row
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+        verticalAlignment = Alignment.Top
     ) {
-        Text(label, fontWeight = FontWeight.SemiBold, color = Color.Gray)
-        Text(value, fontWeight = FontWeight.Bold)
+        Text(label, fontWeight = FontWeight.SemiBold, color = Color.Gray,  modifier = Modifier.weight(1f))
+        Text(value, fontWeight = FontWeight.Bold, textAlign = TextAlign.End, modifier = Modifier.weight(1f))
     }
 }
 
