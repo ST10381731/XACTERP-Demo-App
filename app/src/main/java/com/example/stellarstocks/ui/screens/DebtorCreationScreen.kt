@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -34,6 +35,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -72,6 +74,9 @@ import com.example.stellarstocks.viewmodel.StockViewModel
 fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController: NavController) {
     val accountCode by viewModel.accountCode.collectAsState()
     val name by viewModel.name.collectAsState()
+    var showConfirmationDialog by remember { mutableStateOf(false) } // delete confirmation dialog state
+
+
     // Address 1 States
     val addrLine1 by viewModel.addrLine1.collectAsState()
     val addrLine2 by viewModel.addrLine2.collectAsState()
@@ -128,6 +133,36 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
                 showSearchDialog = false
                 viewModel.resetSearch()
             }
+        )
+    }
+
+    if (showConfirmationDialog) { // show dialog to confirm deletion
+        AlertDialog(
+            onDismissRequest = { showConfirmationDialog = false },
+            title = { Text(text = "Confirm Deletion") },
+            text = {
+                Text(
+                    "Are you sure you want to delete this Debtor?\n\n" +
+                            "Account Code: $accountCode\n" +
+                            "Name: $name"
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteDebtor() //call delete debtor function
+                        showConfirmationDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = DarkGreen)
+                ) { Text("Yes") }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showConfirmationDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = Red)
+                ) { Text("Cancel") }
+            },
+            containerColor = Color.White
         )
     }
 
@@ -346,7 +381,7 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
 
             if (isEditMode) {
                 Button(
-                    onClick = { viewModel.deleteDebtor() },
+                    onClick = { showConfirmationDialog = true },
                     colors = ButtonDefaults.buttonColors(containerColor = Red),
                     modifier = Modifier.weight(1f).padding(start = 8.dp)
                 ) {

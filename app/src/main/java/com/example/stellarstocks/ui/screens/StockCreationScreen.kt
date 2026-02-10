@@ -19,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -28,6 +29,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -51,16 +53,20 @@ import com.example.stellarstocks.ui.navigation.Screen
 import com.example.stellarstocks.ui.theme.DarkGreen
 import com.example.stellarstocks.ui.theme.LightGreen
 import com.example.stellarstocks.ui.theme.Orange
+import com.example.stellarstocks.ui.theme.Red
 import com.example.stellarstocks.viewmodel.DebtorViewModel
 import com.example.stellarstocks.viewmodel.StockViewModel
 
 @Composable
 fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: NavController) {
     val isEditMode by viewModel.isEditMode.collectAsState() // Check if in edit mode
+    var showConfirmationDialog by remember { mutableStateOf(false) } // delete confirmation dialog state
+
     val stockCode by viewModel.stockCode.collectAsState() // variable to hold the stock code
     val description by viewModel.description.collectAsState() // variable to hold the description
     val cost by viewModel.cost.collectAsState() // variable to hold the cost
     val sellingPrice by viewModel.sellingPrice.collectAsState() // variable to hold the selling price
+
     val toastMessage by viewModel.toastMessage.collectAsState()
     val context = LocalContext.current
 
@@ -103,6 +109,38 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
                 showSearchDialog = false
                 viewModel.resetSearch()
             }
+        )
+    }
+
+    if (showConfirmationDialog) { // show dialog to confirm deletion
+        AlertDialog(
+            onDismissRequest = { showConfirmationDialog = false },
+            title = { Text(text = "Confirm Deletion") },
+            text = {
+                Text(
+                    "Are you sure you want to delete this Debtor?\n\n" +
+                            "Stock Code: $stockCode\n" +
+                            "Description: $description\n" +
+                            "Cost: $cost\n" +
+                            "Selling Price: $sellingPrice\n"
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteStock() //call delete stock function
+                        showConfirmationDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = DarkGreen)
+                ) { Text("Yes") }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showConfirmationDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = Red)
+                ) { Text("Cancel") }
+            },
+            containerColor = Color.White
         )
     }
 
@@ -214,7 +252,7 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
 
             if (isEditMode) { // If in edit mode, show the delete button
                 Button(
-                    onClick = { viewModel.deleteStock() },
+                    onClick = { showConfirmationDialog = true },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
                     modifier = Modifier.weight(1f)
                 ) {
