@@ -651,11 +651,7 @@ fun SimpleLineChart(
         var showStockSearchDialog by remember { mutableStateOf(false) } // stock search dialog state
         var showDebtorSearchDialog by remember { mutableStateOf(false) } // debtor search dialog state
         var showQtyDialog by remember { mutableStateOf(false) } // quantity dialog state
-        var tempSelectedStock by remember {
-            mutableStateOf<com.example.stellarstocks.data.db.models.StockMaster?>(
-                null
-            )
-        } // temporary selected stock state for invoice preview
+        var tempSelectedStock by remember { mutableStateOf<com.example.stellarstocks.data.db.models.StockMaster?>(null) } // temporary selected stock state for invoice preview
 
         var showConfirmationDialog by remember { mutableStateOf(false) } // invoice confirmation dialog state
 

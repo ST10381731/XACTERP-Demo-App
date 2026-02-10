@@ -208,7 +208,7 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
                 value = accountCode,
                 onValueChange = { if (isEditMode) viewModel.onSearchCodeChange(it) },
                 label = { Text(if (isEditMode) "Select an Account Code via the Search Button" else "Auto Account Code") },
-                enabled = isEditMode,
+                enabled = isEditMode && accountCode.isNotBlank(),
                 modifier = Modifier.weight(1f),
                 singleLine = true,
                 readOnly = true
@@ -314,7 +314,7 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
                 checked = showAddress2,
                 onCheckedChange = { viewModel.onShowAddress2Change(it) },
                 colors = SwitchDefaults.colors(checkedThumbColor = DarkGreen, checkedTrackColor = LightGreen),
-                enabled= accountCode.isNotBlank()
+                enabled= accountCode.isNotBlank(),
             )
         }
 
@@ -374,7 +374,8 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
             Button(
                 onClick = { viewModel.saveDebtor() },
                 colors = ButtonDefaults.buttonColors(containerColor = DarkGreen),
-                modifier = Modifier.weight(1f).padding(end = 8.dp)
+                modifier = Modifier.weight(1f).padding(end = 8.dp),
+                enabled = accountCode.isNotBlank()
             ) {
                 Text(if (isEditMode) "Update Debtor" else "Create Debtor")
             }
@@ -383,7 +384,8 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
                 Button(
                     onClick = { showConfirmationDialog = true },
                     colors = ButtonDefaults.buttonColors(containerColor = Red),
-                    modifier = Modifier.weight(1f).padding(start = 8.dp)
+                    modifier = Modifier.weight(1f).padding(start = 8.dp),
+                    enabled = accountCode.isNotBlank()
                 ) {
                     Text("Delete")
                 }

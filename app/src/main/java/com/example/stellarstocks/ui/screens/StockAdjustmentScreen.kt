@@ -96,7 +96,8 @@ fun StockAdjustmentScreen(viewModel: StockViewModel = viewModel(), navController
                 label = { Text("Select a Stock Code via the Search Button") },
                 modifier = Modifier.weight(1f),
                 singleLine = true,
-                readOnly = true
+                readOnly = true,
+                enabled = false
             )
             Spacer(modifier = Modifier.width(8.dp))
             Button( //search button with icon

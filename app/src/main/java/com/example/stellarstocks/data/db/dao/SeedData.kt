@@ -28,11 +28,11 @@ object SeedData {
     )
 
     val invoiceHeaders = listOf(
-        InvoiceHeader(1, "ACC001", daysAgo(37), 1800.0, 270.0, 2070.0),
-        InvoiceHeader(2, "ACC001", daysAgo(35), 2400.0, 360.0, 2760.0),
-        InvoiceHeader(3, "ACC004", daysAgo(35), 550.0, 82.5, 632.2),
-        InvoiceHeader(4, "ACC002", daysAgo(32), 1200.0, 180.0, 1380.0),
-        InvoiceHeader(5, "ACC003", daysAgo(20), 3500.0, 525.0, 4025.0),
+        InvoiceHeader(1, "ACC001", daysAgo(180), 1800.0, 270.0, 2070.0),
+        InvoiceHeader(2, "ACC001", daysAgo(175), 2400.0, 360.0, 2760.0),
+        InvoiceHeader(3, "ACC004", daysAgo(175), 550.0, 82.5, 632.2),
+        InvoiceHeader(4, "ACC002", daysAgo(152), 1200.0, 180.0, 1380.0),
+        InvoiceHeader(5, "ACC003", daysAgo(80), 3500.0, 525.0, 4025.0),
     )
 
     val invoiceDetails = listOf(
@@ -44,22 +44,22 @@ object SeedData {
     )
 
     val debtorTransactions = listOf(
-        DebtorTransaction(1, "ACC001", daysAgo(37), "Invoice", 1, 2070.0, 270.0),
-        DebtorTransaction(2, "ACC001", daysAgo(35), "Invoice", 2, 2760.0, 360.0),
-        DebtorTransaction(3, "ACC004", daysAgo(35), "Invoice", 3, 632.2, 82.5),
-        DebtorTransaction(4, "ACC002", daysAgo(32), "Invoice", 4, 1380.0, 180.0),
-        DebtorTransaction(5, "ACC003", daysAgo(20), "Invoice", 5, 4025.0, 525.0),
+        DebtorTransaction(1, "ACC001", daysAgo(180), "Invoice", 1, 2070.0, 270.0),
+        DebtorTransaction(2, "ACC001", daysAgo(175), "Invoice", 2, 2760.0, 360.0),
+        DebtorTransaction(3, "ACC004", daysAgo(175), "Invoice", 3, 632.2, 82.5),
+        DebtorTransaction(4, "ACC002", daysAgo(152), "Invoice", 4, 1380.0, 180.0),
+        DebtorTransaction(5, "ACC003", daysAgo(80), "Invoice", 5, 4025.0, 525.0),
     )
 
     val stockTransactions = listOf(
-        StockTransaction(1, "STK001", daysAgo(40), "Adjustment", 1001, 10, 1200.0, 0.0),
-        StockTransaction(2, "STK002", daysAgo(40), "Adjustment", 1002, 10, 800.0, 0.0),
-        StockTransaction(3, "STK003", daysAgo(40), "Adjustment", 1003, 1, 2500.0, 0.0),
-        StockTransaction(4, "STK005", daysAgo(40), "Adjustment", 1004, 1, 1500.0, 0.0),
-        StockTransaction(5, "STK001", daysAgo(37), "Invoice", 1, -1, 0.0, 1800.0),
-        StockTransaction(7, "STK002", daysAgo(35), "Invoice", 2, -2, 0.0, 2400.0),
-        StockTransaction(8, "STK005", daysAgo(35), "Invoice", 3, -1, 0.0, 550.0),
-        StockTransaction(9, "STK002", daysAgo(32), "Invoice", 4, -1, 0.0, 1200.0),
-        StockTransaction(10, "STK003", daysAgo(20), "Invoice", 5, -1, 0.0, 3500.0),
+        StockTransaction(1, "STK001", daysAgo(200), "Adjustment", 1001, 10, 1200.0, 0.0),
+        StockTransaction(2, "STK002", daysAgo(200), "Adjustment", 1002, 10, 800.0, 0.0),
+        StockTransaction(3, "STK003", daysAgo(200), "Adjustment", 1003, 1, 2500.0, 0.0),
+        StockTransaction(4, "STK005", daysAgo(200), "Adjustment", 1004, 1, 1500.0, 0.0),
+        StockTransaction(5, "STK001", daysAgo(180), "Invoice", 1, -1, 0.0, 1800.0),
+        StockTransaction(7, "STK002", daysAgo(175), "Invoice", 2, -2, 0.0, 2400.0),
+        StockTransaction(8, "STK005", daysAgo(175), "Invoice", 3, -1, 0.0, 550.0),
+        StockTransaction(9, "STK002", daysAgo(152), "Invoice", 4, -1, 0.0, 1200.0),
+        StockTransaction(10, "STK003", daysAgo(80), "Invoice", 5, -1, 0.0, 3500.0),
     )
 }

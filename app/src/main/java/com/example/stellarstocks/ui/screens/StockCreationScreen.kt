@@ -183,7 +183,7 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
                 value = stockCode,
                 onValueChange = { if (isEditMode) viewModel.onStockCodeChange(it) },
                 label = { Text(if (isEditMode) "Select a Stock Code via the Search Button" else "Auto Account Code") },
-                enabled = isEditMode,
+                enabled = isEditMode && stockCode.isNotBlank(),
                 modifier = Modifier.weight(1f),
                 singleLine = true,
                 readOnly = true
@@ -245,7 +245,8 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
             Button( // Button to save or update the stock
                 onClick = { viewModel.saveStock() },
                 colors = ButtonDefaults.buttonColors(containerColor = DarkGreen),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                enabled = stockCode.isNotBlank()
             ) {
                 Text(if (isEditMode) "Update Details" else "Confirm Creation")
             }
@@ -254,7 +255,8 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
                 Button(
                     onClick = { showConfirmationDialog = true },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    enabled = stockCode.isNotBlank()
                 ) {
                     Text("Delete Stock")
                 }
