@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.Date
 
-data class InvoiceItem( //Class to represent an item in the invoice
+data class InvoiceItem( // class for invoice item
     val stock: StockMaster,
     val qty: Int,
     val discountPercent: Double,
@@ -36,7 +36,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
     private val _grandTotal = MutableStateFlow(0.0) // Gross total amount
     val grandTotal = _grandTotal.asStateFlow()
 
-    private val _toastMessage = MutableStateFlow<String?>(null)
+    private val _toastMessage = MutableStateFlow<String?>(null) // variable for toast message
     val toastMessage = _toastMessage.asStateFlow()
 
     private val _invoiceNum = MutableStateFlow((System.currentTimeMillis() % 1000000).toInt()) // Invoice number
@@ -45,7 +45,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
     private val _isInvoiceProcessed = MutableStateFlow(false) // Invoice processed flag
     val isInvoiceProcessed = _isInvoiceProcessed.asStateFlow()
 
-    fun setDebtor(debtor: DebtorMaster) { // Set debtor for invoice
+    fun setDebtor(debtor: DebtorMaster) { // function to set debtor for invoice
         _selectedDebtor.value = debtor
     }
 
@@ -60,7 +60,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
         }
 
 
-        if (qty > stock.stockOnHand) {
+        if (qty > stock.stockOnHand) { // Check if there is enough stock
             _toastMessage.value = "Insufficient stock! Available: ${stock.stockOnHand}"
             return
         }
@@ -74,7 +74,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
 
         currentList.removeAll { it.stock.stockCode == stock.stockCode } // Remove any existing items with the same stock code
 
-        currentList.add(
+        currentList.add( // Add new item to list
             InvoiceItem(stock, qty, discountPercent, discountAmt, finalTotal)
         )
         _invoiceItems.value = currentList
@@ -82,24 +82,24 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
     }
 
     fun removeFromInvoice(item: InvoiceItem) { // Remove an item from invoice
-        val currentList = _invoiceItems.value.toMutableList()
-        currentList.remove(item)
+        val currentList = _invoiceItems.value.toMutableList() // Get current list of items
+        currentList.remove(item) // Remove item from list
         _invoiceItems.value = currentList
         calculateTotals()
     }
     private fun calculateTotals() { // Calculate final total for invoice
         val exVat = _invoiceItems.value.sumOf { it.lineTotal }
         val vatCalc = exVat * 0.15 // 15% VAT
-        val total = exVat + vatCalc
+        val total = exVat + vatCalc // line totals +vat
 
         _totalExVat.value = exVat
         _vat.value = vatCalc
         _grandTotal.value = total
     }
 
-    fun updateInvoiceItem(stock: StockMaster, newQty: Int, newDiscount: Double) {
+    fun updateInvoiceItem(stock: StockMaster, newQty: Int, newDiscount: Double) { // Update an item in the invoice
         if (newQty <= 0) { // Check if quantity is greater than 0
-            val itemToRemove = _invoiceItems.value.find { it.stock.stockCode == stock.stockCode }
+            val itemToRemove = _invoiceItems.value.find { it.stock.stockCode == stock.stockCode } // find item to remove
             if (itemToRemove != null) removeFromInvoice(itemToRemove)
             _toastMessage.value = "Quantity must be greater than 0"
             return
@@ -109,7 +109,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
             return
         }
 
-        if (newQty > stock.stockOnHand) {
+        if (newQty > stock.stockOnHand) { // Check if there is enough stock
             _toastMessage.value = "Insufficient stock! Available: ${stock.stockOnHand}"
             return
         }
@@ -131,24 +131,24 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
         val debtor = _selectedDebtor.value
         val items = _invoiceItems.value
 
-        if (debtor == null) {
+        if (debtor == null) { // check if debtor is null
             _toastMessage.value = "Please select a Debtor"
             return
         }
-        if (items.isEmpty()) {
+        if (items.isEmpty()) { // check if item list is empty
             _toastMessage.value = "Invoice is empty"
             return
         }
 
-        val insufficientItems = items.filter { it.qty > it.stock.stockOnHand }
-        if (insufficientItems.isNotEmpty()) {
+        val insufficientItems = items.filter { it.qty > it.stock.stockOnHand } // check if there is enough stock
+        if (insufficientItems.isNotEmpty()) { //if there is not enough stock then return error message
             _toastMessage.value = "Cannot process: Insufficient stock for ${insufficientItems.size} item(s)."
             return
         }
 
         viewModelScope.launch {
             val invoiceNum = _invoiceNum.value // get invoice number
-            val calculatedTotalCost = items.sumOf { it.qty * it.stock.cost } //calculate total cost
+            val calculatedTotalCost = items.sumOf { it.qty * it.stock.cost } // calculate total cost for invoice
 
             val header = InvoiceHeader( // create the invoice header
                 invoiceNum = invoiceNum,
@@ -159,7 +159,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
                 totalCost = calculatedTotalCost
             )
 
-            val detailItems = items.mapIndexed { index, invoiceItem -> //create the details for the invoice
+            val detailItems = items.mapIndexed { index, invoiceItem -> //create the item list for the invoice
                 InvoiceDetail(
                     invoiceNum = invoiceNum,
                     itemNum = index + 1,
@@ -188,5 +188,5 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
         calculateTotals()
     }
 
-    fun clearToast() { _toastMessage.value = null }
+    fun clearToast() { _toastMessage.value = null } // function to clear toast
 }

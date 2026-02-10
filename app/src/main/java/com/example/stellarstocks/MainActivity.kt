@@ -149,6 +149,8 @@ data class BottomNavItem( // bottom navigation bar
     val route: String
 )
 
+/*
+* The purpose of this function to generate the wave image used in the background of the application*/
 fun createWavePath( // image for landing page
     width: Float,
     height: Float,
@@ -173,7 +175,12 @@ fun createWavePath( // image for landing page
     }
 }
 
-
+/*
+This composable function serves as the main entry point for the user interface. It uses a
+VerticalPager to create a two-page layout that the user can swipe through vertically.
+The first page is the LandingPage, which displays business analytics.
+The second page is the MainApp, which contains the core functionality of the application.
+*/
 @Composable
 fun AppEntryPoint() {
     val pagerState = rememberPagerState(pageCount = { 2 })
@@ -189,6 +196,11 @@ fun AppEntryPoint() {
     }
 }
 
+/*
+ * A composable function that displays the landing page of the application,
+ * The screen displays vital business information such tables of the most popular stock,
+ * top debtors, and monthly sales in a graph form factor.
+*/
 @Composable
 fun LandingPage() { //landing page for app with graph and analytics
     val context = LocalContext.current
@@ -307,6 +319,12 @@ fun LandingPage() { //landing page for app with graph and analytics
     }
 }
 
+
+/*This function creates the simple line graph found on the landing page.
+* It creates a simple grid with x-axis and y-axis labels.
+* It creates a list of dataPoints which is a pair of x and y values.
+* It joins each dataPoint with a DarkGreen line to display the sales growth through the months.
+* If the dataPoints list is empty, it displays a message "No Sales Data yet" instead of the chart.*/
 @Composable
 fun SimpleLineChart(
     dataPoints:List<Pair<Float, Float>>,
@@ -448,6 +466,11 @@ fun SimpleLineChart(
     }
 }
 
+/*
+ * This function is designed to present data in tabular formate with a title and column headers.
+ * It is used on the landing page to show Top Debtors and Popular Stock.
+ * If the data list is empty, it shows a "No data available" message.
+ **/
     @Composable
     fun DashboardTable(title: String, headers: List<String>, data: List<List<String>>) {
         Card(
@@ -499,7 +522,11 @@ fun SimpleLineChart(
     }
 
 
-
+/*This function creates the navigation bar and its contents- Stock, Invoices, Debtors
+* A NavHost is used to define the navigation routes to each composable screens.
+* This setup allows for navigating between various features of the app,
+* such as stock and debtor maintenance, and invoice creation.
+*/
     @Composable
     fun MainApp() {
         val navController = rememberNavController() // navigation controller
@@ -604,6 +631,17 @@ fun SimpleLineChart(
         }
     }
 
+
+/* This screen is the main screen of the application after the user swipes up on the landing page
+* This composable is used to create business invoices that will influence all other data in the application.
+*  It allows the user to:
+ * - Select a debtor for the invoice.
+ * - Add stock items to the invoice.
+ * - Specify the quantity and discount for each item.
+ * - View a running total of the invoice, including subtotal, VAT, and grand total.
+ * - Edit or remove items already added to the invoice.
+ * - Confirm and process the final invoice.
+ */
     @Composable
     fun InvoiceScreen(
         stockViewModel: StockViewModel = viewModel(factory = StockViewModelFactory((LocalContext.current.applicationContext as StellarStocksApplication).repository)),
@@ -653,11 +691,7 @@ fun SimpleLineChart(
                 text = {
                     Text(
                         "Are you sure you want to process this invoice?\n\nTotal: R${
-                            String.format(
-                                "%.2f",
-                                grandTotal
-                            )
-                        }"
+                            String.format("%.2f", grandTotal)}"
                     )
                 },
                 confirmButton = {
@@ -741,7 +775,7 @@ fun SimpleLineChart(
                 }
             )
         }
-        Box(
+        Box( // background wave image
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFFF5F5F5))
@@ -1037,7 +1071,7 @@ fun SimpleLineChart(
                 Spacer(modifier = Modifier.height(24.dp))
 
 
-                if (isInvoiceProcessed) {
+                if (isInvoiceProcessed) { // if invoice is processed, show new invoice button
 
                     Button(
                         onClick = { invoiceViewModel.startNewInvoice() },
@@ -1079,7 +1113,17 @@ fun SimpleLineChart(
         }
     }
 
-
+/*
+* This dialog composable allows for searching of all stock using a search that
+* constantly updates the content displayed in real time.
+* This dialog displays details of the selected stock item, including its description, price, and stock on hand.
+* It provides input fields for specifying the quantity and discount percentage.
+* It includes input validation to ensure that quantity is a digit and the discount is a decimal number
+* and both are positive.
+* The dialog operates in two modes, controlled by the isEditMode parameter:
+* - Add Mode: Enables adding items to invoice.
+* - Edit Mode: The input fields are pre-filled with the existing item's data. Allows updating the quantity and discount.
+*/
     @Composable
     fun AddStockDialog(// Dialog to add a stock item
         stock: com.example.stellarstocks.data.db.models.StockMaster,
@@ -1182,7 +1226,7 @@ fun SimpleLineChart(
         }
     }
 
-    /*
+/*
 * Title- Make a Ticket View with Jetpack Compose
 * Author- Kush Saini
 * Accessed- 30/01/2026
@@ -1372,6 +1416,10 @@ fun SimpleLineChart(
         )
     )
 
+/*
+* A data class that represents the information required to display a single item
+* in the debtor menu. Each instance holds the data for one tile on the DebtorMenuScreen.
+*/
     @Composable
     fun DebtorMenuTile(
         item: DebtorMenuItemData,
@@ -1441,6 +1489,10 @@ fun SimpleLineChart(
         )
     )
 
+/*
+* A data class that represents the information required to display a single item
+* in the stock menu. Each instance holds the data for one tile on the StockMenuScreen.
+*/
     @Composable
     fun StockMenuTile(
         item: StockMenuItemData,
@@ -1481,6 +1533,11 @@ fun SimpleLineChart(
         }
     }
 
+
+/*
+* This function creates a Card that acts as a clickable tile. When clicked,
+ * it uses the navController to navigate to the route specified
+*/
     @Composable
     fun StockMenuScreen(navController: NavController) { // stock menu screen
         Box(
@@ -1524,6 +1581,10 @@ fun SimpleLineChart(
         }
     }
 
+/*
+* This function creates a Card that acts as a clickable tile. When clicked,
+* it uses the navController to navigate to the route specified.
+*/
     @Composable
     fun DebtorMenuScreen(navController: NavController) { // debtor menu screen
         Box(
@@ -1567,6 +1628,14 @@ fun SimpleLineChart(
         }
     }
 
+/*
+ * This screen allows users to:
+ * - See a list of all debtors.
+ * - Search for specific debtors by their account code or name via a search bar.
+ * - Sort the list of debtors based on different criteria
+ * - Navigate back to the previous screen.
+ * - Tap on a debtor in the list to navigate to their details screen.
+*/
     @Composable
     fun DebtorEnquiryScreen(
         debtorViewModel: DebtorViewModel,
@@ -1733,6 +1802,9 @@ fun SimpleLineChart(
             }
         }
 
+/*
+* This function helps determine the type of sort description to be displayed in the sort menu.
+*/
     fun getDebtorListSortLabel(option: DebtorListSortOption): String {
         return when (option) {
             DebtorListSortOption.CODE_ASC -> "Code: Asc"
@@ -1742,6 +1814,14 @@ fun SimpleLineChart(
         }
     }
 
+/*
+ * This screen allows users to:
+ * - See a list of all stock.
+ * - Search for specific stock by its stock code or description via a search bar.
+ * - Sort the list of stock based on different criteria
+ * - Navigate back to the previous screen.
+ * - Tap on a stock in the list to navigate to its details screen.
+*/
     @Composable
     fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavController) {
         val stockList by stockViewModel.filteredStock.collectAsState()
@@ -1925,6 +2005,9 @@ fun SimpleLineChart(
             }
     }
 
+/*
+* This function helps determine the type of sort description to be displayed in the sort menu.
+*/
     fun getStockListSortLabel(option: StockListSortOption): String {
         return when (option) {
             StockListSortOption.CODE_ASC -> "Code: Asc"
@@ -1936,6 +2019,10 @@ fun SimpleLineChart(
         }
     }
 
+/*
+* This function creates a Card that acts as a clickable tile. When clicked,
+ * it uses the navController to navigate to the route specified.
+*/
     @Composable
     fun RowScope.TableCell( // table cell layout
         text: String,

@@ -20,14 +20,14 @@ import kotlinx.coroutines.launch
 import java.util.Date
 import kotlin.math.abs
 
-enum class StockSortOption { // Sort options for stock
+enum class StockSortOption { // Sort options for stock transaction table
     FULL_LIST,
     RECENT_DEBTOR_ONLY,
     HIGHEST_QUANTITY,
     LOWEST_QUANTITY
 }
 
-enum class StockListSortOption {
+enum class StockListSortOption { // sort options for stock enquiry
     CODE_ASC,
     CODE_DESC,
     QTY_DESC,
@@ -41,28 +41,28 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
     private val _searchQuery = MutableStateFlow("") // Search query for stock
     val searchQuery = _searchQuery.asStateFlow() //allows other classes to observe changes to the search query
 
-    private val _stockListSort = MutableStateFlow(StockListSortOption.CODE_ASC)
+    private val _stockListSort = MutableStateFlow(StockListSortOption.CODE_ASC) // Sort option for stock list
     val stockListSort = _stockListSort.asStateFlow()
 
     private val _stock = MutableStateFlow<List<StockMaster>>(emptyList()) // List of stock
     val stock: StateFlow<List<StockMaster>> = _stock //allows list of stock to be observed by other classes
 
-    val filteredStock: StateFlow<List<StockMaster>> = combine(
+    val filteredStock: StateFlow<List<StockMaster>> = combine( // Combine stock, search query, and sort option to filter and sort stock
         repository.getAllStock(),
         _searchQuery,
         _stockListSort
-    ) { stockList: List<StockMaster>, query: String, sortOption: StockListSortOption ->
+    ) { stockList: List<StockMaster>, query: String, sortOption: StockListSortOption -> //combine all three flows into one
 
-        val filtered = if (query.isBlank()) {
+        val filtered = if (query.isBlank()) { // If search query is blank, return all stock
             stockList
         } else {
-            stockList.filter {
+            stockList.filter { // if search query is not blank return stock that matches query
                 it.stockCode.contains(query, ignoreCase = true) ||
                         it.stockDescription.contains(query, ignoreCase = true)
             }
         }
 
-        when (sortOption) {
+        when (sortOption) { // sort stock based on sort option
             StockListSortOption.CODE_ASC -> filtered.sortedBy { it.stockCode }
             StockListSortOption.CODE_DESC -> filtered.sortedByDescending { it.stockCode }
             StockListSortOption.QTY_DESC -> filtered.sortedByDescending { it.stockOnHand }
@@ -127,7 +127,7 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
     private val _sellingPrice = MutableStateFlow(0.0) // stock selling price
     val sellingPrice = _sellingPrice.asStateFlow()
 
-    private val _toastMessage = MutableStateFlow<String?>(null)
+    private val _toastMessage = MutableStateFlow<String?>(null) // Toast message
     val toastMessage = _toastMessage.asStateFlow()
 
     private val _navigationChannel = Channel<Boolean>() // Channel for navigation
@@ -153,7 +153,7 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
         _searchQuery.value = ""
     }
 
-    fun updateStockListSort(option: StockListSortOption) {
+    fun updateStockListSort(option: StockListSortOption) { // function to update stock list sort
         _stockListSort.value = option
     }
 
@@ -234,8 +234,8 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
             )
 
             if (_isEditMode.value) { // If in edit mode, update existing stock
-                val existing = repository.getStock(_stockCode.value)
-                if (existing != null) {
+                val existing = repository.getStock(_stockCode.value) // Get existing stock from repository
+                if (existing != null) { // If stock exists, update it
                     repository.updateStock(stock.copy(
                         stockOnHand = existing.stockOnHand,
                         qtyPurchased = existing.qtyPurchased,
@@ -315,26 +315,26 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
 
     fun deleteStock() { // delete stock
         viewModelScope.launch {
-            if (_stockCode.value.isNotBlank()) {
+            if (_stockCode.value.isNotBlank()) { // If stock code is not blank, delete stock
                 repository.deleteStock(_stockCode.value)
 
                 _toastMessage.value = "Stock Deleted"
                 clearForm()
                 _navigationChannel.send(true)
-            } else
-            {_toastMessage.value = "No stock selected"}
+            } else {
+                _toastMessage.value = "No stock selected"}
         }
     }
 
-    fun clearToast() { _toastMessage.value = null }
+    fun clearToast() { _toastMessage.value = null } // function to clear toast
 
-    private fun clearForm() {
+    private fun clearForm() { //function to clear stock creation form
     _description.value = ""
     _cost.value = 0.0
     _sellingPrice.value = 0.0
     _stockCode.value = "" }
 
-    val popularStock= repository.getAllStock().map { list -> //for graphinh
+    val popularStock= repository.getAllStock().map { list -> //for graphing. Get all stock and sort by qty sold
         list.sortedByDescending { it.qtySold }.take(5)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
