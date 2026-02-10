@@ -317,13 +317,16 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
                         isActive = existing.isActive
                     ))
                     _toastMessage.value = "Debtor Updated"
+                    clearForm()
                     _navigationChannel.send(true)
+
                 }
             } else { // if not in edit mode, insert new debtor
                 repository.insertDebtor(debtor)
                 _toastMessage.value = "Debtor Created"
-                _navigationChannel.send(true)
                 clearForm()
+                _navigationChannel.send(true)
+
             }
         }
     }
