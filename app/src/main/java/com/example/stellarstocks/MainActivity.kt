@@ -10,6 +10,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -82,7 +83,10 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -198,7 +202,37 @@ fun LandingPage() { //landing page for app with graph and analytics
     val topDebtors by debtorViewModel.topDebtors.collectAsState()
     val popularStock by stockViewModel.popularStock.collectAsState()
 
-    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F5))) {
+    val financialYearDataPoints = remember(monthlySales){ //for graph
+        val monthRemapping = mapOf(
+            0 to 10,
+            1 to 11,
+            2 to 0,
+            3 to 1,
+            4 to 2,
+            5 to 3,
+            6 to 4,
+            7 to 5,
+            8 to 6,
+            9 to 7,
+            10 to 8,
+            11 to 9
+        )
+
+        monthlySales.mapNotNull { (monthIndex, sales) ->
+            // Find the new financial year index for the original calendar month
+            val newIndex = monthRemapping[monthIndex.toInt()]
+            if (newIndex != null) {
+                // Create the new Pair with the remapped index
+                Pair(newIndex.toFloat(), sales)
+            } else {
+                null
+            }
+        }.sortedBy { it.first }
+    }
+
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .background(Color(0xFFF5F5F5))) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val wavePath =
                 createWavePath(width = size.width, height = size.height * 0.25f, waveHeight = 80f)
@@ -215,12 +249,12 @@ fun LandingPage() { //landing page for app with graph and analytics
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
                     color = DarkGreen,
-                    modifier = Modifier.padding(start = 16.dp, top = 48.dp, bottom = 16.dp),
+                    modifier = Modifier.padding(start = 16.dp, top = 48.dp, bottom = 16.dp).fillMaxWidth(),
                     textAlign = TextAlign.Center
                 )
             }
             item {
-                SimpleLineChart(dataPoints = monthlySales)
+                SimpleLineChart(dataPoints = financialYearDataPoints)
             }
             item {
                 DashboardTable(
@@ -280,7 +314,11 @@ fun SimpleLineChart(
 ) {
     if (dataPoints.isEmpty()) {
         Box(
-            modifier = Modifier.fillMaxWidth().height(200.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp)
+                .padding(start = 50.dp, bottom = 50.dp, end = 20.dp, top = 20.dp),
+
             contentAlignment = Alignment.Center
         ) {
             Text("No Sales Data yet", color = Color.Gray)
@@ -288,1223 +326,1634 @@ fun SimpleLineChart(
         return
     }
 
+    val scrollState = rememberScrollState()
+
     Column(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
             .padding(16.dp)
             .background(Color.White, shape = MaterialTheme.shapes.medium)
             .padding(16.dp)
     ) {
-        Text("Total Sales per Month", fontWeight = FontWeight.Bold, color = DarkGreen)
+        Text("Total Sales for the Financial Year", fontWeight = FontWeight.Bold, color = DarkGreen)
         Spacer(modifier = Modifier.height(16.dp))
 
-        Canvas(modifier = Modifier.fillMaxWidth().height(200.dp)) {
-            val maxX = 11f
-            val maxY = (dataPoints.maxOfOrNull { it.second } ?: 100f) * 1.2f
-
-            val path = Path()
-
-            dataPoints.forEachIndexed { index, point ->
-                val x = (point.first / maxX) * size.width
-                val y = size.height - ((point.second / maxY) * size.height)
-
-                if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
-                drawCircle(
-                    color = lineColor,
-                    radius = 8f,
-                    center = androidx.compose.ui.geometry.Offset(x, y)
-                )
-            }
-            drawPath(
-                path = path,
-                color = lineColor,
-                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 5f)
-            )
-            drawLine(
-                color = Color.Gray,
-                start = androidx.compose.ui.geometry.Offset(0f, size.height),
-                end = androidx.compose.ui.geometry.Offset(size.width, size.height),
-                strokeWidth = 2f
-            )
-        }
-    }
-}
-
-@Composable
-fun DashboardTable(title: String, headers: List<String>, data: List<List<String>>) {
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = DarkGreen)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Header
-            Row(Modifier.background(LightGreen.copy(alpha = 0.3f))) {
-                headers.forEach { header ->
-                    Text(header, Modifier.weight(1f).padding(8.dp), fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                }
-            }
-
-            // Data Rows
-            if (data.isEmpty()) {
-                Text("No data available", modifier = Modifier.padding(8.dp), fontSize = 12.sp, color = Color.Gray)
-            } else {
-                data.forEach { row ->
-                    Row {
-                        row.forEach { cell ->
-                            Text(cell, Modifier.weight(1f).padding(8.dp), fontSize = 12.sp)
-                        }
-                    }
-                    HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
-                }
+        val textPaint = remember {
+            android.graphics.Paint().apply {
+                color = android.graphics.Color.BLACK
+                textSize = 25f
+                textAlign = android.graphics.Paint.Align.CENTER
             }
         }
-    }
-}
 
+        Box(modifier = Modifier.horizontalScroll(scrollState)) {
+            Canvas(
+                modifier = Modifier
+                    .width(800.dp) //width of chart
+                    .height(300.dp) //height of chart
+            ) {
+                val maxX = 11f
+                val maxY = (dataPoints.maxOfOrNull { it.second } ?: 100f) * 1.2f
+                val gridColor = Color.LightGray
+                val yAxisSteps = 4
 
-@Composable
-fun MainApp() {
-    val navController = rememberNavController() // navigation controller
-    val context = LocalContext.current // context for database
-
-    val app = context.applicationContext as StellarStocksApplication // application context
-    app.database
-    val repository = app.repository // repository for database
-
-
-    val debtorViewModel: DebtorViewModel = viewModel(factory = DebtorViewModelFactory(repository)) // view model for debtor
-    val stockViewModel: StockViewModel = viewModel(factory = StockViewModelFactory(repository)) // view model for stock
-
-    val navItems = listOf( // bottom navigation bar items
-        BottomNavItem("Stocks", Icons.Default.Inventory, Screen.StockMenu.route),
-        BottomNavItem("Invoices", Icons.Default.Description, Screen.Invoice.route),
-        BottomNavItem("Debtors", Icons.Default.People, Screen.DebtorMenu.route)
-    )
-
-    Scaffold(
-        bottomBar = {
-            NavigationBar(
-                containerColor = DarkGreen
-            ) { // bottom navigation bar
-                val navBackStackEntry by navController.currentBackStackEntryAsState() // current back stack entry
-                val currentDestination = navBackStackEntry?.destination // current destination
-                navItems.forEach { item ->// loop through navigation items
-                    NavigationBarItem(
-                        selected = currentDestination?.hierarchy?.any { it.route == item.route } == true, // check if current destination is the same as the item
-                        onClick = {
-                            navController.navigate(item.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { // pop up to start destination
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(item.icon, contentDescription = item.label) },
-                        label = { Text(item.label) },
-                        colors = NavigationBarItemColors(DarkGreen, Yellow, LimeGreen,
-                            Yellow, Yellow, Black, Black),
+                for (i in 0..yAxisSteps) {
+                    val y = size.height - (size.height / yAxisSteps * i)
+                    drawLine(
+                        color = gridColor,
+                        start = androidx.compose.ui.geometry.Offset(0f, y),
+                        end = androidx.compose.ui.geometry.Offset(size.width, y),
+                        strokeWidth = 1.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
                     )
                 }
-            }
-        }
-    ) { innerPadding ->
-        NavHost( // navigation host
-            navController = navController,
-            startDestination = Screen.Invoice.route,
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            composable(Screen.Invoice.route) { InvoiceScreen(stockViewModel, debtorViewModel) } // invoice screen
 
-            composable(Screen.StockMenu.route) { StockMenuScreen(navController) } // stock menu screen
-
-            composable(Screen.StockEnquiry.route) {
-                StockEnquiryScreen(stockViewModel, navController) // stock enquiry screen
-            }
-
-            composable(Screen.StockDetails.route) { backStackEntry -> // stock details screen
-                val stockCode = backStackEntry.arguments?.getString("stockCode")
-                if (stockCode != null) {
-                    StockDetailsScreen(stockCode, stockViewModel, navController)
+                val months = listOf(
+                    "Mar",
+                    "Apr",
+                    "May",
+                    "Jun",
+                    "Jul",
+                    "Aug",
+                    "Sep",
+                    "Oct",
+                    "Nov",
+                    "Dec",
+                    "Jan",
+                    "Feb",
+                )
+                months.forEachIndexed { index, _ ->
+                    val x = (index / maxX) * size.width
+                    drawLine(
+                        color = gridColor,
+                        start = androidx.compose.ui.geometry.Offset(x, 0f),
+                        end = androidx.compose.ui.geometry.Offset(x, size.height),
+                        strokeWidth = 1.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+                    )
                 }
-            }
 
-            composable(Screen.StockCreation.route) { // stock creation screen
-                StockCreationScreen(stockViewModel, navController)
-            }
 
-            composable(Screen.StockAdjustment.route) { // stock adjustment screen
-                StockAdjustmentScreen(viewModel = stockViewModel, navController = navController)
-            }
-
-            composable(Screen.DebtorMenu.route) { DebtorMenuScreen(navController) } // debtor menu screen
-
-            composable(Screen.DebtorEnquiry.route) { // debtor enquiry screen
-                DebtorEnquiryScreen(debtorViewModel, navController)
-            }
-
-            composable(Screen.DebtorCreation.route) { // debtor creation screen
-                DebtorCreationScreen(debtorViewModel, navController)
-            }
-
-            composable(Screen.DebtorDetails.route) { backStackEntry -> // debtor details screen
-                val accountCode = backStackEntry.arguments?.getString("accountCode")
-                if (accountCode != null) {
-                    DebtorDetailsScreen(accountCode, debtorViewModel, navController)
+                drawIntoCanvas { canvas ->
+                    for (i in 0..yAxisSteps) {
+                        val value = maxY / yAxisSteps * i
+                        val y = size.height - (value / maxY * size.height)
+                        canvas.nativeCanvas.drawText(
+                            String.format("%.0f", value),
+                            -15f, // Position text to the left of the chart
+                            y + textPaint.textSize / 2,
+                            textPaint.apply { textAlign = android.graphics.Paint.Align.RIGHT }
+                        )
+                    }
                 }
+
+                drawIntoCanvas { canvas ->
+                    months.forEachIndexed { index, month ->
+                        val x = (index / maxX) * size.width
+                        canvas.nativeCanvas.drawText(
+                            month,
+                            x,
+                            size.height + 40f, // Position text below the chart
+                            textPaint.apply { textAlign = android.graphics.Paint.Align.CENTER }
+                        )
+                    }
+                }
+
+                val path = Path()
+
+                dataPoints.forEachIndexed { index, point ->
+                    val x = (point.first / maxX) * size.width
+                    val y = size.height - ((point.second / maxY) * size.height)
+
+                    if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                    drawCircle(
+                        color = lineColor,
+                        radius = 8f,
+                        center = androidx.compose.ui.geometry.Offset(x, y)
+                    )
+                }
+                drawPath(
+                    path = path,
+                    color = lineColor,
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 5f)
+                )
+                drawLine(
+                    color = Color.Gray,
+                    start = androidx.compose.ui.geometry.Offset(0f, size.height),
+                    end = androidx.compose.ui.geometry.Offset(size.width, size.height),
+                    strokeWidth = 2f
+                )
             }
         }
     }
 }
 
-@Composable
-fun InvoiceScreen(
-    stockViewModel: StockViewModel = viewModel(factory = StockViewModelFactory((LocalContext.current.applicationContext as StellarStocksApplication).repository)),
-    debtorViewModel: DebtorViewModel = viewModel(factory = DebtorViewModelFactory((LocalContext.current.applicationContext as StellarStocksApplication).repository)),
-    invoiceViewModel: InvoiceViewModel = viewModel(factory = InvoiceViewModelFactory((LocalContext.current.applicationContext as StellarStocksApplication).repository))
-) {
-    var showStockSearchDialog by remember { mutableStateOf(false) } // stock search dialog state
-    var showDebtorSearchDialog by remember { mutableStateOf(false) } // debtor search dialog state
-    var showQtyDialog by remember { mutableStateOf(false) } // quantity dialog state
-    var tempSelectedStock by remember { mutableStateOf<com.example.stellarstocks.data.db.models.StockMaster?>(null) } // temporary selected stock state for invoice preview
+    @Composable
+    fun DashboardTable(title: String, headers: List<String>, data: List<List<String>>) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = DarkGreen)
+                Spacer(modifier = Modifier.height(8.dp))
 
-    var showConfirmationDialog by remember { mutableStateOf(false) } // invoice confirmation dialog state
-
-    var isEditMode by remember { mutableStateOf(false) } // edit mode for quantity dialog
-    var editInitialQty by remember { mutableIntStateOf(1) } // initial quantity for quantity dialog
-    var editInitialDiscount by remember { mutableDoubleStateOf(0.0) } // initial discount for quantity dialog
-
-    val scrollState = rememberScrollState() // scroll state for column
-    val context = LocalContext.current
-
-    // Invoice State
-    val selectedDebtor by invoiceViewModel.selectedDebtor.collectAsState() // selected debtor state
-    val invoiceItems by invoiceViewModel.invoiceItems.collectAsState() // invoice items state
-    val totalExVat by invoiceViewModel.totalExVat.collectAsState() // total without VAT
-    val vat by invoiceViewModel.vat.collectAsState() // VAT state
-    val grandTotal by invoiceViewModel.grandTotal.collectAsState() // grand total
-    val toastMessage by invoiceViewModel.toastMessage.collectAsState()
-    val invoiceNum by invoiceViewModel.invoiceNum.collectAsState() // invoice number
-
-    val isInvoiceProcessed by invoiceViewModel.isInvoiceProcessed.collectAsState() // invoice processed state
-
-    LaunchedEffect(toastMessage) { // show toast message
-        toastMessage?.let {
-            android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_SHORT).show()
-            invoiceViewModel.clearToast()
-        }
-    }
-
-    if (showConfirmationDialog) { // show dialog to confirm invoice
-        AlertDialog(
-            onDismissRequest = { showConfirmationDialog = false },
-            title = { Text(text = "Confirm Invoice") },
-            text = { Text("Are you sure you want to process this invoice?\n\nTotal: R${String.format("%.2f", grandTotal)}") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        invoiceViewModel.confirmInvoice() //call confirm invoice function
-                        showConfirmationDialog = false
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = DarkGreen)
-                ) { Text("Yes, Process") }
-            },
-            dismissButton = { TextButton(onClick = { showConfirmationDialog = false }, colors = ButtonDefaults.buttonColors(containerColor = Red)) { Text("Cancel")} },
-            containerColor = Color.White
-        )
-    }
-
-    if (showDebtorSearchDialog) { //show search debtor dialog
-        DebtorCreationSearchDialog(
-            viewModel = debtorViewModel,
-            onDismiss = {
-                showDebtorSearchDialog = false
-                debtorViewModel.resetSearch()},
-            onDebtorSelected = { debtor ->
-                invoiceViewModel.setDebtor(debtor)
-                showDebtorSearchDialog = false
-                debtorViewModel.resetSearch()
-            }
-        )
-    }
-
-    if (showStockSearchDialog) { //show search stock dialog
-        StockSearchDialog(
-            viewModel = stockViewModel,
-            onDismiss = {
-                showStockSearchDialog = false
-                stockViewModel.resetSearch()},
-            onStockSelected = { stock ->
-                tempSelectedStock = stock // set stock added to invoice
-                isEditMode = false
-                editInitialQty=1
-                editInitialDiscount=0.00
-                showStockSearchDialog = false
-                showQtyDialog = true
-                stockViewModel.resetSearch()
-            }
-        )
-    }
-
-    if (showQtyDialog && tempSelectedStock != null) { //show quantity dialog after adding an item to invoice
-        AddStockDialog(
-            stock = tempSelectedStock!!, // stock added to invoice cannot be null
-            initialQty = editInitialQty,
-            initialDiscount = editInitialDiscount,
-            isEditMode = isEditMode,
-            onDismiss = { showQtyDialog = false }, //dismiss dialog if user cancels
-            onConfirm = { qty, discount ->
-                if (isEditMode) {
-
-                    invoiceViewModel.updateInvoiceItem(tempSelectedStock!!, qty, discount)// Update existing item
-                } else {
-
-                    invoiceViewModel.addToInvoice(tempSelectedStock!!, qty, discount) // Add new item
+                // Header
+                Row(Modifier.background(LightGreen.copy(alpha = 0.3f))) {
+                    headers.forEach { header ->
+                        Text(
+                            header, Modifier
+                                .weight(1f)
+                                .padding(8.dp), fontWeight = FontWeight.Bold, fontSize = 12.sp
+                        )
+                    }
                 }
-                showQtyDialog = false
-                tempSelectedStock = null
+
+                // Data Rows
+                if (data.isEmpty()) {
+                    Text(
+                        "No data available",
+                        modifier = Modifier.padding(8.dp),
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
+                } else {
+                    data.forEach { row ->
+                        Row {
+                            row.forEach { cell ->
+                                Text(
+                                    cell, Modifier
+                                        .weight(1f)
+                                        .padding(8.dp), fontSize = 12.sp
+                                )
+                            }
+                        }
+                        HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
+                    }
+                }
             }
-        )
+        }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(scrollState),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Button(
-                onClick = { showDebtorSearchDialog = true },
-                colors = ButtonDefaults.buttonColors(containerColor = LightGreen),
-                modifier = Modifier.weight(1f).padding(end = 8.dp),
-                shape = MaterialTheme.shapes.small,
-                enabled = !isInvoiceProcessed
-            ) {
-                Icon(Icons.Default.People, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Select Debtor")
-            }
 
-            Button(
-                onClick = { showStockSearchDialog = true },
-                colors = ButtonDefaults.buttonColors(containerColor = LightGreen),
-                modifier = Modifier.weight(1f).padding(start = 8.dp),
-                shape = MaterialTheme.shapes.small,
-                enabled = !isInvoiceProcessed
+
+    @Composable
+    fun MainApp() {
+        val navController = rememberNavController() // navigation controller
+        val context = LocalContext.current // context for database
+
+        val app = context.applicationContext as StellarStocksApplication // application context
+        app.database
+        val repository = app.repository // repository for database
+
+
+        val debtorViewModel: DebtorViewModel =
+            viewModel(factory = DebtorViewModelFactory(repository)) // view model for debtor
+        val stockViewModel: StockViewModel =
+            viewModel(factory = StockViewModelFactory(repository)) // view model for stock
+
+        val navItems = listOf( // bottom navigation bar items
+            BottomNavItem("Stocks", Icons.Default.Inventory, Screen.StockMenu.route),
+            BottomNavItem("Invoices", Icons.Default.Description, Screen.Invoice.route),
+            BottomNavItem("Debtors", Icons.Default.People, Screen.DebtorMenu.route)
+        )
+
+        Scaffold(
+            bottomBar = {
+                NavigationBar(
+                    containerColor = DarkGreen
+                ) { // bottom navigation bar
+                    val navBackStackEntry by navController.currentBackStackEntryAsState() // current back stack entry
+                    val currentDestination = navBackStackEntry?.destination // current destination
+                    navItems.forEach { item ->// loop through navigation items
+                        NavigationBarItem(
+                            selected = currentDestination?.hierarchy?.any { it.route == item.route } == true, // check if current destination is the same as the item
+                            onClick = {
+                                navController.navigate(item.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) { // pop up to start destination
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            icon = { Icon(item.icon, contentDescription = item.label) },
+                            label = { Text(item.label) },
+                            colors = NavigationBarItemColors(
+                                DarkGreen, Yellow, LimeGreen,
+                                Yellow, Yellow, Black, Black
+                            ),
+                        )
+                    }
+                }
+            }
+        ) { innerPadding ->
+            NavHost( // navigation host
+                navController = navController,
+                startDestination = Screen.Invoice.route,
+                modifier = Modifier.padding(innerPadding)
             ) {
-                Icon(Icons.Default.Inventory, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Add Item")
+                composable(Screen.Invoice.route) {
+                    InvoiceScreen(
+                        stockViewModel,
+                        debtorViewModel
+                    )
+                } // invoice screen
+
+                composable(Screen.StockMenu.route) { StockMenuScreen(navController) } // stock menu screen
+
+                composable(Screen.StockEnquiry.route) {
+                    StockEnquiryScreen(stockViewModel, navController) // stock enquiry screen
+                }
+
+                composable(Screen.StockDetails.route) { backStackEntry -> // stock details screen
+                    val stockCode = backStackEntry.arguments?.getString("stockCode")
+                    if (stockCode != null) {
+                        StockDetailsScreen(stockCode, stockViewModel, navController)
+                    }
+                }
+
+                composable(Screen.StockCreation.route) { // stock creation screen
+                    StockCreationScreen(stockViewModel, navController)
+                }
+
+                composable(Screen.StockAdjustment.route) { // stock adjustment screen
+                    StockAdjustmentScreen(viewModel = stockViewModel, navController = navController)
+                }
+
+                composable(Screen.DebtorMenu.route) { DebtorMenuScreen(navController) } // debtor menu screen
+
+                composable(Screen.DebtorEnquiry.route) { // debtor enquiry screen
+                    DebtorEnquiryScreen(debtorViewModel, navController)
+                }
+
+                composable(Screen.DebtorCreation.route) { // debtor creation screen
+                    DebtorCreationScreen(debtorViewModel, navController)
+                }
+
+                composable(Screen.DebtorDetails.route) { backStackEntry -> // debtor details screen
+                    val accountCode = backStackEntry.arguments?.getString("accountCode")
+                    if (accountCode != null) {
+                        DebtorDetailsScreen(accountCode, debtorViewModel, navController)
+                    }
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun InvoiceScreen(
+        stockViewModel: StockViewModel = viewModel(factory = StockViewModelFactory((LocalContext.current.applicationContext as StellarStocksApplication).repository)),
+        debtorViewModel: DebtorViewModel = viewModel(factory = DebtorViewModelFactory((LocalContext.current.applicationContext as StellarStocksApplication).repository)),
+        invoiceViewModel: InvoiceViewModel = viewModel(factory = InvoiceViewModelFactory((LocalContext.current.applicationContext as StellarStocksApplication).repository))
+    ) {
+        var showStockSearchDialog by remember { mutableStateOf(false) } // stock search dialog state
+        var showDebtorSearchDialog by remember { mutableStateOf(false) } // debtor search dialog state
+        var showQtyDialog by remember { mutableStateOf(false) } // quantity dialog state
+        var tempSelectedStock by remember {
+            mutableStateOf<com.example.stellarstocks.data.db.models.StockMaster?>(
+                null
+            )
+        } // temporary selected stock state for invoice preview
+
+        var showConfirmationDialog by remember { mutableStateOf(false) } // invoice confirmation dialog state
+
+        var isEditMode by remember { mutableStateOf(false) } // edit mode for quantity dialog
+        var editInitialQty by remember { mutableIntStateOf(1) } // initial quantity for quantity dialog
+        var editInitialDiscount by remember { mutableDoubleStateOf(0.0) } // initial discount for quantity dialog
+
+        val scrollState = rememberScrollState() // scroll state for column
+        val context = LocalContext.current
+
+        // Invoice State
+        val selectedDebtor by invoiceViewModel.selectedDebtor.collectAsState() // selected debtor state
+        val invoiceItems by invoiceViewModel.invoiceItems.collectAsState() // invoice items state
+        val totalExVat by invoiceViewModel.totalExVat.collectAsState() // total without VAT
+        val vat by invoiceViewModel.vat.collectAsState() // VAT state
+        val grandTotal by invoiceViewModel.grandTotal.collectAsState() // grand total
+        val toastMessage by invoiceViewModel.toastMessage.collectAsState()
+        val invoiceNum by invoiceViewModel.invoiceNum.collectAsState() // invoice number
+
+        val isInvoiceProcessed by invoiceViewModel.isInvoiceProcessed.collectAsState() // invoice processed state
+
+        LaunchedEffect(toastMessage) { // show toast message
+            toastMessage?.let {
+                android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_SHORT).show()
+                invoiceViewModel.clearToast()
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        if (showConfirmationDialog) { // show dialog to confirm invoice
+            AlertDialog(
+                onDismissRequest = { showConfirmationDialog = false },
+                title = { Text(text = "Confirm Invoice") },
+                text = {
+                    Text(
+                        "Are you sure you want to process this invoice?\n\nTotal: R${
+                            String.format(
+                                "%.2f",
+                                grandTotal
+                            )
+                        }"
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            invoiceViewModel.confirmInvoice() //call confirm invoice function
+                            showConfirmationDialog = false
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = DarkGreen)
+                    ) { Text("Yes, Process") }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showConfirmationDialog = false },
+                        colors = ButtonDefaults.buttonColors(containerColor = Red)
+                    ) { Text("Cancel") }
+                },
+                containerColor = Color.White
+            )
+        }
 
-        TicketView( // ticket view background for invoice
-            content = {
-                Column {
-                    Text("INVOICE #${invoiceNum}", fontWeight = FontWeight.Bold, fontSize = 20.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(), color = Black) //invoice title
-                    Text(LocalDate.now().toString(), textAlign = TextAlign.Center, color = Color.Gray, modifier = Modifier.fillMaxWidth()) // date of invoice
+        if (showDebtorSearchDialog) { //show search debtor dialog
+            DebtorCreationSearchDialog(
+                viewModel = debtorViewModel,
+                onDismiss = {
+                    showDebtorSearchDialog = false
+                    debtorViewModel.resetSearch()
+                },
+                onDebtorSelected = { debtor ->
+                    invoiceViewModel.setDebtor(debtor)
+                    showDebtorSearchDialog = false
+                    debtorViewModel.resetSearch()
+                }
+            )
+        }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(8.dp))
+        if (showStockSearchDialog) { //show search stock dialog
+            StockSearchDialog(
+                viewModel = stockViewModel,
+                onDismiss = {
+                    showStockSearchDialog = false
+                    stockViewModel.resetSearch()
+                },
+                onStockSelected = { stock ->
+                    tempSelectedStock = stock // set stock added to invoice
+                    isEditMode = false
+                    editInitialQty = 1
+                    editInitialDiscount = 0.00
+                    showStockSearchDialog = false
+                    showQtyDialog = true
+                    stockViewModel.resetSearch()
+                }
+            )
+        }
 
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Subtotal excl. VAT:", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Black)
-                        Text(String.format("R%.2f", totalExVat), fontSize = 12.sp, color = Black) // subtotal excl vat rounded to 2 decimal places
-                    }
+        if (showQtyDialog && tempSelectedStock != null) { //show quantity dialog after adding an item to invoice
+            AddStockDialog(
+                stock = tempSelectedStock!!, // stock added to invoice cannot be null
+                initialQty = editInitialQty,
+                initialDiscount = editInitialDiscount,
+                isEditMode = isEditMode,
+                onDismiss = { showQtyDialog = false }, //dismiss dialog if user cancels
+                onConfirm = { qty, discount ->
+                    if (isEditMode) {
 
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("VAT (15%):", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Black)
-                        Text(String.format("R%.2f", vat), fontSize = 12.sp, color = Black) //vat total rounded to 2 decimal places
-                    }
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("TOTAL:", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = DarkGreen)
-                        Text(String.format("R%.2f", grandTotal), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = DarkGreen) // grand total rounded to 2 decimal places
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Debtor Section
-                    if (selectedDebtor != null) { // show debtor details if selected
-                        Text("BILL TO:", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.Gray)
-                        Text(selectedDebtor!!.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = DarkGreen) // debtor name
-                        Text(selectedDebtor!!.accountCode, fontSize = 14.sp, color = Black) // debtor account code
-
-                        Text("Primary Address:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
-                        Text(selectedDebtor!!.address1.replace(", ", "\n"), fontSize = 12.sp, color= Black)// debtor address
-
-                        if(selectedDebtor!!.address2.isNotBlank()){
-                            Text("Secondary Address:", modifier = Modifier.fillMaxWidth(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Gray, textAlign = TextAlign.End)
-                            Text(selectedDebtor!!.address2.replace(", ", "\n"), modifier = Modifier.fillMaxWidth(), fontSize = 12.sp, color= Black, textAlign = TextAlign.End)
-                        }
+                        invoiceViewModel.updateInvoiceItem(
+                            tempSelectedStock!!,
+                            qty,
+                            discount
+                        )// Update existing item
                     } else {
-                        Text("No Debtor Selected", color = Color.Red, fontWeight = FontWeight.Bold)
+
+                        invoiceViewModel.addToInvoice(
+                            tempSelectedStock!!,
+                            qty,
+                            discount
+                        ) // Add new item
                     }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Invoice Details separator
-                    Row(
-                        modifier = Modifier.fillMaxWidth().background(Color(0xff000000)).padding(4.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                    showQtyDialog = false
+                    tempSelectedStock = null
+                }
+            )
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFF5F5F5))
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val wavePath =
+                    createWavePath(
+                        width = size.width,
+                        height = size.height * 0.25f,
+                        waveHeight = 80f
+                    )
+                drawPath(path = wavePath, color = Yellow.copy(alpha = 0.5f))
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+                    .verticalScroll(scrollState),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Button(
+                        onClick = { showDebtorSearchDialog = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = LightGreen),
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 8.dp),
+                        shape = MaterialTheme.shapes.small,
+                        enabled = !isInvoiceProcessed
                     ) {
-                        Text("Item (Tap to Edit Added Items)", fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                        Text("Total (Excl VAT)", fontWeight = FontWeight.Bold, fontSize = 12.sp) //per line item total
+                        Icon(Icons.Default.People, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Select Debtor")
                     }
 
-                    // Invoice Items List
-                    if (invoiceItems.isEmpty()) {
-                        Text("Invoice is empty", modifier = Modifier.padding(vertical = 20.dp).fillMaxWidth(), textAlign = TextAlign.Center, color = Color.Gray)
-                    } else {
-                        invoiceItems.forEach { item -> // loop through invoice items
+                    Button(
+                        onClick = { showStockSearchDialog = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = LightGreen),
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = 8.dp),
+                        shape = MaterialTheme.shapes.small,
+                        enabled = !isInvoiceProcessed
+                    ) {
+                        Icon(Icons.Default.Inventory, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Add Item")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                TicketView( // ticket view background for invoice
+                    content = {
+                        Column {
+                            Text(
+                                "INVOICE #${invoiceNum}",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth(),
+                                color = Black
+                            ) //invoice title
+                            Text(
+                                LocalDate.now().toString(),
+                                textAlign = TextAlign.Center,
+                                color = Color.Gray,
+                                modifier = Modifier.fillMaxWidth()
+                            ) // date of invoice
+
+                            Spacer(modifier = Modifier.height(16.dp))
+                            HorizontalDivider()
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    "Subtotal excl. VAT:",
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 12.sp,
+                                    color = Black
+                                )
+                                Text(
+                                    String.format("R%.2f", totalExVat),
+                                    fontSize = 12.sp,
+                                    color = Black
+                                ) // subtotal excl vat rounded to 2 decimal places
+                            }
+
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    "VAT (15%):",
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 12.sp,
+                                    color = Black
+                                )
+                                Text(
+                                    String.format("R%.2f", vat),
+                                    fontSize = 12.sp,
+                                    color = Black
+                                ) //vat total rounded to 2 decimal places
+                            }
+
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    "TOTAL:",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp,
+                                    color = DarkGreen
+                                )
+                                Text(
+                                    String.format("R%.2f", grandTotal),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp,
+                                    color = DarkGreen
+                                ) // grand total rounded to 2 decimal places
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+                            HorizontalDivider()
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Debtor Section
+                            if (selectedDebtor != null) { // show debtor details if selected
+                                Text(
+                                    "BILL TO:",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                    color = Color.Gray
+                                )
+                                Text(
+                                    selectedDebtor!!.name,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp,
+                                    color = DarkGreen
+                                ) // debtor name
+                                Text(
+                                    selectedDebtor!!.accountCode,
+                                    fontSize = 14.sp,
+                                    color = Black
+                                ) // debtor account code
+
+                                Text(
+                                    "Primary Address:",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Gray
+                                )
+                                Text(
+                                    selectedDebtor!!.address1.replace(", ", "\n"),
+                                    fontSize = 12.sp,
+                                    color = Black
+                                )// debtor address
+
+                                if (selectedDebtor!!.address2.isNotBlank()) {
+                                    Text(
+                                        "Secondary Address:",
+                                        modifier = Modifier.fillMaxWidth(),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.Gray,
+                                        textAlign = TextAlign.End
+                                    )
+                                    Text(
+                                        selectedDebtor!!.address2.replace(", ", "\n"),
+                                        modifier = Modifier.fillMaxWidth(),
+                                        fontSize = 12.sp,
+                                        color = Black,
+                                        textAlign = TextAlign.End
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    "No Debtor Selected",
+                                    color = Color.Red,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+                            // Invoice Details separator
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable(enabled = !isInvoiceProcessed) {
-                                        tempSelectedStock = item.stock
-                                        editInitialQty = item.qty
-                                        editInitialDiscount = item.discountPercent
-                                        isEditMode = true
-                                        showQtyDialog = true
-                                    }
-                                    .padding(vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                    .background(Color(0xff000000))
+                                    .padding(4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(item.stock.stockDescription, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = DarkGreen) // stock description
-                                    Row {
-                                        Text("${item.qty} x R${item.stock.sellingPrice}", fontSize = 12.sp, color = Color.Gray) // quantity and price
-                                        if (item.discountPercent > 0 && item.discountPercent < 100) {
-                                            Spacer(Modifier.width(8.dp))
-                                            Text("(-${item.discountPercent}%)", fontSize = 12.sp, color = Color.Red) // discount percent
+                                Text(
+                                    "Item (Tap to Edit Added Items)",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp
+                                )
+                                Text(
+                                    "Total (Excl VAT)",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp
+                                ) //per line item total
+                            }
+
+                            // Invoice Items List
+                            if (invoiceItems.isEmpty()) {
+                                Text(
+                                    "Invoice is empty",
+                                    modifier = Modifier
+                                        .padding(vertical = 20.dp)
+                                        .fillMaxWidth(),
+                                    textAlign = TextAlign.Center,
+                                    color = Color.Gray
+                                )
+                            } else {
+                                invoiceItems.forEach { item -> // loop through invoice items
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable(enabled = !isInvoiceProcessed) {
+                                                tempSelectedStock = item.stock
+                                                editInitialQty = item.qty
+                                                editInitialDiscount = item.discountPercent
+                                                isEditMode = true
+                                                showQtyDialog = true
+                                            }
+                                            .padding(vertical = 8.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                item.stock.stockDescription,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 14.sp,
+                                                color = DarkGreen
+                                            ) // stock description
+                                            Row {
+                                                Text(
+                                                    "${item.qty} x R${item.stock.sellingPrice}",
+                                                    fontSize = 12.sp,
+                                                    color = Color.Gray
+                                                ) // quantity and price
+                                                if (item.discountPercent > 0 && item.discountPercent < 100) {
+                                                    Spacer(Modifier.width(8.dp))
+                                                    Text(
+                                                        "(-${item.discountPercent}%)",
+                                                        fontSize = 12.sp,
+                                                        color = Color.Red
+                                                    ) // discount percent
+                                                }
+                                            }
+                                        }
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(
+                                                String.format("R%.2f", item.lineTotal),
+                                                fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.padding(end = 12.dp),
+                                                color = Black
+                                            )
+
+                                            if (!isInvoiceProcessed) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Delete,
+                                                    contentDescription = "Remove",
+                                                    tint = Color.Red,
+                                                    modifier = Modifier
+                                                        .size(20.dp)
+                                                        .clickable {
+                                                            invoiceViewModel.removeFromInvoice(
+                                                                item
+                                                            )
+                                                        }
+                                                )
+                                            }
                                         }
                                     }
-                                }
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(String.format("R%.2f", item.lineTotal), fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 12.dp), color = Black)
-
-                                    if (!isInvoiceProcessed) {
-                                        Icon(
-                                            imageVector = Icons.Default.Delete,
-                                            contentDescription = "Remove",
-                                            tint = Color.Red,
-                                            modifier = Modifier.size(20.dp).clickable { invoiceViewModel.removeFromInvoice(item) }
-                                        )
-                                    }
+                                    HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
                                 }
                             }
-                            HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
                         }
+                    }
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+
+
+                if (isInvoiceProcessed) {
+
+                    Button(
+                        onClick = { invoiceViewModel.startNewInvoice() },
+                        colors = ButtonDefaults.buttonColors(containerColor = ProfessionalLightBlue),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                    ) {
+                        Text("Start New Invoice", fontWeight = FontWeight.Bold, color = Color.Black)
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+
+                    Button(
+                        onClick = { },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        enabled = false
+                    ) {
+                        Text("Invoice Processed", fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                } else {
+
+                    Button(
+                        onClick = { showConfirmationDialog = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = DarkGreen),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        enabled = selectedDebtor != null && invoiceItems.isNotEmpty()
+                    ) {
+                        Text("CONFIRM & PROCESS INVOICE", fontWeight = FontWeight.Bold)
                     }
                 }
             }
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-
-
-        if (isInvoiceProcessed) {
-
-            Button(
-                onClick = { invoiceViewModel.startNewInvoice() },
-                colors = ButtonDefaults.buttonColors(containerColor = ProfessionalLightBlue),
-                modifier = Modifier.fillMaxWidth().height(56.dp)
-            ) {
-                Text("Start New Invoice", fontWeight = FontWeight.Bold, color = Color.Black)
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-
-            Button(
-                onClick = { },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                enabled = false
-            ) {
-                Text("Invoice Processed", fontWeight = FontWeight.Bold, color = Color.White)
-            }
-        } else {
-
-            Button(
-                onClick = { showConfirmationDialog = true },
-                colors = ButtonDefaults.buttonColors(containerColor = DarkGreen),
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                enabled = selectedDebtor != null && invoiceItems.isNotEmpty()
-            ) {
-                Text("CONFIRM & PROCESS INVOICE", fontWeight = FontWeight.Bold)
-            }
         }
     }
-}
 
 
-@Composable
-fun AddStockDialog(// Dialog to add a stock item
-    stock: com.example.stellarstocks.data.db.models.StockMaster,
-    initialQty: Int = 0,
-    initialDiscount: Double = 0.0,
-    isEditMode: Boolean = false,
-    onDismiss: () -> Unit,
-    onConfirm: (Int, Double) -> Unit
-) {
-    var qtyText by remember { mutableStateOf(if (initialQty > 0) initialQty.toString() else "1") }
-    var discountText by remember { mutableStateOf(initialDiscount.toString()) }
+    @Composable
+    fun AddStockDialog(// Dialog to add a stock item
+        stock: com.example.stellarstocks.data.db.models.StockMaster,
+        initialQty: Int = 0,
+        initialDiscount: Double = 0.0,
+        isEditMode: Boolean = false,
+        onDismiss: () -> Unit,
+        onConfirm: (Int, Double) -> Unit
+    ) {
+        var qtyText by remember { mutableStateOf(if (initialQty > 0) initialQty.toString() else "1") }
+        var discountText by remember { mutableStateOf(initialDiscount.toString()) }
 
-    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) { //dialog for adding a stock item
-        Card( //card to display items
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White)
-        ) {
-            Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = if (isEditMode) "Edit Item" else "Add Item", //switch text depending on mode
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
-                Text(stock.stockDescription, fontWeight = FontWeight.Medium, color = DarkGreen) // stock description
-                Text("Price: R${stock.sellingPrice}", color = Color.Gray, fontSize = 12.sp) //stock selling price
-                Text("Stock on Hand: ${stock.stockOnHand}", color = Color.Gray, fontSize = 12.sp)
-                Spacer(Modifier.height(16.dp))
+        androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) { //dialog for adding a stock item
+            Card( //card to display items
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(
+                    Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = if (isEditMode) "Edit Item" else "Add Item", //switch text depending on mode
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                    Text(
+                        stock.stockDescription,
+                        fontWeight = FontWeight.Medium,
+                        color = DarkGreen
+                    ) // stock description
+                    Text(
+                        "Price: R${stock.sellingPrice}",
+                        color = Color.Gray,
+                        fontSize = 12.sp
+                    ) //stock selling price
+                    Text(
+                        "Stock on Hand: ${stock.stockOnHand}",
+                        color = Color.Gray,
+                        fontSize = 12.sp
+                    )
+                    Spacer(Modifier.height(16.dp))
 
-                OutlinedTextField(
-                    value = qtyText,
-                    onValueChange = { input ->
-                        if (input.all { it.isDigit() }) {
-                            qtyText = input
-                        }
-                    },
-                    label = { Text("Quantity") },
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
-                    ),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = discountText,
-                    onValueChange = { input ->
-                        if (input.count { it == '.' } <= 2 && input.all { it.isDigit() || it == '.' }) {
-                            discountText = input
-                        }
-                    },
-                    label = { Text("Discount %") },
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
-                    ),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(Modifier.height(24.dp))
-
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    TextButton(onClick = onDismiss, colors = ButtonDefaults.buttonColors(containerColor = Red)) { Text("Cancel") } // cancel button
-                    Button(
-                        onClick = {
-                            val qty = qtyText.toIntOrNull() ?: 0 // get quantity from text field
-                            val disc = discountText.toDoubleOrNull() ?: 0.0 // get discount from text field
-                            if (qty > 0 && disc>=0) onConfirm(qty, disc) // check if quantity is greater than 0
+                    OutlinedTextField(
+                        value = qtyText,
+                        onValueChange = { input ->
+                            if (input.all { it.isDigit() }) {
+                                qtyText = input
+                            }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = DarkGreen)
-                    ) { Text(if (isEditMode) "Update" else "Add") } // change button based on mode
+                        label = { Text("Quantity") },
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                        ),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        value = discountText,
+                        onValueChange = { input ->
+                            if (input.count { it == '.' } <= 2 && input.all { it.isDigit() || it == '.' }) {
+                                discountText = input
+                            }
+                        },
+                        label = { Text("Discount %") },
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
+                        ),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(Modifier.height(24.dp))
+
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        TextButton(
+                            onClick = onDismiss,
+                            colors = ButtonDefaults.buttonColors(containerColor = Red)
+                        ) { Text("Cancel") } // cancel button
+                        Button(
+                            onClick = {
+                                val qty = qtyText.toIntOrNull() ?: 0 // get quantity from text field
+                                val disc = discountText.toDoubleOrNull()
+                                    ?: 0.0 // get discount from text field
+                                if (qty > 0 && disc >= 0) onConfirm(
+                                    qty,
+                                    disc
+                                ) // check if quantity is greater than 0
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = DarkGreen)
+                        ) { Text(if (isEditMode) "Update" else "Add") } // change button based on mode
+                    }
                 }
             }
         }
     }
-}
 
-/*
+    /*
 * Title- Make a Ticket View with Jetpack Compose
 * Author- Kush Saini
 * Accessed- 30/01/2026
 * URL- https://medium.com/@kushsaini/make-a-ticketview-with-jetpack-compose-ea0c8f7a00a8
 * */
-@Preview
-@Composable
-private fun TicketView( // custom background for invoice
-    content: @Composable () -> Unit = {
-        Text("Ticket View")
-    }
-) {
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.primary
+    @Preview
+    @Composable
+    private fun TicketView( // custom background for invoice
+        content: @Composable () -> Unit = {
+            Text("Ticket View")
+        }
     ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.primary
+        ) {
 
-        Box(
+            Box(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .shadow(
+                        2.dp,
+                        shape = TicketShape(8f, 4f),
+                        clip = true
+                    )
+                    .background(Color.White)
+            ) {
+
+                Box(modifier = Modifier.padding(16.dp)) {
+                    content()
+                }
+            }
+        }
+    }
+
+    /*
+* Title- Make a Ticket View with Jetpack Compose
+* Author- Kush Saini
+* Accessed- 30/01/2026
+* URL- https://medium.com/@kushsaini/make-a-ticketview-with-jetpack-compose-ea0c8f7a00a8
+* */
+    class TicketShape(
+        private val teethWidthDp: Float,
+        private val teethHeightDp: Float
+    ) : Shape {
+        override fun createOutline(
+            size: Size,
+            layoutDirection: LayoutDirection,
+            density: Density
+        ) = Outline.Generic(Path().apply {
+
+            moveTo(
+                size.width * 0.99f,
+                size.height * 0.01f
+            )
+
+            val teethHeightPx = teethHeightDp * density.density
+            var fullTeethWidthPx = teethWidthDp * density.density
+            var halfTeethWidthPx = fullTeethWidthPx / 2
+            var currentDrawPositionX = size.width * 0.99f
+            var teethBasePositionY = size.height * 0.01f + teethHeightPx
+            val shapeWidthPx = size.width * 0.99f - size.width * 0.01f
+
+            val teethCount = shapeWidthPx / fullTeethWidthPx
+            val minTeethCount = floor(teethCount)
+
+            if (teethCount != minTeethCount) { // check to allow drawing if shape width is a multiple of teeth count
+                val newTeethWidthPx = shapeWidthPx / minTeethCount
+                fullTeethWidthPx = newTeethWidthPx
+                halfTeethWidthPx = fullTeethWidthPx / 2
+            }
+
+            var drawnTeethCount = 1
+
+            // draw half of first teeth
+            lineTo(
+                currentDrawPositionX - halfTeethWidthPx,
+                teethBasePositionY + teethHeightPx
+            )
+
+            // draw remaining teethes
+            while (drawnTeethCount < minTeethCount) {
+
+                currentDrawPositionX -= halfTeethWidthPx
+
+                // draw right half of teeth
+                lineTo(
+                    currentDrawPositionX - halfTeethWidthPx,
+                    teethBasePositionY - teethHeightPx
+                )
+
+                currentDrawPositionX -= halfTeethWidthPx
+
+                // draw left half of teeth
+                lineTo(
+                    currentDrawPositionX - halfTeethWidthPx,
+                    teethBasePositionY + teethHeightPx
+                )
+
+                drawnTeethCount++
+            }
+
+            currentDrawPositionX -= halfTeethWidthPx
+
+            // draw half of last teeth
+            lineTo(
+                currentDrawPositionX - halfTeethWidthPx,
+                teethBasePositionY - teethHeightPx
+            )
+
+            // draw left edge
+            lineTo(
+                size.width * 0.01f,
+                size.height * 0.99f
+            )
+
+            drawnTeethCount = 1
+            teethBasePositionY = size.height * 0.99f - teethHeightPx
+            currentDrawPositionX = size.width * 0.01f
+
+            // draw half of first teeth
+            lineTo(
+                currentDrawPositionX,
+                teethBasePositionY + teethHeightPx
+            )
+
+            lineTo(
+                currentDrawPositionX + halfTeethWidthPx,
+                teethBasePositionY - teethHeightPx
+            )
+
+            // draw remaining teethes
+            while (drawnTeethCount < minTeethCount) {
+
+                currentDrawPositionX += halfTeethWidthPx
+
+                // draw left half of teeth
+                lineTo(
+                    currentDrawPositionX + halfTeethWidthPx,
+                    teethBasePositionY + teethHeightPx
+                )
+
+                currentDrawPositionX += halfTeethWidthPx
+
+                // draw right half of teeth
+                lineTo(
+                    currentDrawPositionX + halfTeethWidthPx,
+                    teethBasePositionY - teethHeightPx
+                )
+
+                drawnTeethCount++
+            }
+
+            currentDrawPositionX += halfTeethWidthPx
+
+            // draw half of last teeth
+            lineTo(
+                currentDrawPositionX + halfTeethWidthPx,
+                teethBasePositionY + teethHeightPx
+            )
+
+            // left edge will automatically be drawn to close the path with the top-left arc
+            close()
+        })
+
+    }
+
+    data class DebtorMenuItemData( // data class for debtor menu tiles
+        val title: String,
+        val description: String,
+        val icon: ImageVector,
+        val route: String
+    )
+
+    val debtorMenuItems = listOf( // list of debtor menu tiles
+        DebtorMenuItemData(
+            title = "Debtor Enquiry",
+            description = "Search and view debtors",
+            icon = Icons.Default.Search,
+            route = Screen.DebtorEnquiry.route
+        ),
+        DebtorMenuItemData(
+            title = "Debtor Maintenance",
+            description = "Create and edit debtors",
+            icon = Icons.Default.Edit,
+            route = Screen.DebtorCreation.route
+        )
+    )
+
+    @Composable
+    fun DebtorMenuTile(
+        item: DebtorMenuItemData,
+        navController: NavController
+    ) { // debtor menu tile layouts
+        Card(
             modifier = Modifier
                 .padding(8.dp)
-                .shadow(
-                    2.dp,
-                    shape = TicketShape(8f, 4f),
-                    clip = true
+                .clickable { navController.navigate(item.route) },
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            colors = CardDefaults.cardColors(containerColor = LightGreen)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .size(160.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(item.icon, contentDescription = item.title, modifier = Modifier.size(48.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    item.title,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center
                 )
-                .background(Color.White)
-        ) {
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Box(modifier = Modifier.padding(16.dp)) {
-                content()
-            }
-        }
-    }
-}
-
-/*
-* Title- Make a Ticket View with Jetpack Compose
-* Author- Kush Saini
-* Accessed- 30/01/2026
-* URL- https://medium.com/@kushsaini/make-a-ticketview-with-jetpack-compose-ea0c8f7a00a8
-* */
-class TicketShape(
-    private val teethWidthDp: Float,
-    private val teethHeightDp: Float
-) : Shape {
-    override fun createOutline(
-        size: Size,
-        layoutDirection: LayoutDirection,
-        density: Density
-    ) = Outline.Generic(Path().apply {
-
-        moveTo(
-            size.width * 0.99f,
-            size.height * 0.01f
-        )
-
-        val teethHeightPx = teethHeightDp * density.density
-        var fullTeethWidthPx = teethWidthDp * density.density
-        var halfTeethWidthPx = fullTeethWidthPx / 2
-        var currentDrawPositionX = size.width * 0.99f
-        var teethBasePositionY = size.height * 0.01f + teethHeightPx
-        val shapeWidthPx = size.width * 0.99f - size.width * 0.01f
-
-        val teethCount = shapeWidthPx / fullTeethWidthPx
-        val minTeethCount = floor(teethCount)
-
-        if (teethCount != minTeethCount) { // check to allow drawing if shape width is a multiple of teeth count
-            val newTeethWidthPx = shapeWidthPx / minTeethCount
-            fullTeethWidthPx = newTeethWidthPx
-            halfTeethWidthPx = fullTeethWidthPx / 2
-        }
-
-        var drawnTeethCount = 1
-
-        // draw half of first teeth
-        lineTo(
-            currentDrawPositionX - halfTeethWidthPx,
-            teethBasePositionY + teethHeightPx
-        )
-
-        // draw remaining teethes
-        while (drawnTeethCount < minTeethCount) {
-
-            currentDrawPositionX -= halfTeethWidthPx
-
-            // draw right half of teeth
-            lineTo(
-                currentDrawPositionX - halfTeethWidthPx,
-                teethBasePositionY - teethHeightPx
-            )
-
-            currentDrawPositionX -= halfTeethWidthPx
-
-            // draw left half of teeth
-            lineTo(
-                currentDrawPositionX - halfTeethWidthPx,
-                teethBasePositionY + teethHeightPx
-            )
-
-            drawnTeethCount++
-        }
-
-        currentDrawPositionX -= halfTeethWidthPx
-
-        // draw half of last teeth
-        lineTo(
-            currentDrawPositionX - halfTeethWidthPx,
-            teethBasePositionY - teethHeightPx
-        )
-
-        // draw left edge
-        lineTo(
-            size.width * 0.01f,
-            size.height * 0.99f
-        )
-
-        drawnTeethCount = 1
-        teethBasePositionY = size.height * 0.99f - teethHeightPx
-        currentDrawPositionX = size.width * 0.01f
-
-        // draw half of first teeth
-        lineTo(
-            currentDrawPositionX,
-            teethBasePositionY + teethHeightPx
-        )
-
-        lineTo(
-            currentDrawPositionX + halfTeethWidthPx,
-            teethBasePositionY - teethHeightPx
-        )
-
-        // draw remaining teethes
-        while (drawnTeethCount < minTeethCount) {
-
-            currentDrawPositionX += halfTeethWidthPx
-
-            // draw left half of teeth
-            lineTo(
-                currentDrawPositionX + halfTeethWidthPx,
-                teethBasePositionY + teethHeightPx
-            )
-
-            currentDrawPositionX += halfTeethWidthPx
-
-            // draw right half of teeth
-            lineTo(
-                currentDrawPositionX + halfTeethWidthPx,
-                teethBasePositionY - teethHeightPx
-            )
-
-            drawnTeethCount++
-        }
-
-        currentDrawPositionX += halfTeethWidthPx
-
-        // draw half of last teeth
-        lineTo(
-            currentDrawPositionX + halfTeethWidthPx,
-            teethBasePositionY + teethHeightPx
-        )
-
-        // left edge will automatically be drawn to close the path with the top-left arc
-        close()
-    })
-
-}
-
-data class DebtorMenuItemData( // data class for debtor menu tiles
-    val title: String,
-    val description: String,
-    val icon: ImageVector,
-    val route: String
-)
-
-val debtorMenuItems = listOf( // list of debtor menu tiles
-    DebtorMenuItemData(
-        title = "Debtor Enquiry",
-        description = "Search and view debtors",
-        icon = Icons.Default.Search,
-        route = Screen.DebtorEnquiry.route
-    ),
-    DebtorMenuItemData(
-        title = "Debtor Maintenance",
-        description = "Create and edit debtors",
-        icon = Icons.Default.Edit,
-        route = Screen.DebtorCreation.route
-    )
-)
-
-@Composable
-fun DebtorMenuTile(item: DebtorMenuItemData, navController: NavController) { // debtor menu tile layouts
-    Card(
-        modifier = Modifier
-            .padding(8.dp)
-            .clickable { navController.navigate(item.route) },
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = LightGreen)
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .size(160.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(item.icon, contentDescription = item.title, modifier = Modifier.size(48.dp))
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(item.title, fontWeight = FontWeight.Bold, fontSize = 16.sp, textAlign = TextAlign.Center)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(item.description, textAlign = TextAlign.Center, fontSize = 12.sp, color = Color.Gray)
-        }
-    }
-}
-
-
-data class StockMenuItemData( // data class for stock menu tiles
-    val title: String,
-    val description: String,
-    val icon: ImageVector,
-    val route: String
-)
-
-val stockMenuItems = listOf( // list of stock menu tiles
-    StockMenuItemData(
-        title = "Stock Enquiry",
-        description = "Search and view stock items",
-        icon = Icons.Default.Search,
-        route = Screen.StockEnquiry.route
-    ),
-    StockMenuItemData(
-        title = "Stock Maintenance",
-        description = "Create and edit stock items",
-        icon = Icons.Default.Edit,
-        route = Screen.StockCreation.route
-    ),
-    StockMenuItemData(
-        title = "Stock Adjustment",
-        description = "Adjust stock levels",
-        icon = Icons.Default.AddShoppingCart,
-        route = Screen.StockAdjustment.route
-    )
-)
-
-@Composable
-fun StockMenuTile(item: StockMenuItemData, navController: NavController) { // stock menu tile layouts
-    Card(
-        modifier = Modifier
-            .padding(8.dp)
-            .clickable { navController.navigate(item.route) },
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = LightGreen)
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .size(160.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(item.icon, contentDescription = item.title, modifier = Modifier.size(48.dp))
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(item.title, fontWeight = FontWeight.Bold, fontSize = 16.sp, textAlign = TextAlign.Center)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(item.description, textAlign = TextAlign.Center, fontSize = 12.sp, color = Color.Gray)
-        }
-    }
-}
-
-@Composable
-fun StockMenuScreen(navController: NavController) { // stock menu screen
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text(
-            "Stocks Menu",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = DarkGreen,
-            modifier = Modifier.padding(bottom = 16.dp).fillMaxWidth(),
-            textAlign = TextAlign.Center
-        )
-        LazyVerticalGrid( // grid layout for stock menu tiles
-            columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(8.dp)
-        ) {
-            items(stockMenuItems) { item -> // loop through stock menu tiles
-                StockMenuTile(item = item, navController = navController)
-            }
-        }
-    }
-}
-
-@Composable
-fun DebtorMenuScreen(navController: NavController) { // debtor menu screen
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text(
-            "Debtors Menu",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = DarkGreen,
-            modifier = Modifier.padding(bottom = 16.dp).fillMaxWidth(),
-            textAlign = TextAlign.Center
-        )
-        LazyVerticalGrid( // grid layout for debtor menu tiles
-            columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(8.dp)
-        ) {
-            items(debtorMenuItems) { item -> // loop through debtor menu tiles
-                DebtorMenuTile(item = item, navController = navController)
-            }
-        }
-    }
-}
-
-@Composable
-fun DebtorEnquiryScreen(debtorViewModel: DebtorViewModel, navController: NavController) { // debtor enquiry screen
-    val debtorList by debtorViewModel.filteredDebtors.collectAsState() // list of debtors
-    val searchQuery by debtorViewModel.searchQuery.collectAsState() // search query to filter debtors
-
-    val currentSort by debtorViewModel.debtorListSort.collectAsState()
-    var showSortMenu by remember { mutableStateOf(false) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(bottom = 8.dp)
-        ) {
-            IconButton(onClick = { navController.popBackStack() }) { //back button to navigate back to debtors menu
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = DarkGreen
+                Text(
+                    item.description,
+                    textAlign = TextAlign.Center,
+                    fontSize = 12.sp,
+                    color = Color.Gray
                 )
             }
+        }
+    }
+
+
+    data class StockMenuItemData( // data class for stock menu tiles
+        val title: String,
+        val description: String,
+        val icon: ImageVector,
+        val route: String
+    )
+
+    val stockMenuItems = listOf( // list of stock menu tiles
+        StockMenuItemData(
+            title = "Stock Enquiry",
+            description = "Search and view stock items",
+            icon = Icons.Default.Search,
+            route = Screen.StockEnquiry.route
+        ),
+        StockMenuItemData(
+            title = "Stock Maintenance",
+            description = "Create and edit stock items",
+            icon = Icons.Default.Edit,
+            route = Screen.StockCreation.route
+        ),
+        StockMenuItemData(
+            title = "Stock Adjustment",
+            description = "Adjust stock levels",
+            icon = Icons.Default.AddShoppingCart,
+            route = Screen.StockAdjustment.route
+        )
+    )
+
+    @Composable
+    fun StockMenuTile(
+        item: StockMenuItemData,
+        navController: NavController
+    ) { // stock menu tile layouts
+        Card(
+            modifier = Modifier
+                .padding(8.dp)
+                .clickable { navController.navigate(item.route) },
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            colors = CardDefaults.cardColors(containerColor = LightGreen)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .size(160.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(item.icon, contentDescription = item.title, modifier = Modifier.size(48.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    item.title,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    item.description,
+                    textAlign = TextAlign.Center,
+                    fontSize = 12.sp,
+                    color = Color.Gray
+                )
+            }
+        }
+    }
+
+    @Composable
+    fun StockMenuScreen(navController: NavController) { // stock menu screen
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFF5F5F5))
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val wavePath =
+                    createWavePath(
+                        width = size.width,
+                        height = size.height * 0.25f,
+                        waveHeight = 80f
+                    )
+                drawPath(path = wavePath, color = Yellow.copy(alpha = 0.5f))
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                Text(
+                    "Stocks Menu",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = DarkGreen,
+                    modifier = Modifier
+                        .padding(bottom = 16.dp)
+                        .fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+                LazyVerticalGrid( // grid layout for stock menu tiles
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(8.dp)
+                ) {
+                    items(stockMenuItems) { item -> // loop through stock menu tiles
+                        StockMenuTile(item = item, navController = navController)
+                    }
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun DebtorMenuScreen(navController: NavController) { // debtor menu screen
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFF5F5F5))
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val wavePath =
+                    createWavePath(
+                        width = size.width,
+                        height = size.height * 0.25f,
+                        waveHeight = 80f
+                    )
+                drawPath(path = wavePath, color = Yellow.copy(alpha = 0.5f))
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                Text(
+                    "Debtors Menu",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = DarkGreen,
+                    modifier = Modifier
+                        .padding(bottom = 16.dp)
+                        .fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+                LazyVerticalGrid( // grid layout for debtor menu tiles
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(8.dp)
+                ) {
+                    items(debtorMenuItems) { item -> // loop through debtor menu tiles
+                        DebtorMenuTile(item = item, navController = navController)
+                    }
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun DebtorEnquiryScreen(
+        debtorViewModel: DebtorViewModel,
+        navController: NavController
+    ) { // debtor enquiry screen
+        val debtorList by debtorViewModel.filteredDebtors.collectAsState() // list of debtors
+        val searchQuery by debtorViewModel.searchQuery.collectAsState() // search query to filter debtors
+
+        val currentSort by debtorViewModel.debtorListSort.collectAsState()
+        var showSortMenu by remember { mutableStateOf(false) }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                ) {
+                    IconButton(onClick = { navController.popBackStack() }) { //back button to navigate back to debtors menu
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = DarkGreen
+                        )
+                    }
+                    Text(
+                        "Debtor Enquiry",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = DarkGreen
+                    )
+                }
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { debtorViewModel.onSearchQueryChange(it) },
+                    label = { Text("Search Account Code or Name") }, // label for search field
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { debtorViewModel.onSearchQueryChange("") }) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = "Clear search",
+                                    tint = Black
+                                )
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    singleLine = true
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                ) {
+                    Button(
+                        onClick = { showSortMenu = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = LightGreen),
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Sort By: ${getDebtorListSortLabel(currentSort)}",
+                            color = Color.Black
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = "Sort",
+                            tint = Color.Black
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = showSortMenu,
+                        onDismissRequest = { showSortMenu = false },
+                        modifier = Modifier.background(Color.White)
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Code: Ascending") },
+                            onClick = {
+                                debtorViewModel.updateDebtorListSort(DebtorListSortOption.CODE_ASC)
+                                showSortMenu = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Code: Descending") },
+                            onClick = {
+                                debtorViewModel.updateDebtorListSort(DebtorListSortOption.CODE_DESC)
+                                showSortMenu = false
+                            }
+                        )
+                        HorizontalDivider()
+                        DropdownMenuItem(
+                            text = { Text("Lowest Balance") },
+                            onClick = {
+                                debtorViewModel.updateDebtorListSort(DebtorListSortOption.BALANCE_ASC)
+                                showSortMenu = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Highest Balance") },
+                            onClick = {
+                                debtorViewModel.updateDebtorListSort(DebtorListSortOption.BALANCE_DESC)
+                                showSortMenu = false
+                            }
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Max)
+                        .border(1.dp, Color.Gray)
+                ) { // header row for table
+                    TableCell(text = "Code", weight = .25f, isHeader = true)
+                    TableCell(text = "Name", weight = .5f, isHeader = true)
+                    TableCell(text = "Balance", weight = .25f, isHeader = true)
+                }
+
+                if (debtorList.isEmpty()) { // if no debtors found, display message
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .padding(top = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No debtors found matching '$searchQuery'", color = Color.Gray)
+                    }
+                } else { // if debtors found, display list of debtors
+                    LazyColumn {
+                        items(debtorList) { debtor ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(IntrinsicSize.Max)
+                                    .clickable {
+                                        navController.navigate(
+                                            Screen.DebtorDetails.createRoute(
+                                                debtor.accountCode
+                                            )
+                                        )
+                                    }
+                            ) {
+                                TableCell(text = debtor.accountCode, weight = .25f)
+                                TableCell(text = debtor.name, weight = .5f)
+                                TableCell(
+                                    text = String.format("R%.2f", debtor.balance),
+                                    weight = .25f
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    fun getDebtorListSortLabel(option: DebtorListSortOption): String {
+        return when (option) {
+            DebtorListSortOption.CODE_ASC -> "Code: Asc"
+            DebtorListSortOption.CODE_DESC -> "Code: Desc"
+            DebtorListSortOption.BALANCE_ASC -> "Lowest Balance"
+            DebtorListSortOption.BALANCE_DESC -> "Highest Balance"
+        }
+    }
+
+    @Composable
+    fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavController) {
+        val stockList by stockViewModel.filteredStock.collectAsState()
+        val searchQuery by stockViewModel.searchQuery.collectAsState()
+        val currentSort by stockViewModel.stockListSort.collectAsState()
+        var showSortMenu by remember { mutableStateOf(false) }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                ) {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = DarkGreen
+                        )
+                    }
+                    Text(
+                        "Stock Enquiry",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = DarkGreen
+                    )
+                }
+
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { stockViewModel.onSearchQueryChange(it) },
+                    label = { Text("Search Stock Code or Name") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { stockViewModel.onSearchQueryChange("") }) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = "Clear search",
+                                    tint = Black
+                                )
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    singleLine = true
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                ) {
+                    Button(
+                        onClick = { showSortMenu = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = LightGreen),
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Sort By: ${getStockListSortLabel(currentSort)}",
+                            color = Color.Black
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = "Sort",
+                            tint = Color.Black
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = showSortMenu,
+                        onDismissRequest = { showSortMenu = false },
+                        modifier = Modifier.background(Color.White)
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Code: Ascending") },
+                            onClick = {
+                                stockViewModel.updateStockListSort(StockListSortOption.CODE_ASC)
+                                showSortMenu = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Code: Descending") },
+                            onClick = {
+                                stockViewModel.updateStockListSort(StockListSortOption.CODE_DESC)
+                                showSortMenu = false
+                            }
+                        )
+                        HorizontalDivider()
+                        DropdownMenuItem(
+                            text = { Text("Highest Qty") },
+                            onClick = {
+                                stockViewModel.updateStockListSort(StockListSortOption.QTY_DESC)
+                                showSortMenu = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Lowest Qty") },
+                            onClick = {
+                                stockViewModel.updateStockListSort(StockListSortOption.QTY_ASC)
+                                showSortMenu = false
+                            }
+                        )
+                        HorizontalDivider()
+                        DropdownMenuItem(
+                            text = { Text("Highest Cost") },
+                            onClick = {
+                                stockViewModel.updateStockListSort(StockListSortOption.COST_DESC)
+                                showSortMenu = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Lowest Cost") },
+                            onClick = {
+                                stockViewModel.updateStockListSort(StockListSortOption.COST_ASC)
+                                showSortMenu = false
+                            }
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Max)// ensures header cells are uniform height if titles wrap
+                        .border(1.dp, Color.Gray)
+                ) {
+                    TableCell(text = "Code", weight = 0.2f, isHeader = true)
+                    TableCell(text = "Description", weight = 0.4f, isHeader = true)
+                    TableCell(text = "Qty", weight = 0.15f, isHeader = true)
+                    TableCell(text = "Unit Cost", weight = 0.25f, isHeader = true)
+                }
+
+                if (stockList.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .padding(top = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No stock found matching '$searchQuery'", color = Color.Gray)
+                    }
+                } else {
+                    LazyColumn {
+                        items(stockList) { stock ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(IntrinsicSize.Max)
+                                    .clickable {
+                                        navController.navigate(Screen.StockDetails.createRoute(stock.stockCode))
+                                    }
+                            ) {
+                                TableCell(text = stock.stockCode, weight = 0.2f) // stock codes
+                                TableCell(
+                                    text = stock.stockDescription,
+                                    weight = 0.4f
+                                ) // stock descriptions
+                                TableCell(
+                                    text = stock.stockOnHand.toString(),
+                                    weight = 0.15f
+                                ) // stock on hand
+                                TableCell(
+                                    text = String.format("R%.2f", stock.cost),
+                                    weight = 0.25f
+                                ) // stock cost
+                            }
+                        }
+                    }
+                }
+            }
+    }
+
+    fun getStockListSortLabel(option: StockListSortOption): String {
+        return when (option) {
+            StockListSortOption.CODE_ASC -> "Code: Asc"
+            StockListSortOption.CODE_DESC -> "Code: Desc"
+            StockListSortOption.QTY_DESC -> "Highest Qty"
+            StockListSortOption.QTY_ASC -> "Lowest Qty"
+            StockListSortOption.COST_DESC -> "Highest Cost"
+            StockListSortOption.COST_ASC -> "Lowest Cost"
+        }
+    }
+
+    @Composable
+    fun RowScope.TableCell( // table cell layout
+        text: String,
+        weight: Float,
+        isHeader: Boolean = false
+    ) {
+        Box(
+            modifier = Modifier
+                .weight(weight)
+                .fillMaxHeight() // Stretches to fill the Intrinsic Height of the Row
+                .border(0.5.dp, Color.LightGray) // Creates the grid line effect
+                .padding(8.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
             Text(
-                "Debtor Enquiry",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = DarkGreen
+                text = text,
+                fontWeight = if (isHeader) FontWeight.Bold else FontWeight.Normal,
+                fontSize = if (isHeader) 16.sp else 14.sp
             )
         }
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { debtorViewModel.onSearchQueryChange(it) },
-            label = { Text("Search Account Code or Name") }, // label for search field
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-            trailingIcon = {
-                if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = { debtorViewModel.onSearchQueryChange("") }) {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = "Clear search",
-                            tint = Black
-                        )
-                    }
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            singleLine = true
-        )
-
-        Box(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-            Button(
-                onClick = { showSortMenu = true },
-                colors = ButtonDefaults.buttonColors(containerColor = LightGreen),
-                modifier = Modifier.align(Alignment.Center).fillMaxWidth()
-            ) {
-                Text(
-                    text = "Sort By: ${getDebtorListSortLabel(currentSort)}",
-                    color = Color.Black
-                )
-                Spacer(Modifier.width(8.dp))
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = "Sort",
-                    tint = Color.Black
-                )
-            }
-
-            DropdownMenu(
-                expanded = showSortMenu,
-                onDismissRequest = { showSortMenu = false },
-                modifier = Modifier.background(Color.White)
-            ) {
-                DropdownMenuItem(
-                    text = { Text("Code: Ascending") },
-                    onClick = {
-                        debtorViewModel.updateDebtorListSort(DebtorListSortOption.CODE_ASC)
-                        showSortMenu = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text("Code: Descending") },
-                    onClick = {
-                        debtorViewModel.updateDebtorListSort(DebtorListSortOption.CODE_DESC)
-                        showSortMenu = false
-                    }
-                )
-                HorizontalDivider()
-                DropdownMenuItem(
-                    text = { Text("Lowest Balance") },
-                    onClick = {
-                        debtorViewModel.updateDebtorListSort(DebtorListSortOption.BALANCE_ASC)
-                        showSortMenu = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text("Highest Balance") },
-                    onClick = {
-                        debtorViewModel.updateDebtorListSort(DebtorListSortOption.BALANCE_DESC)
-                        showSortMenu = false
-                    }
-                )
-            }
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Max)
-                .border(1.dp, Color.Gray)
-        ) { // header row for table
-            TableCell(text = "Code", weight = .25f, isHeader = true)
-            TableCell(text = "Name", weight = .5f, isHeader = true)
-            TableCell(text = "Balance", weight = .25f, isHeader = true)
-        }
-
-        if (debtorList.isEmpty()) { // if no debtors found, display message
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .padding(top = 32.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("No debtors found matching '$searchQuery'", color = Color.Gray)
-            }
-        } else { // if debtors found, display list of debtors
-            LazyColumn {
-                items(debtorList) { debtor ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(IntrinsicSize.Max)
-                            .clickable {
-                                navController.navigate(Screen.DebtorDetails.createRoute(debtor.accountCode))
-                            }
-                    ) {
-                        TableCell(text = debtor.accountCode, weight = .25f)
-                        TableCell(text = debtor.name, weight = .5f)
-                        TableCell(text = String.format("R%.2f", debtor.balance) , weight = .25f)
-                    }
-                }
-            }
-        }
     }
-}
-
-fun getDebtorListSortLabel(option: DebtorListSortOption): String {
-    return when(option) {
-        DebtorListSortOption.CODE_ASC -> "Code: Asc"
-        DebtorListSortOption.CODE_DESC -> "Code: Desc"
-        DebtorListSortOption.BALANCE_ASC -> "Lowest Balance"
-        DebtorListSortOption.BALANCE_DESC -> "Highest Balance"
-    }
-}
-
-@Composable
-fun StockEnquiryScreen(stockViewModel: StockViewModel, navController: NavController) {
-    val stockList by stockViewModel.filteredStock.collectAsState()
-    val searchQuery by stockViewModel.searchQuery.collectAsState()
-    val currentSort by stockViewModel.stockListSort.collectAsState()
-    var showSortMenu by remember { mutableStateOf(false) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(bottom = 8.dp)
-        ) {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = DarkGreen
-                )
-            }
-            Text("Stock Enquiry", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DarkGreen)
-        }
-
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { stockViewModel.onSearchQueryChange(it) },
-            label = { Text("Search Stock Code or Name") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-            trailingIcon = {
-                if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = { stockViewModel.onSearchQueryChange("") }) {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = "Clear search",
-                            tint = Black
-                        )
-                    }
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            singleLine = true
-        )
-
-        Box(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-            Button(
-                onClick = { showSortMenu = true },
-                colors = ButtonDefaults.buttonColors(containerColor = LightGreen),
-                modifier = Modifier.align(Alignment.Center).fillMaxWidth()
-            ) {
-                Text(
-                    text = "Sort By: ${getStockListSortLabel(currentSort)}",
-                    color = Color.Black
-                )
-                Spacer(Modifier.width(8.dp))
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = "Sort",
-                    tint = Color.Black
-                )
-            }
-
-            DropdownMenu(
-                expanded = showSortMenu,
-                onDismissRequest = { showSortMenu = false },
-                modifier = Modifier.background(Color.White)
-            ) {
-                DropdownMenuItem(
-                    text = { Text("Code: Ascending") },
-                    onClick = {
-                        stockViewModel.updateStockListSort(StockListSortOption.CODE_ASC)
-                        showSortMenu = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text("Code: Descending") },
-                    onClick = {
-                        stockViewModel.updateStockListSort(StockListSortOption.CODE_DESC)
-                        showSortMenu = false
-                    }
-                )
-                HorizontalDivider()
-                DropdownMenuItem(
-                    text = { Text("Highest Qty") },
-                    onClick = {
-                        stockViewModel.updateStockListSort(StockListSortOption.QTY_DESC)
-                        showSortMenu = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text("Lowest Qty") },
-                    onClick = {
-                        stockViewModel.updateStockListSort(StockListSortOption.QTY_ASC)
-                        showSortMenu = false
-                    }
-                )
-                HorizontalDivider()
-                DropdownMenuItem(
-                    text = { Text("Highest Cost") },
-                    onClick = {
-                        stockViewModel.updateStockListSort(StockListSortOption.COST_DESC)
-                        showSortMenu = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text("Lowest Cost") },
-                    onClick = {
-                        stockViewModel.updateStockListSort(StockListSortOption.COST_ASC)
-                        showSortMenu = false
-                    }
-                )
-            }
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Max)// ensures header cells are uniform height if titles wrap
-                .border(1.dp, Color.Gray)
-        ) {
-            TableCell(text = "Code", weight = 0.2f, isHeader = true)
-            TableCell(text = "Description", weight = 0.4f, isHeader = true)
-            TableCell(text = "Qty", weight = 0.15f, isHeader = true)
-            TableCell(text = "Unit Cost", weight = 0.25f, isHeader = true)
-        }
-
-        if (stockList.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .padding(top = 32.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("No stock found matching '$searchQuery'", color = Color.Gray)
-            }
-        } else {
-            LazyColumn {
-                items(stockList) { stock ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(IntrinsicSize.Max)
-                            .clickable {
-                                navController.navigate(Screen.StockDetails.createRoute(stock.stockCode))
-                            }
-                    ) {
-                        TableCell(text = stock.stockCode, weight = 0.2f) // stock codes
-                        TableCell(text = stock.stockDescription, weight = 0.4f) // stock descriptions
-                        TableCell(text = stock.stockOnHand.toString(), weight = 0.15f) // stock on hand
-                        TableCell(text = String.format("R%.2f", stock.cost), weight = 0.25f) // stock cost
-                    }
-                }
-            }
-        }
-    }
-}
-
-fun getStockListSortLabel(option: StockListSortOption): String {
-    return when(option) {
-        StockListSortOption.CODE_ASC -> "Code: Asc"
-        StockListSortOption.CODE_DESC -> "Code: Desc"
-        StockListSortOption.QTY_DESC -> "Highest Qty"
-        StockListSortOption.QTY_ASC -> "Lowest Qty"
-        StockListSortOption.COST_DESC -> "Highest Cost"
-        StockListSortOption.COST_ASC -> "Lowest Cost"
-    }
-}
-
-@Composable
-fun RowScope.TableCell( // table cell layout
-    text: String,
-    weight: Float,
-    isHeader: Boolean = false
-) {
-    Box(
-        modifier = Modifier
-            .weight(weight)
-            .fillMaxHeight() // Stretches to fill the Intrinsic Height of the Row
-            .border(0.5.dp, Color.LightGray) // Creates the grid line effect
-            .padding(8.dp),
-        contentAlignment = Alignment.CenterStart
-    ) {
-        Text(
-            text = text,
-            fontWeight = if (isHeader) FontWeight.Bold else FontWeight.Normal,
-            fontSize = if (isHeader) 16.sp else 14.sp
-        )
-    }
-}
