@@ -39,10 +39,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -67,12 +70,30 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
     val cost by viewModel.cost.collectAsState() // variable to hold the cost
     val sellingPrice by viewModel.sellingPrice.collectAsState() // variable to hold the selling price
 
+    var costTfv by remember { mutableStateOf(TextFieldValue(cost.toString())) }
+    var sellingPriceTfv by remember { mutableStateOf(TextFieldValue(sellingPrice.toString())) }
+
+    LaunchedEffect(cost) {
+        val currentInputVal = costTfv.text.toDoubleOrNull() ?: 0.0
+        // Only update if the value is numerically different to avoid interrupting typing (e.g. "10.")
+        if (currentInputVal != cost) {
+            val newText = cost.toString()
+            costTfv = TextFieldValue(text = newText, selection = TextRange(newText.length))
+        }
+    }
+
+    LaunchedEffect(sellingPrice) {
+        val currentInputVal = sellingPriceTfv.text.toDoubleOrNull() ?: 0.0
+        if (currentInputVal != sellingPrice) {
+            val newText = sellingPrice.toString()
+            sellingPriceTfv = TextFieldValue(text = newText, selection = TextRange(newText.length))
+        }
+    }
+
     val toastMessage by viewModel.toastMessage.collectAsState()
     val context = LocalContext.current
-
-    val scrollState = rememberScrollState() // Scroll state for the column
-
-    var showSearchDialog by remember { mutableStateOf(false) } // State to control the search dialog visibility
+    val scrollState = rememberScrollState()
+    var showSearchDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(toastMessage) {
         toastMessage?.let {
@@ -214,11 +235,22 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField( // Text field for cost
-            value = cost.toString(),
-            onValueChange = { viewModel.onCostChange(it.toDoubleOrNull() ?: 0.0) },
+        OutlinedTextField(
+            value = costTfv,
+            onValueChange = { input ->
+                costTfv = input
+                viewModel.onCostChange(input.text.toDoubleOrNull() ?: 0.0)
+            },
             label = { Text("Cost of Item * ") },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged { focusState ->
+                    // Auto-highlight logic
+                    if (focusState.isFocused) {
+                        val text = costTfv.text
+                        costTfv = costTfv.copy(selection = TextRange(0, text.length))
+                    }
+                },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             singleLine = true,
             enabled = stockCode.isNotBlank()
@@ -226,14 +258,25 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField( // Text field for selling price
-            value = sellingPrice.toString(),
-            onValueChange = { viewModel.onSellingPriceChange(it.toDoubleOrNull() ?: 0.0) },
+        OutlinedTextField(
+            value = sellingPriceTfv,
+            onValueChange = { input ->
+                sellingPriceTfv = input
+                viewModel.onSellingPriceChange(input.text.toDoubleOrNull() ?: 0.0)
+            },
             label = { Text("Selling Price * ") },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged { focusState ->
+                    // Auto-highlight logic
+                    if (focusState.isFocused) {
+                        val text = sellingPriceTfv.text
+                        sellingPriceTfv = sellingPriceTfv.copy(selection = TextRange(0, text.length))
+                    }
+                },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             singleLine = true,
-            enabled= stockCode.isNotBlank()
+            enabled = stockCode.isNotBlank()
         )
 
         Spacer(modifier = Modifier.height(24.dp))

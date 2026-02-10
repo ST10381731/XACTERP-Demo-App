@@ -4,7 +4,6 @@ import androidx.core.text.isDigitsOnly
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.stellarstocks.data.db.models.DebtorMaster
-import com.example.stellarstocks.data.db.models.DebtorTransaction
 import com.example.stellarstocks.data.db.models.DebtorTransactionInfo
 import com.example.stellarstocks.data.db.repository.StellarStocksRepository
 import kotlinx.coroutines.Dispatchers
@@ -24,7 +23,6 @@ import kotlin.collections.emptyList
 import kotlin.math.abs
 
 enum class SortOption { // enum class to hold debtor transaction sort options
-    FULL_LIST,
     RECENT_ITEM_SOLD,
     HIGHEST_VALUE,
     LOWEST_VALUE
@@ -44,7 +42,7 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
     val debtorListSort = _debtorListSort.asStateFlow()
 
     private val _currentSort =
-        MutableStateFlow(SortOption.FULL_LIST) // variable to hold current sort option
+        MutableStateFlow(SortOption.RECENT_ITEM_SOLD) // variable to hold current sort option
     val currentSort = _currentSort.asStateFlow()
 
     val filteredDebtors: StateFlow<List<DebtorMaster>> = combine( // variable to hold filtered debtors based on search query and sort option
@@ -86,7 +84,6 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
             _currentSort
         ) { transactions, sortOption ->
             when (sortOption) { // sort transactions based on sort option
-                SortOption.FULL_LIST -> transactions.sortedByDescending { it.date }
                 SortOption.RECENT_ITEM_SOLD -> transactions.filter { it.items != null }
                     .sortedByDescending { it.date }
 
@@ -136,7 +133,6 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
     val addr2PostalCode = _addr2PostalCode.asStateFlow()
 
     private val _balance = MutableStateFlow(0.0) // variable to hold debtor balance
-    val balance = _balance.asStateFlow()
 
     private val _toastMessage = MutableStateFlow<String?>(null) // variable to hold toast messages
     val toastMessage = _toastMessage.asStateFlow()

@@ -69,6 +69,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
@@ -79,6 +80,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
@@ -89,7 +91,9 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Density
@@ -116,6 +120,7 @@ import com.example.stellarstocks.ui.theme.Black
 import com.example.stellarstocks.ui.theme.DarkGreen
 import com.example.stellarstocks.ui.theme.LightGreen
 import com.example.stellarstocks.ui.theme.LimeGreen
+import com.example.stellarstocks.ui.theme.Orange
 import com.example.stellarstocks.ui.theme.ProfessionalLightBlue
 import com.example.stellarstocks.ui.theme.Red
 import com.example.stellarstocks.ui.theme.StellarStocksTheme
@@ -123,6 +128,7 @@ import com.example.stellarstocks.ui.theme.Yellow
 import com.example.stellarstocks.viewmodel.DebtorListSortOption
 import com.example.stellarstocks.viewmodel.DebtorViewModel
 import com.example.stellarstocks.viewmodel.DebtorViewModelFactory
+import com.example.stellarstocks.viewmodel.InvoiceItem
 import com.example.stellarstocks.viewmodel.InvoiceViewModel
 import com.example.stellarstocks.viewmodel.InvoiceViewModelFactory
 import com.example.stellarstocks.viewmodel.StockListSortOption
@@ -261,7 +267,9 @@ fun LandingPage() { //landing page for app with graph and analytics
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
                     color = DarkGreen,
-                    modifier = Modifier.padding(start = 16.dp, top = 48.dp, bottom = 16.dp).fillMaxWidth(),
+                    modifier = Modifier
+                        .padding(start = 16.dp, top = 48.dp, bottom = 16.dp)
+                        .fillMaxWidth(),
                     textAlign = TextAlign.Center
                 )
             }
@@ -651,10 +659,12 @@ fun SimpleLineChart(
         var showStockSearchDialog by remember { mutableStateOf(false) } // stock search dialog state
         var showDebtorSearchDialog by remember { mutableStateOf(false) } // debtor search dialog state
         var showQtyDialog by remember { mutableStateOf(false) } // quantity dialog state
+
         var tempSelectedStock by remember { mutableStateOf<com.example.stellarstocks.data.db.models.StockMaster?>(null) } // temporary selected stock state for invoice preview
 
-        var showConfirmationDialog by remember { mutableStateOf(false) } // invoice confirmation dialog state
+        var editingInvoiceItem by remember { mutableStateOf<InvoiceItem?>(null) }
 
+        var showConfirmationDialog by remember { mutableStateOf(false) } // invoice confirmation dialog state
         var isEditMode by remember { mutableStateOf(false) } // edit mode for quantity dialog
         var editInitialQty by remember { mutableIntStateOf(1) } // initial quantity for quantity dialog
         var editInitialDiscount by remember { mutableDoubleStateOf(0.0) } // initial discount for quantity dialog
@@ -670,6 +680,9 @@ fun SimpleLineChart(
         val grandTotal by invoiceViewModel.grandTotal.collectAsState() // grand total
         val toastMessage by invoiceViewModel.toastMessage.collectAsState()
         val invoiceNum by invoiceViewModel.invoiceNum.collectAsState() // invoice number
+
+        val currentInvoiceItem = invoiceItems.find { it.stock.stockCode == tempSelectedStock?.stockCode }
+        val qtyInInvoice = currentInvoiceItem?.qty ?: 0
 
         val isInvoiceProcessed by invoiceViewModel.isInvoiceProcessed.collectAsState() // invoice processed state
 
@@ -744,30 +757,32 @@ fun SimpleLineChart(
         }
 
         if (showQtyDialog && tempSelectedStock != null) { //show quantity dialog after adding an item to invoice
+            val totalQtyInInvoice = invoiceItems
+                .filter { it.stock.stockCode == tempSelectedStock!!.stockCode }
+                .sumOf { it.qty }
+            val qtyForDialogCalc = if (isEditMode && editingInvoiceItem != null) {
+                totalQtyInInvoice - editingInvoiceItem!!.qty
+            } else {
+                totalQtyInInvoice
+            }
             AddStockDialog(
                 stock = tempSelectedStock!!, // stock added to invoice cannot be null
+                existingQtyInInvoice = qtyInInvoice,
                 initialQty = editInitialQty,
                 initialDiscount = editInitialDiscount,
                 isEditMode = isEditMode,
                 onDismiss = { showQtyDialog = false }, //dismiss dialog if user cancels
                 onConfirm = { qty, discount ->
-                    if (isEditMode) {
+                    if (isEditMode && editingInvoiceItem != null) {
 
-                        invoiceViewModel.updateInvoiceItem(
-                            tempSelectedStock!!,
-                            qty,
-                            discount
-                        )// Update existing item
+                        invoiceViewModel.updateInvoiceItem(editingInvoiceItem!!, qty, discount)
                     } else {
 
-                        invoiceViewModel.addToInvoice(
-                            tempSelectedStock!!,
-                            qty,
-                            discount
-                        ) // Add new item
+                        invoiceViewModel.addToInvoice(tempSelectedStock!!, qty, discount)
                     }
                     showQtyDialog = false
                     tempSelectedStock = null
+                    editingInvoiceItem = null
                 }
             )
         }
@@ -985,23 +1000,18 @@ fun SimpleLineChart(
                                 ) //per line item total
                             }
 
-                            // Invoice Items List
-                            if (invoiceItems.isEmpty()) {
-                                Text(
-                                    "Invoice is empty",
-                                    modifier = Modifier
-                                        .padding(vertical = 20.dp)
-                                        .fillMaxWidth(),
-                                    textAlign = TextAlign.Center,
-                                    color = Color.Gray
-                                )
+
+                            if (invoiceItems.isEmpty()) {// Invoice Items List
+                                Text("Invoice is empty", modifier = Modifier.padding(vertical = 20.dp).fillMaxWidth(), textAlign = TextAlign.Center, color = Color.Gray)
                             } else {
-                                invoiceItems.forEach { item -> // loop through invoice items
+                                invoiceItems.forEach { item ->
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .clickable(enabled = !isInvoiceProcessed) {
+
                                                 tempSelectedStock = item.stock
+                                                editingInvoiceItem = item // Capture the specific item
                                                 editInitialQty = item.qty
                                                 editInitialDiscount = item.discountPercent
                                                 isEditMode = true
@@ -1011,49 +1021,26 @@ fun SimpleLineChart(
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
+                                        // ... (Row Content: Description, Qty, Price, Discount) ...
                                         Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                item.stock.stockDescription,
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 14.sp,
-                                                color = DarkGreen
-                                            ) // stock description
+                                            Text(item.stock.stockDescription, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = DarkGreen)
                                             Row {
-                                                Text(
-                                                    "${item.qty} x R${item.stock.sellingPrice}",
-                                                    fontSize = 12.sp,
-                                                    color = Color.Gray
-                                                ) // quantity and price
-                                                if (item.discountPercent > 0 && item.discountPercent < 100) {
+                                                Text("${item.qty} x R${item.stock.sellingPrice}", fontSize = 12.sp, color = Color.Gray)
+                                                if (item.discountPercent > 0) {
                                                     Spacer(Modifier.width(8.dp))
-                                                    Text(
-                                                        "(-${item.discountPercent}%)",
-                                                        fontSize = 12.sp,
-                                                        color = Color.Red
-                                                    ) // discount percent
+                                                    Text("(-${item.discountPercent}%)", fontSize = 12.sp, color = Red)
                                                 }
                                             }
                                         }
                                         Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Text(
-                                                String.format("R%.2f", item.lineTotal),
-                                                fontWeight = FontWeight.Bold,
-                                                modifier = Modifier.padding(end = 12.dp),
-                                                color = Black
-                                            )
+                                            Text(String.format("R%.2f", item.lineTotal), fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 12.dp))
 
                                             if (!isInvoiceProcessed) {
                                                 Icon(
                                                     imageVector = Icons.Default.Delete,
                                                     contentDescription = "Remove",
                                                     tint = Color.Red,
-                                                    modifier = Modifier
-                                                        .size(20.dp)
-                                                        .clickable {
-                                                            invoiceViewModel.removeFromInvoice(
-                                                                item
-                                                            )
-                                                        }
+                                                    modifier = Modifier.size(20.dp).clickable { invoiceViewModel.removeFromInvoice(item) }
                                                 )
                                             }
                                         }
@@ -1120,107 +1107,151 @@ fun SimpleLineChart(
 * - Add Mode: Enables adding items to invoice.
 * - Edit Mode: The input fields are pre-filled with the existing item's data. Allows updating the quantity and discount.
 */
-    @Composable
-    fun AddStockDialog(// Dialog to add a stock item
-        stock: com.example.stellarstocks.data.db.models.StockMaster,
-        initialQty: Int = 0,
-        initialDiscount: Double = 0.0,
-        isEditMode: Boolean = false,
-        onDismiss: () -> Unit,
-        onConfirm: (Int, Double) -> Unit
-    ) {
-        var qtyText by remember { mutableStateOf(if (initialQty > 0) initialQty.toString() else "1") }
-        var discountText by remember { mutableStateOf(initialDiscount.toString()) }
+@Composable
+fun AddStockDialog(
+    stock: com.example.stellarstocks.data.db.models.StockMaster,
+    existingQtyInInvoice: Int = 0,
+    initialQty: Int = 0,
+    initialDiscount: Double = 0.0,
+    isEditMode: Boolean = false,
+    onDismiss: () -> Unit,
+    onConfirm: (Int, Double) -> Unit
+) {
+    var qtyState by remember {
+        mutableStateOf(
+            TextFieldValue(
+                text = if (initialQty > 0) initialQty.toString() else "1",
+                selection = TextRange(if (initialQty > 0) initialQty.toString().length else 1)
+            )
+        )
+    }
 
-        androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) { //dialog for adding a stock item
-            Card( //card to display items
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
-            ) {
-                Column(
-                    Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+    var discountState by remember {
+        mutableStateOf(
+            TextFieldValue(
+                text = initialDiscount.toString(),
+                selection = TextRange(initialDiscount.toString().length)
+            )
+        )
+    }
+
+    val maxAllowed = if (isEditMode) stock.stockOnHand else (stock.stockOnHand - existingQtyInInvoice)
+    val availableDisplay = if (maxAllowed < 0) 0 else maxAllowed
+
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
+            Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = if (isEditMode) "Edit Item" else "Add Item",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+                Text(stock.stockDescription, fontWeight = FontWeight.Medium, color = DarkGreen)
+
+                Spacer(Modifier.height(8.dp))
+
+                // Stock Info Display
+                Row(
+                    modifier = Modifier.fillMaxWidth().background(Color(0xFFF0F0F0), shape = MaterialTheme.shapes.small).padding(8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        text = if (isEditMode) "Edit Item" else "Add Item", //switch text depending on mode
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
-                    )
-                    Text(
-                        stock.stockDescription,
-                        fontWeight = FontWeight.Medium,
-                        color = DarkGreen
-                    ) // stock description
-                    Text(
-                        "Price: R${stock.sellingPrice}",
-                        color = Color.Gray,
-                        fontSize = 12.sp
-                    ) //stock selling price
-                    Text(
-                        "Stock on Hand: ${stock.stockOnHand}",
-                        color = Color.Gray,
-                        fontSize = 12.sp
-                    )
-                    Spacer(Modifier.height(16.dp))
-
-                    OutlinedTextField(
-                        value = qtyText,
-                        onValueChange = { input ->
-                            if (input.all { it.isDigit() }) {
-                                qtyText = input
-                            }
-                        },
-                        label = { Text("Quantity") },
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
-                        ),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Spacer(Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        value = discountText,
-                        onValueChange = { input ->
-                            if (input.count { it == '.' } <= 2 && input.all { it.isDigit() || it == '.' }) {
-                                discountText = input
-                            }
-                        },
-                        label = { Text("Discount %") },
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
-                        ),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Spacer(Modifier.height(24.dp))
-
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        TextButton(
-                            onClick = onDismiss,
-                            colors = ButtonDefaults.buttonColors(containerColor = Red)
-                        ) { Text("Cancel") } // cancel button
-                        Button(
-                            onClick = {
-                                val qty = qtyText.toIntOrNull() ?: 0 // get quantity from text field
-                                val disc = discountText.toDoubleOrNull()
-                                    ?: 0.0 // get discount from text field
-                                if (qty > 0 && disc >= 0) onConfirm(
-                                    qty,
-                                    disc
-                                ) // check if quantity is greater than 0
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = DarkGreen)
-                        ) { Text(if (isEditMode) "Update" else "Add") } // change button based on mode
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("On Hand", fontSize = 10.sp, color = Color.Gray)
+                        Text("${stock.stockOnHand}", fontWeight = FontWeight.Bold)
                     }
+                    if (!isEditMode && existingQtyInInvoice > 0) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("In Invoice", fontSize = 10.sp, color = Color.Gray)
+                            Text("$existingQtyInInvoice", fontWeight = FontWeight.Bold, color = Orange)
+                        }
+                    }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(if(isEditMode) "Max Qty" else "Remaining", fontSize = 10.sp, color = Color.Gray)
+                        Text("$availableDisplay", fontWeight = FontWeight.Bold, color = if(availableDisplay == 0) Red else DarkGreen)
+                    }
+                }
+
+                Text("Price: R${stock.sellingPrice}", color = Color.Gray, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
+
+                Spacer(Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = qtyState,
+                    onValueChange = { input ->
+                        if (input.text.all { it.isDigit() }) {
+                            qtyState = input
+                        }
+                    },
+                    label = { Text("Quantity") },
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                    ),
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onFocusChanged { focusState ->
+                            // Auto-highlight logic
+                            if (focusState.isFocused) {
+                                val text = qtyState.text
+                                qtyState = qtyState.copy(selection = TextRange(0, text.length))
+                            }
+                        },
+                    isError = (qtyState.text.toIntOrNull() ?: 0) > maxAllowed
+                )
+
+                if ((qtyState.text.toIntOrNull() ?: 0) > maxAllowed) {
+                    Text("Max available is $availableDisplay", color = Red, fontSize = 12.sp, modifier = Modifier.align(Alignment.Start))
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = discountState,
+                    onValueChange = { input ->
+                        if (input.text.count { it == '.' } <= 1 && input.text.all { it.isDigit() || it == '.' }) {
+                            discountState = input
+                        }
+                    },
+                    label = { Text("Discount %") },
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
+                    ),
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onFocusChanged { focusState ->
+                            // Auto-highlight logic
+                            if (focusState.isFocused) {
+                                val text = discountState.text
+                                discountState = discountState.copy(selection = TextRange(0, text.length))
+                            }
+                        }
+                )
+
+                Spacer(Modifier.height(24.dp))
+
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    TextButton(onClick = onDismiss, colors = ButtonDefaults.buttonColors(containerColor = Red)) { Text("Cancel") }
+                    Button(
+                        onClick = {
+                            val qty = qtyState.text.toIntOrNull() ?: 0
+                            val disc = discountState.text.toDoubleOrNull() ?: 0.0
+
+                            if (qty > 0 && qty <= maxAllowed && disc >= 0) {
+                                onConfirm(qty, disc)
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = DarkGreen),
+                        enabled = (qtyState.text.toIntOrNull() ?: 0) <= maxAllowed
+                    ) { Text(if (isEditMode) "Update" else "Add") }
                 }
             }
         }
     }
+}
 
 /*
 * Title- Make a Ticket View with Jetpack Compose
@@ -2019,24 +2050,35 @@ fun SimpleLineChart(
 * This function creates a Card that acts as a clickable tile. When clicked,
  * it uses the navController to navigate to the route specified.
 */
-    @Composable
-    fun RowScope.TableCell( // table cell layout
-        text: String,
-        weight: Float,
-        isHeader: Boolean = false
+@Composable
+fun RowScope.TableCell( // table cell layout
+    text: String,
+    weight: Float,
+    isHeader: Boolean = false
+) {
+    Box(
+        modifier = Modifier
+            .weight(weight)
+            .fillMaxHeight() // Stretches to fill the Intrinsic Height of the Row
+            .border(0.5.dp, Color.LightGray) // Creates the grid line effect
+            .padding(8.dp),
+        contentAlignment = Alignment.CenterStart
     ) {
-        Box(
-            modifier = Modifier
-                .weight(weight)
-                .fillMaxHeight() // Stretches to fill the Intrinsic Height of the Row
-                .border(0.5.dp, Color.LightGray) // Creates the grid line effect
-                .padding(8.dp),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Text(
-                text = text,
-                fontWeight = if (isHeader) FontWeight.Bold else FontWeight.Normal,
-                fontSize = if (isHeader) 16.sp else 14.sp
-            )
-        }
+        Text(
+            text = text,
+            fontWeight = if (isHeader) FontWeight.Bold else FontWeight.Normal,
+            fontSize = if (isHeader) 16.sp else 14.sp
+        )
     }
+}
+
+fun Modifier.selectAllOnFocus(
+    textFieldValueState: MutableState<TextFieldValue>
+): Modifier = this.onFocusChanged { focusState ->
+    if (focusState.isFocused) {
+        val text = textFieldValueState.value.text
+        textFieldValueState.value = textFieldValueState.value.copy(
+            selection = TextRange(0, text.length)
+        )
+    }
+}

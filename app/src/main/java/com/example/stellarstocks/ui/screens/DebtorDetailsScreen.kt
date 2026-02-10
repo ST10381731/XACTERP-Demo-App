@@ -146,13 +146,6 @@ fun DebtorDetailsScreen(
                 onDismissRequest = { expanded = false }
             ) {
                 DropdownMenuItem(
-                    text = { Text("Full List") },
-                    onClick = {
-                        viewModel.updateSort(SortOption.FULL_LIST)
-                        expanded = false
-                    }
-                )
-                DropdownMenuItem(
                     text = { Text("Recent Item Sold") },
                     onClick = {
                         viewModel.updateSort(SortOption.RECENT_ITEM_SOLD)
@@ -199,7 +192,6 @@ fun DebtorDetailsScreen(
 }
 fun getSortLabel(option: SortOption): String { // function to get sort label based on option
     return when(option) {
-        SortOption.FULL_LIST -> "Full List"
         SortOption.RECENT_ITEM_SOLD -> "Recent Item Sold"
         SortOption.HIGHEST_VALUE -> "Highest Value"
         SortOption.LOWEST_VALUE -> "Lowest Value"
