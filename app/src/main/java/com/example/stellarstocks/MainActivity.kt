@@ -123,6 +123,7 @@ import com.example.stellarstocks.ui.theme.Orange
 import com.example.stellarstocks.ui.theme.ProfessionalLightBlue
 import com.example.stellarstocks.ui.theme.Red
 import com.example.stellarstocks.ui.theme.StellarStocksTheme
+import com.example.stellarstocks.ui.theme.White
 import com.example.stellarstocks.ui.theme.Yellow
 import com.example.stellarstocks.viewmodel.DebtorListSortOption
 import com.example.stellarstocks.viewmodel.DebtorViewModel
@@ -805,38 +806,6 @@ fun SimpleLineChart(
                     .verticalScroll(scrollState),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Button(     // button to select debtor
-                        onClick = { showDebtorSearchDialog = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = LightGreen),
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 8.dp),
-                        shape = MaterialTheme.shapes.small,
-                        enabled = !isInvoiceProcessed
-                    ) {
-                        Icon(Icons.Default.People, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Select Debtor")
-                    }
-
-                    Button( // button to add stock
-                        onClick = { showStockSearchDialog = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = LightGreen),
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(start = 8.dp),
-                        shape = MaterialTheme.shapes.small,
-                        enabled = !isInvoiceProcessed
-                    ) {
-                        Icon(Icons.Default.Inventory, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Add Item")
-                    }
-                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -920,14 +889,26 @@ fun SimpleLineChart(
                             HorizontalDivider()
                             Spacer(modifier = Modifier.height(16.dp))
 
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("BILL TO:", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.Gray)
+
+                                // Select Debtor Button
+                                if (!isInvoiceProcessed) {
+                                    TextButton(
+                                        onClick = { showDebtorSearchDialog = true },
+                                        colors = ButtonDefaults.textButtonColors(contentColor = Orange)
+                                    ) {
+                                        Text(if (selectedDebtor == null) "+ Select Debtor" else "Change Debtor", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+
                             // Debtor Section
                             if (selectedDebtor != null) { // show debtor details if selected
-                                Text(
-                                    "BILL TO:",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp,
-                                    color = Color.Gray
-                                )
                                 Text(// debtor name
                                     selectedDebtor!!.name,
                                     fontWeight = FontWeight.Bold,
@@ -982,20 +963,24 @@ fun SimpleLineChart(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(Color(0xff000000))
-                                    .padding(4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                    .background(Color(0xFF000000)) // Slightly lighter grey for header
+                                    .padding(horizontal = 4.dp, vertical = 2.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    "Item (Tap to Edit Added Items)",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp
-                                )
-                                Text(//per line item total
-                                    "Total (Excl VAT)",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Add an Item", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+
+                                    if (!isInvoiceProcessed) {
+                                        IconButton(
+                                            onClick = { showStockSearchDialog = true },
+                                            modifier = Modifier.size(24.dp).padding(start = 4.dp)
+                                        ) {
+                                            Icon(Icons.Default.AddShoppingCart, contentDescription = "Add Item", tint = DarkGreen)
+                                        }
+                                    }
+                                }
+                                Text("Total (Excl VAT)", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                             }
 
 

@@ -228,7 +228,7 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
 
             val stock = StockMaster( // Create new stock
                 stockCode = _stockCode.value,
-                stockDescription = _description.value.trim(),
+                stockDescription = _description.value.trim(), // prevents text ending in whitespace
                 cost = _cost.value,
                 sellingPrice = _sellingPrice.value,
                 stockOnHand = 0,

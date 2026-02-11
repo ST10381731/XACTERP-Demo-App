@@ -139,7 +139,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
 
 
         if ((otherLinesQty + newQty) > originalItem.stock.stockOnHand) { // Check if new quantity exceeds available stock
-            _toastMessage.value = "Insufficient stock! Other lines have $otherLinesQty. Available for this line: ${originalItem.stock.stockOnHand - otherLinesQty}"
+            _toastMessage.value = "Insufficient stock! Other items have $otherLinesQty. Available : ${originalItem.stock.stockOnHand - otherLinesQty}"
             return
         }
 
