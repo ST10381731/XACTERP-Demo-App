@@ -60,6 +60,7 @@ interface StockDao {
     """)
     suspend fun getMostRecentDebtorForStock(code: String): String? // Get most recent debtor for a stock
 
+    @Transaction
     @Query("""
         SELECT t.id AS transactionId, t.date, h.accountCode, t.documentNum, t.transactionType, t.qty, 
                (ABS(t.qty) * CASE WHEN t.transactionType = 'Invoice' THEN t.unitSell ELSE t.unitCost END) as value

@@ -220,7 +220,7 @@ fun LandingPage() { //landing page for app with graph and analytics
     val topDebtors by debtorViewModel.topDebtors.collectAsState()
     val popularStock by stockViewModel.popularStock.collectAsState()
 
-    val financialYearDataPoints = remember(monthlySales){ //for graph
+    val financialYearDataPoints = remember(monthlySales){ //for graph to link data points accurately to months on x axis
         val monthRemapping = mapOf(
             0 to 10,
             1 to 11,
@@ -248,7 +248,7 @@ fun LandingPage() { //landing page for app with graph and analytics
         }.sortedBy { it.first }
     }
 
-    Box(modifier = Modifier
+    Box(modifier = Modifier // background wave image
         .fillMaxSize()
         .background(Color(0xFFF5F5F5))) {
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -261,7 +261,7 @@ fun LandingPage() { //landing page for app with graph and analytics
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 100.dp)
         ) {
-            item {
+            item { // Title for landing page
                 Text(
                     text = "Business Analytics",
                     fontSize = 32.sp,
@@ -273,10 +273,10 @@ fun LandingPage() { //landing page for app with graph and analytics
                     textAlign = TextAlign.Center
                 )
             }
-            item {
+            item { // Graph of sales for the financial year on landing page
                 SimpleLineChart(dataPoints = financialYearDataPoints)
             }
-            item {
+            item { // Table of top debtors on landing page
                 DashboardTable(
                     title = "Top Debtors",
                     headers = listOf("Name", "Code", "Sales"),
@@ -289,7 +289,7 @@ fun LandingPage() { //landing page for app with graph and analytics
                     }
                 )
             }
-            item {
+            item { // Table of most popular stock on landing page
                 DashboardTable(
                     title = "Popular Stock",
                     headers = listOf("Item", "Sold", "On Hand"),
@@ -311,13 +311,13 @@ fun LandingPage() { //landing page for app with graph and analytics
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(
+            Icon( // swipe up icon
                 imageVector = Icons.Filled.KeyboardArrowUp,
                 contentDescription = "Swipe up",
                 tint = DarkGreen,
                 modifier = Modifier.size(32.dp)
             )
-            Text(
+            Text( // hint text
                 text = "Swipe to Enter App",
                 color = DarkGreen,
                 fontSize = 14.sp,
@@ -481,7 +481,7 @@ fun SimpleLineChart(
  **/
     @Composable
     fun DashboardTable(title: String, headers: List<String>, data: List<List<String>>) {
-        Card(
+        Card( // Card holding table data
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -492,8 +492,8 @@ fun SimpleLineChart(
                 Text(title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = DarkGreen)
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Header
-                Row(Modifier.background(LightGreen.copy(alpha = 0.3f))) {
+
+                Row(Modifier.background(LightGreen.copy(alpha = 0.3f))) {// Table Headers
                     headers.forEach { header ->
                         Text(
                             header, Modifier
@@ -503,8 +503,7 @@ fun SimpleLineChart(
                     }
                 }
 
-                // Data Rows
-                if (data.isEmpty()) {
+                if (data.isEmpty()) {// Data Rows
                     Text(
                         "No data available",
                         modifier = Modifier.padding(8.dp),
@@ -586,17 +585,12 @@ fun SimpleLineChart(
                 }
             }
         ) { innerPadding ->
-            NavHost( // navigation host
+            NavHost( // navigation host sets routes for redirecting user to different screens
                 navController = navController,
                 startDestination = Screen.Invoice.route,
                 modifier = Modifier.padding(innerPadding)
             ) {
-                composable(Screen.Invoice.route) {
-                    InvoiceScreen(
-                        stockViewModel,
-                        debtorViewModel
-                    )
-                } // invoice screen
+                composable(Screen.Invoice.route) { InvoiceScreen(stockViewModel, debtorViewModel) } // invoice screen
 
                 composable(Screen.StockMenu.route) { StockMenuScreen(navController) } // stock menu screen
 
@@ -652,9 +646,12 @@ fun SimpleLineChart(
  */
     @Composable
     fun InvoiceScreen(
-        stockViewModel: StockViewModel = viewModel(factory = StockViewModelFactory((LocalContext.current.applicationContext as StellarStocksApplication).repository)),
-        debtorViewModel: DebtorViewModel = viewModel(factory = DebtorViewModelFactory((LocalContext.current.applicationContext as StellarStocksApplication).repository)),
-        invoiceViewModel: InvoiceViewModel = viewModel(factory = InvoiceViewModelFactory((LocalContext.current.applicationContext as StellarStocksApplication).repository))
+        stockViewModel: StockViewModel = viewModel(factory = StockViewModelFactory(
+            (LocalContext.current.applicationContext as StellarStocksApplication).repository)),
+        debtorViewModel: DebtorViewModel = viewModel(factory = DebtorViewModelFactory(
+            (LocalContext.current.applicationContext as StellarStocksApplication).repository)),
+        invoiceViewModel: InvoiceViewModel = viewModel(factory = InvoiceViewModelFactory(
+            (LocalContext.current.applicationContext as StellarStocksApplication).repository))
     ) {
         var showStockSearchDialog by remember { mutableStateOf(false) } // stock search dialog state
         var showDebtorSearchDialog by remember { mutableStateOf(false) } // debtor search dialog state
@@ -727,10 +724,10 @@ fun SimpleLineChart(
                 viewModel = debtorViewModel,
                 onDismiss = {
                     showDebtorSearchDialog = false
-                    debtorViewModel.resetSearch()
+                    debtorViewModel.resetSearch() // reset search
                 },
                 onDebtorSelected = { debtor ->
-                    invoiceViewModel.setDebtor(debtor)
+                    invoiceViewModel.setDebtor(debtor) // set selected debtor to invoice
                     showDebtorSearchDialog = false
                     debtorViewModel.resetSearch()
                 }
@@ -746,7 +743,7 @@ fun SimpleLineChart(
                 },
                 onStockSelected = { stock ->
                     tempSelectedStock = stock // set stock added to invoice
-                    isEditMode = false
+                    isEditMode = false //
                     editInitialQty = 1
                     editInitialDiscount = 0.00
                     showStockSearchDialog = false
@@ -757,28 +754,30 @@ fun SimpleLineChart(
         }
 
         if (showQtyDialog && tempSelectedStock != null) { //show quantity dialog after adding an item to invoice
-            val totalQtyInInvoice = invoiceItems
+            val totalQtyInInvoice = invoiceItems // total quantity in invoice currently
                 .filter { it.stock.stockCode == tempSelectedStock!!.stockCode }
-                .sumOf { it.qty }
-            val qtyForDialogCalc = if (isEditMode && editingInvoiceItem != null) {
+                .sumOf { it.qty } // sum of all quantities relating to the filtered stock code in invoice
+
+            val qtyForDialogCalc = if (isEditMode && editingInvoiceItem != null) { // calculate quantity for dialog if editing an item
                 totalQtyInInvoice - editingInvoiceItem!!.qty
             } else {
                 totalQtyInInvoice
             }
+
             AddStockDialog(
                 stock = tempSelectedStock!!, // stock added to invoice cannot be null
-                existingQtyInInvoice = qtyInInvoice,
+                existingQtyInInvoice = qtyForDialogCalc,
                 initialQty = editInitialQty,
                 initialDiscount = editInitialDiscount,
                 isEditMode = isEditMode,
                 onDismiss = { showQtyDialog = false }, //dismiss dialog if user cancels
                 onConfirm = { qty, discount ->
-                    if (isEditMode && editingInvoiceItem != null) {
+                    if (isEditMode && editingInvoiceItem != null) { // if in edit mode and item is not null
 
-                        invoiceViewModel.updateInvoiceItem(editingInvoiceItem!!, qty, discount)
+                        invoiceViewModel.updateInvoiceItem(editingInvoiceItem!!, qty, discount) // update relevant item fields in invoice
                     } else {
 
-                        invoiceViewModel.addToInvoice(tempSelectedStock!!, qty, discount)
+                        invoiceViewModel.addToInvoice(tempSelectedStock!!, qty, discount) // add item to invoice
                     }
                     showQtyDialog = false
                     tempSelectedStock = null
@@ -811,7 +810,7 @@ fun SimpleLineChart(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Button(
+                    Button( // button to select debtor
                         onClick = { showDebtorSearchDialog = true },
                         colors = ButtonDefaults.buttonColors(containerColor = LightGreen),
                         modifier = Modifier
@@ -825,7 +824,7 @@ fun SimpleLineChart(
                         Text("Select Debtor")
                     }
 
-                    Button(
+                    Button( // button to add stock
                         onClick = { showStockSearchDialog = true },
                         colors = ButtonDefaults.buttonColors(containerColor = LightGreen),
                         modifier = Modifier
@@ -845,20 +844,20 @@ fun SimpleLineChart(
                 TicketView( // ticket view background for invoice
                     content = {
                         Column {
-                            Text(
+                            Text(//invoice title
                                 "INVOICE #${invoiceNum}",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 20.sp,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth(),
                                 color = Black
-                            ) //invoice title
-                            Text(
+                            )
+                            Text(// date of invoice
                                 LocalDate.now().toString(),
                                 textAlign = TextAlign.Center,
                                 color = Color.Gray,
                                 modifier = Modifier.fillMaxWidth()
-                            ) // date of invoice
+                            )
 
                             Spacer(modifier = Modifier.height(16.dp))
                             HorizontalDivider()
@@ -874,11 +873,11 @@ fun SimpleLineChart(
                                     fontSize = 12.sp,
                                     color = Black
                                 )
-                                Text(
+                                Text(// subtotal excl vat rounded to 2 decimal places
                                     String.format("R%.2f", totalExVat),
                                     fontSize = 12.sp,
                                     color = Black
-                                ) // subtotal excl vat rounded to 2 decimal places
+                                )
                             }
 
                             Row(
@@ -891,11 +890,11 @@ fun SimpleLineChart(
                                     fontSize = 12.sp,
                                     color = Black
                                 )
-                                Text(
+                                Text(//vat total rounded to 2 decimal places
                                     String.format("R%.2f", vat),
                                     fontSize = 12.sp,
                                     color = Black
-                                ) //vat total rounded to 2 decimal places
+                                )
                             }
 
                             Spacer(modifier = Modifier.height(4.dp))
@@ -910,12 +909,12 @@ fun SimpleLineChart(
                                     fontSize = 18.sp,
                                     color = DarkGreen
                                 )
-                                Text(
+                                Text(// final total rounded to 2 decimal places
                                     String.format("R%.2f", grandTotal),
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 18.sp,
                                     color = DarkGreen
-                                ) // grand total rounded to 2 decimal places
+                                )
                             }
 
                             Spacer(modifier = Modifier.height(8.dp))
@@ -930,17 +929,17 @@ fun SimpleLineChart(
                                     fontSize = 12.sp,
                                     color = Color.Gray
                                 )
-                                Text(
+                                Text(// debtor name
                                     selectedDebtor!!.name,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 16.sp,
                                     color = DarkGreen
-                                ) // debtor name
-                                Text(
+                                )
+                                Text(// debtor account code
                                     selectedDebtor!!.accountCode,
                                     fontSize = 14.sp,
                                     color = Black
-                                ) // debtor account code
+                                )
 
                                 Text(
                                     "Primary Address:",
@@ -948,11 +947,11 @@ fun SimpleLineChart(
                                     fontWeight = FontWeight.Bold,
                                     color = Color.Gray
                                 )
-                                Text(
+                                Text(// debtor primary address
                                     selectedDebtor!!.address1.replace(", ", "\n"),
                                     fontSize = 12.sp,
                                     color = Black
-                                )// debtor address
+                                )
 
                                 if (selectedDebtor!!.address2.isNotBlank()) {
                                     Text(
@@ -963,7 +962,7 @@ fun SimpleLineChart(
                                         color = Color.Gray,
                                         textAlign = TextAlign.End
                                     )
-                                    Text(
+                                    Text(// debtor secondary address if applicable
                                         selectedDebtor!!.address2.replace(", ", "\n"),
                                         modifier = Modifier.fillMaxWidth(),
                                         fontSize = 12.sp,
@@ -993,22 +992,22 @@ fun SimpleLineChart(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 12.sp
                                 )
-                                Text(
+                                Text(//per line item total
                                     "Total (Excl VAT)",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 12.sp
-                                ) //per line item total
+                                )
                             }
 
 
                             if (invoiceItems.isEmpty()) {// Invoice Items List
                                 Text("Invoice is empty", modifier = Modifier.padding(vertical = 20.dp).fillMaxWidth(), textAlign = TextAlign.Center, color = Color.Gray)
                             } else {
-                                invoiceItems.forEach { item ->
+                                invoiceItems.forEach { item -> // loop through invoice items
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .clickable(enabled = !isInvoiceProcessed) {
+                                            .clickable(enabled = !isInvoiceProcessed) { // enable click only if invoice is not processed
 
                                                 tempSelectedStock = item.stock
                                                 editingInvoiceItem = item // Capture the specific item
@@ -1021,21 +1020,20 @@ fun SimpleLineChart(
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        // ... (Row Content: Description, Qty, Price, Discount) ...
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(item.stock.stockDescription, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = DarkGreen)
                                             Row {
-                                                Text("${item.qty} x R${item.stock.sellingPrice}", fontSize = 12.sp, color = Color.Gray)
-                                                if (item.discountPercent > 0) {
+                                                Text("${item.qty} x R${item.stock.sellingPrice}", fontSize = 12.sp, color = Color.Gray) // item quantity and price
+                                                if (item.discountPercent > 0) { // if item has discount
                                                     Spacer(Modifier.width(8.dp))
                                                     Text("(-${item.discountPercent}%)", fontSize = 12.sp, color = Red)
                                                 }
                                             }
                                         }
                                         Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Text(String.format("R%.2f", item.lineTotal), fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 12.dp))
+                                            Text(String.format("R%.2f", item.lineTotal), fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 12.dp), color = Black)
 
-                                            if (!isInvoiceProcessed) {
+                                            if (!isInvoiceProcessed) { // if invoice is not processed, allow user to remove item from invoice items
                                                 Icon(
                                                     imageVector = Icons.Default.Delete,
                                                     contentDescription = "Remove",
@@ -1056,7 +1054,7 @@ fun SimpleLineChart(
 
                 if (isInvoiceProcessed) { // if invoice is processed, show new invoice button
 
-                    Button(
+                    Button( // button to start a new invoice
                         onClick = { invoiceViewModel.startNewInvoice() },
                         colors = ButtonDefaults.buttonColors(containerColor = ProfessionalLightBlue),
                         modifier = Modifier
@@ -1069,7 +1067,7 @@ fun SimpleLineChart(
                     Spacer(modifier = Modifier.height(8.dp))
 
 
-                    Button(
+                    Button( // button to visually show invoice is processed
                         onClick = { },
                         colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
                         modifier = Modifier
@@ -1081,7 +1079,7 @@ fun SimpleLineChart(
                     }
                 } else {
 
-                    Button(
+                    Button( // button to confirm invoice
                         onClick = { showConfirmationDialog = true },
                         colors = ButtonDefaults.buttonColors(containerColor = DarkGreen),
                         modifier = Modifier
@@ -1109,10 +1107,10 @@ fun SimpleLineChart(
 */
 @Composable
 fun AddStockDialog(
-    stock: com.example.stellarstocks.data.db.models.StockMaster,
-    existingQtyInInvoice: Int = 0,
-    initialQty: Int = 0,
-    initialDiscount: Double = 0.0,
+    stock: com.example.stellarstocks.data.db.models.StockMaster, // stock to be added to invoice
+    existingQtyInInvoice: Int = 0, // to hold existing quantity in invoice
+    initialQty: Int = 0, // initial quantity for dialog
+    initialDiscount: Double = 0.0, // initial discount for dialog
     isEditMode: Boolean = false,
     onDismiss: () -> Unit,
     onConfirm: (Int, Double) -> Unit
@@ -1120,7 +1118,7 @@ fun AddStockDialog(
     var qtyState by remember {
         mutableStateOf(
             TextFieldValue(
-                text = if (initialQty > 0) initialQty.toString() else "1",
+                text = if (initialQty > 0) initialQty.toString() else "1", // initial quantity
                 selection = TextRange(if (initialQty > 0) initialQty.toString().length else 1)
             )
         )
@@ -1135,8 +1133,8 @@ fun AddStockDialog(
         )
     }
 
-    val maxAllowed = if (isEditMode) stock.stockOnHand else (stock.stockOnHand - existingQtyInInvoice)
-    val availableDisplay = if (maxAllowed < 0) 0 else maxAllowed
+    val maxAllowed = if (isEditMode) stock.stockOnHand else (stock.stockOnHand - existingQtyInInvoice) // calculate max allowed quantity in stock
+    val availableDisplay = if (maxAllowed < 0) 0 else maxAllowed // calculate available stock quantity
 
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -2068,17 +2066,6 @@ fun RowScope.TableCell( // table cell layout
             text = text,
             fontWeight = if (isHeader) FontWeight.Bold else FontWeight.Normal,
             fontSize = if (isHeader) 16.sp else 14.sp
-        )
-    }
-}
-
-fun Modifier.selectAllOnFocus(
-    textFieldValueState: MutableState<TextFieldValue>
-): Modifier = this.onFocusChanged { focusState ->
-    if (focusState.isFocused) {
-        val text = textFieldValueState.value.text
-        textFieldValueState.value = textFieldValueState.value.copy(
-            selection = TextRange(0, text.length)
         )
     }
 }

@@ -12,15 +12,15 @@ object SeedData {
     private fun daysAgo(days: Int): Date = Date(System.currentTimeMillis() - (days * 24 * 60 * 60 * 1000L))
 
     val debtors = listOf(
-        DebtorMaster("ACC001", "Tech Solutions KZN", "12, West Street, Phoenix, 4002", "", 4830.0, 4830.0, 1200.0, true),
-        DebtorMaster("ACC002", "Jozi Jola Consulting", "88, Maude Ave, Sandton, 4060", "", 1380.0, 1380.0, 800.0, true),
-        DebtorMaster("ACC003", "Cape Logistics", "45, Port Road, Bayview, 4001", "", 4025.0, 4025.0, 2500.0, true),
+        DebtorMaster("ACC001", "KZN Fix IT", "12, West Street, Phoenix, 4002", "", 4830.0, 4830.0, 1200.0, true),
+        DebtorMaster("ACC002", "Jozi Consulting", "88, Maude Ave, Sandton, 4060", "", 1380.0, 1380.0, 800.0, true),
+        DebtorMaster("ACC003", "MSC Logistics", "45, Port Road, Bayview, 4001", "", 4025.0, 4025.0, 2500.0, true),
         DebtorMaster("ACC004", "Waltons Stationery", "101, Croftdene Dr, Chatsworth, 4092", "", 632.2, 632.2, 300.0, true),
         DebtorMaster("ACC005", "Page Automation IT", "5, Main Road, Nandi Dr, 4015", "", 0.0, 0.0, 0.0, true)
     )
 
     val stock = listOf(
-        StockMaster("STK001", "Ergonomic Office Chair", 1200.0, 1800.0, 1200.0, 1800.0, 10, 1, 9, true),
+        StockMaster("STK001", "Office Chair", 1200.0, 1800.0, 1200.0, 1800.0, 10, 1, 9, true),
         StockMaster("STK002", "Wireless Mechanical Keyboard", 800.0, 1200.0, 3600.0, 2400.0, 10, 3, 7, true),
         StockMaster("STK003", "24-inch IPS Monitor", 2500.0, 3500.0, 2500.0, 3500.0, 1, 1, 0, true),
         StockMaster("STK004", "USB-C Docking Station", 1500.0, 2200.0, 0.0, 0.0, 0, 0, 0, true),

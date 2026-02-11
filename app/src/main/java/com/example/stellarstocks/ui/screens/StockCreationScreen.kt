@@ -75,7 +75,6 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
 
     LaunchedEffect(cost) {
         val currentInputVal = costTfv.text.toDoubleOrNull() ?: 0.0
-        // Only update if the value is numerically different to avoid interrupting typing (e.g. "10.")
         if (currentInputVal != cost) {
             val newText = cost.toString()
             costTfv = TextFieldValue(text = newText, selection = TextRange(newText.length))
@@ -238,14 +237,16 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
         OutlinedTextField(
             value = costTfv,
             onValueChange = { input ->
-                costTfv = input
-                viewModel.onCostChange(input.text.toDoubleOrNull() ?: 0.0)
+
+                if (input.text.count { it == '.' } <= 1 && input.text.all { it.isDigit() || it == '.' }) {// Only allow digits and max one decimal point
+                    costTfv = input
+                    viewModel.onCostChange(input.text.toDoubleOrNull() ?: 0.0)
+                }
             },
             label = { Text("Cost of Item * ") },
             modifier = Modifier
                 .fillMaxWidth()
                 .onFocusChanged { focusState ->
-                    // Auto-highlight logic
                     if (focusState.isFocused) {
                         val text = costTfv.text
                         costTfv = costTfv.copy(selection = TextRange(0, text.length))
@@ -261,14 +262,15 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
         OutlinedTextField(
             value = sellingPriceTfv,
             onValueChange = { input ->
-                sellingPriceTfv = input
-                viewModel.onSellingPriceChange(input.text.toDoubleOrNull() ?: 0.0)
+                if (input.text.count { it == '.' } <= 1 && input.text.all { it.isDigit() || it == '.' }) { // Only allow digits and max one decimal point
+                    sellingPriceTfv = input
+                    viewModel.onSellingPriceChange(input.text.toDoubleOrNull() ?: 0.0)
+                }
             },
             label = { Text("Selling Price * ") },
             modifier = Modifier
                 .fillMaxWidth()
                 .onFocusChanged { focusState ->
-                    // Auto-highlight logic
                     if (focusState.isFocused) {
                         val text = sellingPriceTfv.text
                         sellingPriceTfv = sellingPriceTfv.copy(selection = TextRange(0, text.length))

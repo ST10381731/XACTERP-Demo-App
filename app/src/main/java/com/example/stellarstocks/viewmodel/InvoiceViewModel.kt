@@ -58,7 +58,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
             _toastMessage.value = "Discount must be between 0% and 100%"
             return
         }
-        val currentList = _invoiceItems.value.toMutableList()
+        val currentList = ArrayList(_invoiceItems.value)
 
 
         val totalQtyInInvoice = currentList
@@ -83,16 +83,15 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
         if (existingItemIndex != -1) {
 
             val existingItem = currentList[existingItemIndex]
-            val newQty = existingItem.qty + qty
+            val newQty = existingItem.qty + qty // merge quantities
 
 
-            val newGross = stock.sellingPrice * newQty
-            val newDiscAmt = newGross * (discountPercent / 100)
-            val newFinal = newGross - newDiscAmt
+            val newGross = stock.sellingPrice * newQty // Calculate new gross total
+            val newDiscAmt = newGross * (discountPercent / 100) // Calculate new discount amount
+            val newFinal = newGross - newDiscAmt // Calculate new final total
 
             currentList[existingItemIndex] = InvoiceItem(stock, newQty, discountPercent, newDiscAmt, newFinal)
         } else {
-
             currentList.add(InvoiceItem(stock, qty, discountPercent, discountAmt, finalTotal))
         }
 
@@ -129,25 +128,23 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
 
         val currentList = _invoiceItems.value.toMutableList()
 
-        // 1. Calculate Total Qty of OTHER lines (exclude the one we are editing)
-        val otherLinesQty = currentList
+        val otherLinesQty = currentList // Get quantity of other lines with the same stock code
             .filter { it.stock.stockCode == originalItem.stock.stockCode && it != originalItem }
             .sumOf { it.qty }
 
-        // 2. Check if New Qty + Other Lines <= Stock On Hand
-        if ((otherLinesQty + newQty) > originalItem.stock.stockOnHand) {
+
+        if ((otherLinesQty + newQty) > originalItem.stock.stockOnHand) { // Check if new quantity exceeds available stock
             _toastMessage.value = "Insufficient stock! Other lines have $otherLinesQty. Available for this line: ${originalItem.stock.stockOnHand - otherLinesQty}"
             return
         }
 
-        // 3. Update the specific item
-        val index = currentList.indexOf(originalItem)
+        val index = currentList.indexOf(originalItem) // Find index of original item
         if (index != -1) {
-            val grossTotal = originalItem.stock.sellingPrice * newQty
-            val discountAmt = grossTotal * (newDiscount / 100)
-            val finalTotal = grossTotal - discountAmt
+            val grossTotal = originalItem.stock.sellingPrice * newQty // Calculate new gross total
+            val discountAmt = grossTotal * (newDiscount / 100) // Calculate new discount amount
+            val finalTotal = grossTotal - discountAmt // Calculate new final total
 
-            currentList[index] = InvoiceItem(originalItem.stock, newQty, newDiscount, discountAmt, finalTotal)
+            currentList[index] = InvoiceItem(originalItem.stock, newQty, newDiscount, discountAmt, finalTotal) // Update item in list
             _invoiceItems.value = currentList
             calculateTotals()
         }

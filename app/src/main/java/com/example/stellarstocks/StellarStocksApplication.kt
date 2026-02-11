@@ -15,10 +15,12 @@ class StellarStocksApplication : Application() {
 
     val applicationScope = CoroutineScope(SupervisorJob())
 
-    val database by lazy { StellarStocksDatabase.getDatabase(this, applicationScope) }
+    val database by lazy { StellarStocksDatabase.getDatabase(this, applicationScope) } // lazy initialisation of database
 
-    val repository: StellarStocksRepository by lazy {
-        StellarStocksRepositoryImpl(
+
+    val repository: StellarStocksRepository by lazy { // lazy initialisation of repository
+        StellarStocksRepositoryImpl( // StellarStocksRepositoryImpl is a class that implements StellarStocksRepository
+            database,
             database.debtorDao(),
             database.stockDao(),
             database.invoiceHeaderDao(),

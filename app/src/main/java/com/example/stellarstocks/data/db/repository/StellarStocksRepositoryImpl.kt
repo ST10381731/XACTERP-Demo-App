@@ -1,5 +1,8 @@
 package com.example.stellarstocks.data.db.repository
 
+import androidx.room.util.copy
+import androidx.room.withTransaction
+import com.example.stellarstocks.data.db.StellarStocksDatabase
 import com.example.stellarstocks.data.db.dao.DebtorDao
 import com.example.stellarstocks.data.db.dao.InvoiceDetailDao
 import com.example.stellarstocks.data.db.dao.InvoiceHeaderDao
@@ -14,8 +17,10 @@ import com.example.stellarstocks.data.db.models.StockTransaction
 import com.example.stellarstocks.data.db.models.TransactionInfo
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
+import java.util.Calendar
 
 class StellarStocksRepositoryImpl @Inject constructor(
+    private val db: StellarStocksDatabase,
     private val debtorDao: DebtorDao,
     private val stockDao: StockDao,
     private val invoiceHeaderDao: InvoiceHeaderDao,
@@ -74,8 +79,7 @@ class StellarStocksRepositoryImpl @Inject constructor(
         stockDao.getStockTransactions(code) // gets a list of stock transactions by stockCode
 
 
-    override suspend fun getMostRecentDebtorForStock(code: String): String?
-    {
+    override suspend fun getMostRecentDebtorForStock(code: String): String? {
         return stockDao.getMostRecentDebtorForStock(code)// gets the most recent debtor for stock transaction filter
     }
 
@@ -88,50 +92,82 @@ class StellarStocksRepositoryImpl @Inject constructor(
     }
 
     override suspend fun processInvoice(header: InvoiceHeader, items: List<InvoiceDetail>) { // processes an invoice
+        db.withTransaction { // wrap entire method in transaction to maintain atomicity
+            invoiceHeaderDao.insertInvoiceHeaders(listOf(header))
+            invoiceDetailDao.insertInvoiceDetails(items)
 
-        invoiceHeaderDao.insertInvoiceHeaders(listOf(header)) // inserts an invoice header
-        invoiceDetailDao.insertInvoiceDetails(items) // inserts a list of invoice details
+            items.forEach { item -> // Process each item in the invoice
+
+                val stock = stockDao.getStock(item.stockCode) // Get Stock
+
+                if (stock != null) {
+                    stockDao.recordStockSale(
+                        code = item.stockCode,
+                        qtySold = item.qtySold, // update stock sold
+                        saleAmount = item.total //update total sales
+                    )
+
+                    val stockTrans = StockTransaction( // Add Stock Transaction
+                        stockCode = item.stockCode,
+                        date = header.date,
+                        transactionType = "Invoice",
+                        documentNum = header.invoiceNum,
+                        qty = -item.qtySold, // Negative for sale
+                        unitCost = stock.cost,
+                        unitSell = stock.sellingPrice
+                    )
+                    stockDao.insertTransaction(stockTrans)
+                }
+            }
+
+            val debtor = debtorDao.getDebtor(header.accountCode) // Get Debtor from invoice header
+
+            if (debtor != null) {
+                val invoiceTotal = header.totalSellAmtExVat + header.vat // get final total from invoice header
+                val invoiceCost = header.totalCost // get total cost from invoice header
+
+                val currentInvoiceYear =
+                    Calendar.getInstance().apply { time = header.date }.get(Calendar.YEAR) // get current year
+
+                var newSalesYTD = debtor.salesYearToDate
+                var newCostYTD = debtor.costYearToDate
+                var newSalesLastYear = debtor.salesLastYear
+                var newCostLastYear = debtor.costLastYear
+                var newFinancialYear = debtor.financialYear
+
+                if (currentInvoiceYear > debtor.financialYear) { // update stats for new financial year
+                    newSalesLastYear = debtor.salesYearToDate
+                    newCostLastYear = debtor.costYearToDate
+
+                    newSalesYTD = invoiceTotal // update total sales for the new financial year
+                    newCostYTD = invoiceCost // update total cost for the new financial year
+                    newFinancialYear = currentInvoiceYear // update financial year
+                } else if (currentInvoiceYear == debtor.financialYear) { // update stats for the current financial year
+                    newSalesYTD += invoiceTotal // update total sales for the current financial year
+                    newCostYTD += invoiceCost //update the total cost for the current financial year
+                }
 
 
-        debtorDao.updateDebtorFinancials( // updates debtors profile post invoice confirmation
-            code = header.accountCode,
-            totalInclVat = header.totalSellAmtExVat + header.vat,
-            salesExVat = header.totalSellAmtExVat,
-            totalCost = header.totalCost
-        )
-
-
-        val debtorTrans = DebtorTransaction( // inserts a debtor transaction
-            accountCode = header.accountCode,
-            date = header.date,
-            transactionType = "Invoice",
-            documentNo = header.invoiceNum,
-            grossTransactionValue = header.totalSellAmtExVat + header.vat,
-            vatValue = header.vat
-        )
-        debtorDao.insertTransaction(debtorTrans)
-
-
-        items.forEach { item -> // updates stock on hand post invoice confirmation
-            val stockItem = stockDao.getStock(item.stockCode)
-            if (stockItem != null) {
-
-                stockDao.recordStockSale(
-                    code = item.stockCode,
-                    qtySold = item.qtySold,
-                    saleAmount = item.total
+                debtorDao.updateDebtor(// Update Debtors Master with new stats
+                    debtor.copy(
+                        balance = debtor.balance + invoiceTotal,
+                        salesYearToDate = newSalesYTD,
+                        costYearToDate = newCostYTD,
+                        salesLastYear = newSalesLastYear,
+                        costLastYear = newCostLastYear,
+                        financialYear = newFinancialYear
+                    )
                 )
 
-                val stockTrans = StockTransaction( // inserts a stock transaction based on invoice details
-                    stockCode = item.stockCode,
+                val debtorTrans = DebtorTransaction(// Add Debtor Transaction
+                    accountCode = header.accountCode,
                     date = header.date,
                     transactionType = "Invoice",
-                    documentNum = header.invoiceNum,
-                    qty = -item.qtySold,
-                    unitCost = stockItem.cost,
-                    unitSell = stockItem.sellingPrice
+                    documentNo = header.invoiceNum,
+                    grossTransactionValue = invoiceTotal,
+                    vatValue = header.vat
                 )
-                stockDao.insertTransaction(stockTrans)
+                debtorDao.insertTransaction(debtorTrans)
             }
         }
     }

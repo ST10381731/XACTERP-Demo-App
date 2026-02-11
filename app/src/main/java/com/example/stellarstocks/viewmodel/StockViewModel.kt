@@ -211,8 +211,13 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
                 return@launch
             }
 
-            if (_cost.value <=0.0 || _sellingPrice.value <= 0.0){ // Cost and sell price cannot be zero or negative
-                _toastMessage.value = "Cost and Sell price cannot be zero or negative"
+            if (_cost.value ==0.0 || _sellingPrice.value == 0.0){ // Cost and sell price cannot be zero
+                _toastMessage.value = "Cost and Sell price cannot be zero"
+                return@launch
+            }
+
+            if (_cost.value <0.0 || _sellingPrice.value < 0.0){ // Cost and sell price cannot be negative
+                _toastMessage.value = "Cost and Sell price cannot be negative"
                 return@launch
             }
 
@@ -287,6 +292,11 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
 
         if (type == "Purchase" && qty < 0) { // Purchases cannot be negative
             _toastMessage.value = "Purchase quantity must be positive"
+            return
+        }
+
+        if (type == "Adjustment" && (stock.stockOnHand + qty) < 0) {
+            _toastMessage.value = "Insufficient stock! Current: ${stock.stockOnHand}"
             return
         }
 

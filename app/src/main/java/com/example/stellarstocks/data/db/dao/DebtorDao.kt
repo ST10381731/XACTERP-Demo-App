@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import com.example.stellarstocks.data.db.models.DebtorMaster
 import com.example.stellarstocks.data.db.models.DebtorTransaction
@@ -47,7 +48,7 @@ interface DebtorDao {
 
     @Query("SELECT * FROM debtor_transaction WHERE accountCode = :code") // Get Debtor Transactions by accountCode
     fun getDebtorTransactions(code: String): Flow<List<DebtorTransaction>>
-
+    @Transaction
     @Query("""
     SELECT dt.date, dt.documentNo AS documentNum, dt.transactionType, dt.grossTransactionValue AS value,
            (SELECT GROUP_CONCAT(sm.stockDescription, ', ') FROM invoice_items ii JOIN stock_master sm ON ii.stockCode = sm.stockCode WHERE ii.invoiceNum = dt.documentNo) AS items

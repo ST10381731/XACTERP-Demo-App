@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
     InvoiceDetail::class,
     DebtorTransaction::class,
     StockTransaction::class
-], version = 7, exportSchema = false)
+], version = 8, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class StellarStocksDatabase : RoomDatabase() {
     abstract fun stockDao(): StockDao
