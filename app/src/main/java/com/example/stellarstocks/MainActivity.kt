@@ -69,7 +69,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
@@ -810,7 +809,7 @@ fun SimpleLineChart(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Button( // button to select debtor
+                    Button(     // button to select debtor
                         onClick = { showDebtorSearchDialog = true },
                         colors = ButtonDefaults.buttonColors(containerColor = LightGreen),
                         modifier = Modifier
@@ -1119,7 +1118,7 @@ fun AddStockDialog(
         mutableStateOf(
             TextFieldValue(
                 text = if (initialQty > 0) initialQty.toString() else "1", // initial quantity
-                selection = TextRange(if (initialQty > 0) initialQty.toString().length else 1)
+                selection = TextRange(if (initialQty > 0) initialQty.toString().length else 1) // cursor position
             )
         )
     }
@@ -1147,7 +1146,7 @@ fun AddStockDialog(
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
                 )
-                Text(stock.stockDescription, fontWeight = FontWeight.Medium, color = DarkGreen)
+                Text(stock.stockDescription, fontWeight = FontWeight.Medium, color = DarkGreen) // stock description
 
                 Spacer(Modifier.height(8.dp))
 
@@ -1156,19 +1155,19 @@ fun AddStockDialog(
                     modifier = Modifier.fillMaxWidth().background(Color(0xFFF0F0F0), shape = MaterialTheme.shapes.small).padding(8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) { // stock info display
                         Text("On Hand", fontSize = 10.sp, color = Color.Gray)
-                        Text("${stock.stockOnHand}", fontWeight = FontWeight.Bold)
+                        Text("${stock.stockOnHand}", fontWeight = FontWeight.Bold) // stock on hand
                     }
-                    if (!isEditMode && existingQtyInInvoice > 0) {
+                    if (existingQtyInInvoice > 0) { // if there is an existing quantity in invoice
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("In Invoice", fontSize = 10.sp, color = Color.Gray)
-                            Text("$existingQtyInInvoice", fontWeight = FontWeight.Bold, color = Orange)
+                            Text("$existingQtyInInvoice", fontWeight = FontWeight.Bold, color = Orange) // display existing quantity
                         }
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(if(isEditMode) "Max Qty" else "Remaining", fontSize = 10.sp, color = Color.Gray)
-                        Text("$availableDisplay", fontWeight = FontWeight.Bold, color = if(availableDisplay == 0) Red else DarkGreen)
+                        Text(if(isEditMode) "Max Qty" else "Remaining", fontSize = 10.sp, color = Color.Gray) // max allowed quantity
+                        Text("$availableDisplay", fontWeight = FontWeight.Bold, color = if(availableDisplay == 0) Red else DarkGreen) // display remaining quantity
                     }
                 }
 
@@ -1238,7 +1237,7 @@ fun AddStockDialog(
                             val qty = qtyState.text.toIntOrNull() ?: 0
                             val disc = discountState.text.toDoubleOrNull() ?: 0.0
 
-                            if (qty > 0 && qty <= maxAllowed && disc >= 0) {
+                            if (qty in 1..maxAllowed && disc >= 0) {
                                 onConfirm(qty, disc)
                             }
                         },

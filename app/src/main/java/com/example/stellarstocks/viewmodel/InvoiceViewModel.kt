@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.Date
+import kotlin.math.abs
 
 data class InvoiceItem( // class for invoice item
     val stock: StockMaster,
@@ -47,6 +48,10 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
 
     fun setDebtor(debtor: DebtorMaster) { // function to set debtor for invoice
         _selectedDebtor.value = debtor
+    }
+
+    private fun areDiscountsEqual(d1: Double, d2: Double): Boolean {
+        return abs(d1 - d2) < 0.001
     }
 
     fun addToInvoice(stock: StockMaster, qty: Int, discountPercent: Double) {
@@ -126,9 +131,9 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
             return
         }
 
-        val currentList = _invoiceItems.value.toMutableList()
+        val currentItems = _invoiceItems.value
 
-        val otherLinesQty = currentList // Get quantity of other lines with the same stock code
+        val otherLinesQty = currentItems // Get quantity of other lines with the same stock code
             .filter { it.stock.stockCode == originalItem.stock.stockCode && it != originalItem }
             .sumOf { it.qty }
 
@@ -138,17 +143,41 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
             return
         }
 
-        val index = currentList.indexOf(originalItem) // Find index of original item
-        if (index != -1) {
-            val grossTotal = originalItem.stock.sellingPrice * newQty // Calculate new gross total
-            val discountAmt = grossTotal * (newDiscount / 100) // Calculate new discount amount
-            val finalTotal = grossTotal - discountAmt // Calculate new final total
-
-            currentList[index] = InvoiceItem(originalItem.stock, newQty, newDiscount, discountAmt, finalTotal) // Update item in list
-            _invoiceItems.value = currentList
-            calculateTotals()
+        val mergeTarget = currentItems.find { // Find item to merge with
+            it != originalItem && // Don't merge with self
+                    it.stock.stockCode == originalItem.stock.stockCode &&
+                    areDiscountsEqual(it.discountPercent, newDiscount)
         }
+
+        if (mergeTarget != null) { // If there is a merge target
+            val listWithoutOriginal = currentItems.filter { it != originalItem } // Remove original item
+
+            _invoiceItems.value = listWithoutOriginal.map { item -> // update merge target
+                if (item == mergeTarget) { // if merge target
+                    val combinedQty = item.qty + newQty // combine quantities
+                    val newGross = item.stock.sellingPrice * combinedQty // Calculate new gross total
+                    val newDiscAmt = newGross * (newDiscount / 100) // Calculate new discount amount
+                    val newFinal = newGross - newDiscAmt // Calculate new final total
+                    item.copy(qty = combinedQty, discountAmount = newDiscAmt, lineTotal = newFinal) // return new item with updated values
+                } else {
+                    item // return original item
+                }
+            }
+        } else {
+            _invoiceItems.value = currentItems.map { item -> // update original item
+                if (item == originalItem) { // if original item
+                    val grossTotal = item.stock.sellingPrice * newQty // Calculate new gross total
+                    val discountAmt = grossTotal * (newDiscount / 100) // Calculate new discount amount
+                    val finalTotal = grossTotal - discountAmt // Calculate new final total
+                    item.copy(qty = newQty, discountPercent = newDiscount, discountAmount = discountAmt, lineTotal = finalTotal) // return new item with updated values
+                } else {
+                    item // return the original item
+                }
+            }
+        }
+        calculateTotals()
     }
+
     fun confirmInvoice() { // Confirm invoice and process it
         val debtor = _selectedDebtor.value
         val items = _invoiceItems.value

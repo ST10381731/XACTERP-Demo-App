@@ -225,7 +225,14 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
 
         OutlinedTextField( // Text field for description
             value = description,
-            onValueChange = { viewModel.onDescriptionChange(it) },
+            onValueChange = { input ->
+                val sanitised = input.trimStart().replace("  ", " ") // Prevent starting with space and prevent double spacing
+                if (sanitised.all { char ->
+                        char.isLetterOrDigit() || char == ' ' || char in "+&#%=()" //Allow letters, digits, space, and specific symbols
+                    }) {
+                    viewModel.onDescriptionChange(sanitised)
+                }
+            },
             label = { Text("Stock Description *") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,

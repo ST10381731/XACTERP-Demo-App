@@ -231,7 +231,14 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
 
         OutlinedTextField( // text field for name
             value = name,
-            onValueChange = { viewModel.onNameChange(it) },
+            onValueChange = { input ->
+                val sanitised = input.trimStart().replace("  ", " ") // Prevent starting with space and prevent double spacing
+                if (sanitised.all { char ->
+                        char.isLetterOrDigit() || char == ' ' || char in "+&#%=()" //Allow letters, digits, space, and specific symbols
+                    }) {
+                    viewModel.onNameChange(sanitised)
+                }
+            },
             label = { Text("Client Name *") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
@@ -261,8 +268,11 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
         OutlinedTextField(
             value = addrLine2,
             onValueChange = { input ->
-                if (input.all { it.isLetterOrDigit() || it.isWhitespace() }) {
-                    viewModel.onAddrLine2Change(input)
+                val sanitised = input.trimStart().replace("  ", " ")// Prevent starting with space and prevent double spacing
+                if (sanitised.all { char ->
+                        char.isLetterOrDigit() || char == ' ' || char in "+&#%=()" //Allow letters, digits, space, and specific symbols
+                    }) {
+                    viewModel.onAddrLine2Change(sanitised)
                 }
             },
             label = { Text("Street Name *") },
@@ -276,9 +286,11 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
             OutlinedTextField(
                 value = suburb,
                 onValueChange = { input ->
-                    // Letters and Whitespace only
-                    if (input.all { it.isLetter() || it.isWhitespace() }) {
-                        viewModel.onSuburbChange(input)
+                    val sanitised = input.trimStart().replace("  ", " ") // Prevent starting with space and prevent double spacing
+                    if (sanitised.all { char ->
+                            char.isLetterOrDigit() || char == ' ' || char in "+&#%=()" //Allow letters, digits, space, and specific symbols
+                        }) {
+                        viewModel.onSuburbChange(sanitised)
                     }
                 },
                 label = { Text("Suburb *") },
@@ -323,34 +335,48 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
 
             OutlinedTextField(
                 value = addr2Line1,
-                onValueChange = { input -> if (input.all { it.isDigit() }) viewModel.onAddr2Line1Change(input) },
+                onValueChange = { input ->
+                    if (input.all { it.isDigit() })
+                        viewModel.onAddr2Line1Change(input)
+                    },
                 label = { Text("Street Number") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
+
             Spacer(modifier = Modifier.height(8.dp))
+
             OutlinedTextField(
                 value = addr2Line2,
                 onValueChange = { input ->
-                    if (input.all { it.isLetterOrDigit() || it.isWhitespace() }) {
-                        viewModel.onAddr2Line2Change(input)
+                    val sanitised = input.trimStart().replace("  ", " ") // Prevent starting with space and prevent double spacing
+                    if (sanitised.all { char ->
+                            char.isLetterOrDigit() || char == ' ' || char in "+&#%=()" //Allow letters, digits, space, and specific symbols
+                        }) {
+                        viewModel.onAddr2Line2Change(sanitised)
                     }
                 },
                 label = { Text("Street Name") },
                 modifier = Modifier.fillMaxWidth()
             )
+
             Spacer(modifier = Modifier.height(8.dp))
+
             Row(Modifier.fillMaxWidth()) {
                 OutlinedTextField(
                     value = addr2Suburb,
                     onValueChange = { input ->
-                        if (input.all { it.isLetter() || it.isWhitespace() }) {
-                            viewModel.onAddr2SuburbChange(input)
+                        val sanitised = input.trimStart().replace("  ", " ") // Prevent starting with space and prevent double spacing
+                        if (sanitised.all { char ->
+                                char.isLetterOrDigit() || char == ' ' || char in "+&#%=()" //Allow letters, digits, space, and specific symbols
+                            }) {
+                            viewModel.onAddr2SuburbChange(sanitised)
                         }
                     },
                     label = { Text("Suburb") },
                     modifier = Modifier.weight(1f).padding(end = 4.dp)
                 )
+
                 OutlinedTextField(
                     value = addr2PostalCode,
                     onValueChange = { input ->
@@ -393,6 +419,34 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
         }
     }
 }
+/*
+fun isValidDebtorNameChar(char: Char): Boolean {
+
+    if (char.isLetterOrDigit()) return true // checks letters (A-Z, a-z) and Numbers 0-9
+
+    if (char.isWhitespace()) return true
+
+    // Select Symbols: +, &, #, %, =
+    if ("+&#%=".contains(char)) return true
+
+    // Round Brackets: ( )
+    if ("()".contains(char)) return true
+
+    // Punctuation Marks
+    if (".,;:!?'\"-".contains(char)) return true
+
+    return false
+}
+
+fun areBracketsBalanced(input: String): Boolean { // function to check if brackets are balanced in debtor name
+    var count = 0
+    for (char in input) {
+        if (char == '(') count++
+        if (char == ')') count--
+        if (count < 0) return false
+    }
+    return count == 0
+}*/
 
 @Composable
 fun DebtorCreationSearchDialog( // search dialog for selecting debtor

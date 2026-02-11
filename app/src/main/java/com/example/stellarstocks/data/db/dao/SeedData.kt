@@ -13,7 +13,7 @@ object SeedData {
 
     val debtors = listOf(
         DebtorMaster("ACC001", "KZN Fix IT", "12, West Street, Phoenix, 4002", "", 4830.0, 4830.0, 1200.0, true),
-        DebtorMaster("ACC002", "Jozi Consulting", "88, Maude Ave, Sandton, 4060", "", 1380.0, 1380.0, 800.0, true),
+        DebtorMaster("ACC002", "Insight Consulting", "88, Maude Ave, Sandton, 4060", "", 1380.0, 1380.0, 800.0, true),
         DebtorMaster("ACC003", "MSC Logistics", "45, Port Road, Bayview, 4001", "", 4025.0, 4025.0, 2500.0, true),
         DebtorMaster("ACC004", "Waltons Stationery", "101, Croftdene Dr, Chatsworth, 4092", "", 632.2, 632.2, 300.0, true),
         DebtorMaster("ACC005", "Page Automation IT", "5, Main Road, Nandi Dr, 4015", "", 0.0, 0.0, 0.0, true)
@@ -28,7 +28,7 @@ object SeedData {
     )
 
     val invoiceHeaders = listOf(
-        InvoiceHeader(1, "ACC001", daysAgo(180), 1800.0, 270.0, 2070.0),
+        InvoiceHeader(1, "ACC001", daysAgo(280), 1800.0, 270.0, 2070.0),
         InvoiceHeader(2, "ACC001", daysAgo(175), 2400.0, 360.0, 2760.0),
         InvoiceHeader(3, "ACC004", daysAgo(175), 550.0, 82.5, 632.2),
         InvoiceHeader(4, "ACC002", daysAgo(152), 1200.0, 180.0, 1380.0),
@@ -44,7 +44,7 @@ object SeedData {
     )
 
     val debtorTransactions = listOf(
-        DebtorTransaction(1, "ACC001", daysAgo(180), "Invoice", 1, 2070.0, 270.0),
+        DebtorTransaction(1, "ACC001", daysAgo(280), "Invoice", 1, 2070.0, 270.0),
         DebtorTransaction(2, "ACC001", daysAgo(175), "Invoice", 2, 2760.0, 360.0),
         DebtorTransaction(3, "ACC004", daysAgo(175), "Invoice", 3, 632.2, 82.5),
         DebtorTransaction(4, "ACC002", daysAgo(152), "Invoice", 4, 1380.0, 180.0),
@@ -56,7 +56,7 @@ object SeedData {
         StockTransaction(2, "STK002", daysAgo(200), "Adjustment", 1002, 10, 800.0, 0.0),
         StockTransaction(3, "STK003", daysAgo(200), "Adjustment", 1003, 1, 2500.0, 0.0),
         StockTransaction(4, "STK005", daysAgo(200), "Adjustment", 1004, 1, 1500.0, 0.0),
-        StockTransaction(5, "STK001", daysAgo(180), "Invoice", 1, -1, 0.0, 1800.0),
+        StockTransaction(5, "STK001", daysAgo(280), "Invoice", 1, -1, 0.0, 1800.0),
         StockTransaction(7, "STK002", daysAgo(175), "Invoice", 2, -2, 0.0, 2400.0),
         StockTransaction(8, "STK005", daysAgo(175), "Invoice", 3, -1, 0.0, 550.0),
         StockTransaction(9, "STK002", daysAgo(152), "Invoice", 4, -1, 0.0, 1200.0),

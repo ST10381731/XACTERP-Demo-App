@@ -297,7 +297,7 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
 
             val debtor = DebtorMaster( // create debtor object
                 accountCode = _accountCode.value,
-                name = _name.value,
+                name = _name.value.trim(),
                 address1 = combinedAddress1,
                 address2 = combinedAddress2,
                 balance = 0.0
@@ -332,7 +332,7 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
             val debtor = repository.getDebtor(code) // get debtor by code
             if (debtor != null) { // if debtor exists, update form fields
                 _accountCode.value = debtor.accountCode
-                _name.value = debtor.name
+                _name.value = debtor.name.trim()
 
                 // Split Address 1
                 val parts1 = debtor.address1.split(",").map { it.trim() } // split address into parts
@@ -404,7 +404,6 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
             if (transactions.isEmpty()) return@map emptyList<Pair<Float, Float>>()
 
             val calendar = Calendar.getInstance() // calendar to get month from date
-
 
             transactions
                 .groupBy {// Group by Month
