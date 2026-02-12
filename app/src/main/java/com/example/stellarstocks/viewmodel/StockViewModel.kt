@@ -184,7 +184,7 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
     }
 
     fun onStockCodeChange(newValue: String) { _stockCode.value = newValue } // Update stock code
-    fun onDescriptionChange(newValue: String) { _description.value = newValue } // Update stock description
+    fun onDescriptionChange(newValue: String) { _description.value = newValue.take(50) } // Update stock description
     fun onCostChange(newValue: Double) { _cost.value = newValue } // Update stock cost
     fun onSellingPriceChange(newValue: Double) { _sellingPrice.value = newValue } // Update stock selling price
 

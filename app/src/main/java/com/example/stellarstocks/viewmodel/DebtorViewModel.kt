@@ -186,18 +186,18 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
         _accountCode.value = newValue
     }
     fun onNameChange(newValue: String) { // function to update name
-        _name.value = newValue
+        _name.value = newValue.take(50)
     }
 
     // Primary Address Setters
     fun onAddrLine1Change(newValue: String) { // function to update primary address line 1
-        _addrLine1.value = newValue.filter { it.isDigit() }
+        _addrLine1.value = newValue.filter { it.isDigit() }.take(8)
     }
     fun onAddrLine2Change(newValue: String) { // function to update primary address line 2
-        _addrLine2.value = newValue.filter { it.isLetterOrDigit() || it.isWhitespace() }
+        _addrLine2.value = newValue.filter { it.isLetterOrDigit() || it.isWhitespace() }.take(50)
     }
     fun onSuburbChange(newValue: String) { // function to update suburb
-        _suburb.value = newValue.filter { it.isLetter() || it.isWhitespace() }
+        _suburb.value = newValue.filter { it.isLetter() || it.isWhitespace() }.take(50)
     }
     fun onPostalCodeChange(newValue: String) { // function to update postal code
         // Filter digits and limit to 4 characters
@@ -208,13 +208,13 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
     fun onShowAddress2Change(v: Boolean) { _showAddress2.value = v }
     // function to toggle secondary address visibility
     fun onAddr2Line1Change(v: String) { // function to update secondary address line 1
-        _addr2Line1.value = v.filter { it.isDigit() }
+        _addr2Line1.value = v.filter { it.isDigit() }.take(15)
     }
     fun onAddr2Line2Change(v: String) { // function to update secondary address line 2
-        _addr2Line2.value = v.filter { it.isLetterOrDigit() || it.isWhitespace() }
+        _addr2Line2.value = v.filter { it.isLetterOrDigit() || it.isWhitespace() }.take(50)
     }
     fun onAddr2SuburbChange(v: String) { // function to update secondary address suburb
-        _addr2Suburb.value = v.filter { it.isLetter() || it.isWhitespace() }
+        _addr2Suburb.value = v.filter { it.isLetter() || it.isWhitespace() }.take(50)
     }
     fun onAddr2PostalCodeChange(v: String) { // function to update secondary address postal code
         _addr2PostalCode.value = v.filter { it.isDigit() }.take(4)

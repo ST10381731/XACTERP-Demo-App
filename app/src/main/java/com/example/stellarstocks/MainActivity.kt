@@ -1174,8 +1174,10 @@ fun AddStockDialog(
                 OutlinedTextField(
                     value = qtyState,
                     onValueChange = { input ->
-                        if (input.text.all { it.isDigit() }) {
-                            qtyState = input
+                        if (input.text.length <=15) {
+                            if (input.text.all { it.isDigit() }) {
+                                qtyState = input
+                            }
                         }
                     },
                     label = { Text("Quantity") },
@@ -1203,8 +1205,10 @@ fun AddStockDialog(
                 OutlinedTextField(
                     value = discountState,
                     onValueChange = { input ->
-                        if (input.text.count { it == '.' } <= 1 && input.text.all { it.isDigit() || it == '.' }) {
-                            discountState = input
+                        if (input.text.length <=15) {
+                            if (input.text.count { it == '.' } <= 1 && input.text.all { it.isDigit() || it == '.' }) {
+                                discountState = input
+                            }
                         }
                     },
                     label = { Text("Discount %") },
@@ -1215,8 +1219,7 @@ fun AddStockDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .onFocusChanged { focusState ->
-                            // Auto-highlight logic
-                            if (focusState.isFocused) {
+                            if (focusState.isFocused) {// Auto-highlight logic
                                 val text = discountState.text
                                 discountState = discountState.copy(selection = TextRange(0, text.length))
                             }

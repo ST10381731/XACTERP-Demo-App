@@ -176,6 +176,11 @@ class StellarStocksRepositoryImpl @Inject constructor(
             items.forEach { item -> // process each item in the invoice
                 val stock = stockDao.getStock(item.stockCode)
                 if (stock != null) {
+                    val effectiveUnitSell = if (item.qtySold != 0) {
+                        item.total / item.qtySold
+                    } else {
+                        0.0
+                    }
                     stockDao.recordStockSale( // update Stock master for that item code
                         code = item.stockCode,
                         qtySold = item.qtySold,
@@ -190,7 +195,7 @@ class StellarStocksRepositoryImpl @Inject constructor(
                             documentNum = invoiceId,
                             qty = -item.qtySold, // negative qty for an invoice
                             unitCost = stock.cost,
-                            unitSell = stock.sellingPrice
+                            unitSell = effectiveUnitSell
                         )
                     )
                 }

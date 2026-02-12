@@ -249,8 +249,11 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
         OutlinedTextField( // Text field for description
             value = description,
             onValueChange = { input ->
-                val sanitised = input.trimStart().replace("  ", " ") // Prevent starting with space and prevent double spacing
+                if (input.length <= 50) {
+                    val sanitised = input.trimStart().replace("  ", " ")
+                    // Prevent starting with space and prevent double spacing
                     viewModel.onDescriptionChange(sanitised)
+                }
             },
             label = { Text("Stock Description *") },
             modifier = Modifier.fillMaxWidth(),
@@ -263,11 +266,12 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
         OutlinedTextField( // Text field for cost
             value = costTfv,
             onValueChange = { input ->
-
-                if (input.text.count { it == '.' } <= 1 && input.text.all { it.isDigit() || it == '.' }) {
-                    // Only allow digits and max one decimal point
-                    costTfv = input
-                    viewModel.onCostChange(input.text.toDoubleOrNull() ?: 0.0)
+                if (input.text.length <= 15) {
+                    if (input.text.count { it == '.' } <= 1 && input.text.all { it.isDigit() || it == '.' }) {
+                        // Only allow digits and max one decimal point
+                        costTfv = input
+                        viewModel.onCostChange(input.text.toDoubleOrNull() ?: 0.0)
+                    }
                 }
             },
             label = { Text("Cost of Item * ") },
@@ -289,10 +293,12 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
         OutlinedTextField( // Text field for selling price
             value = sellingPriceTfv,
             onValueChange = { input ->
-                if (input.text.count { it == '.' } <= 1 && input.text.all { it.isDigit() || it == '.' }) { // Only allow digits and max one decimal point
+                if (input.text.length <= 15) {
+                    if (input.text.count { it == '.' } <= 1 && input.text.all { it.isDigit() || it == '.' }) { // Only allow digits and max one decimal point
                     // Only allow digits and max one decimal point
                     sellingPriceTfv = input
                     viewModel.onSellingPriceChange(input.text.toDoubleOrNull() ?: 0.0)
+                    }
                 }
             },
             label = { Text("Selling Price * ") },

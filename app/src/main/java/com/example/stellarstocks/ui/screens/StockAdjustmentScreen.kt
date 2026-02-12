@@ -167,14 +167,19 @@ fun StockAdjustmentScreen(viewModel: StockViewModel = viewModel(), navController
             OutlinedTextField(// quantity text field
                 value = adjustmentQty.toString(),
                 onValueChange = {
+                    if (it.length <= 15){
                     val num = it.toIntOrNull() // convert quantity input
                     if (num != null) { // validate quantity input
                         viewModel.onAdjustmentQtyChange(num) // update quantity
                     } else if (it.isEmpty() || it == "-") { // if quantity is empty or negative, set to 0
                         viewModel.onAdjustmentQtyChange(0) // update quantity
                     }
+                        }
                 },
-                label = { Text(if(adjustmentType == "Purchase") "Quantity (+ only)" else "Quantity (+/-)") },
+                label = {
+                    Text(
+                        if(adjustmentType == "Purchase") "Quantity (+ only)" else "Quantity (+/-)")
+                        },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), //restrict user input to numbers only
                 modifier = Modifier.width(200.dp)
             )
