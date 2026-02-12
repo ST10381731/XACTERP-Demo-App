@@ -40,8 +40,18 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
     private val _toastMessage = MutableStateFlow<String?>(null) // variable for toast message
     val toastMessage = _toastMessage.asStateFlow()
 
-    private val _invoiceNum = MutableStateFlow((System.currentTimeMillis() % 1000000).toInt()) // Invoice number
+    private val _invoiceNum = MutableStateFlow(0)
     val invoiceNum = _invoiceNum.asStateFlow()
+
+    init {
+        fetchNextInvoiceId()
+    }
+
+    private fun fetchNextInvoiceId() {
+        viewModelScope.launch {
+            _invoiceNum.value = repository.getNextInvoiceNum()
+        }
+    }
 
     private val _isInvoiceProcessed = MutableStateFlow(false) // Invoice processed flag
     val isInvoiceProcessed = _isInvoiceProcessed.asStateFlow()
@@ -206,7 +216,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
             val calculatedTotalCost = items.sumOf { it.qty * it.stock.cost }
 
             val header = InvoiceHeader(
-                invoiceNum = invoiceNum,
+                invoiceNum = 0,
                 accountCode = debtor.accountCode,
                 date = Date(),
                 totalSellAmtExVat = _totalExVat.value,
@@ -216,7 +226,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
 
             val detailItems = items.mapIndexed { index, invoiceItem ->
                 InvoiceDetail(
-                    invoiceNum = invoiceNum,
+                    invoiceNum = 0,
                     itemNum = index + 1,
                     stockCode = invoiceItem.stock.stockCode,
                     qtySold = invoiceItem.qty,
@@ -238,7 +248,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
     fun startNewInvoice() { // Start a new invoice
         _invoiceItems.value = emptyList()
         _selectedDebtor.value = null
-        _invoiceNum.value = (System.currentTimeMillis() % 1000000).toInt()
+        fetchNextInvoiceId()
         _isInvoiceProcessed.value = false
         calculateTotals()
     }

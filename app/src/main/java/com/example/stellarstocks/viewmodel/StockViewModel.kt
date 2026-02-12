@@ -301,11 +301,12 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
         }
 
         viewModelScope.launch { // If valid, adjust stock
+            val nextDocNum = repository.getNextAdjustmentNum()
             val transaction = StockTransaction(
                 stockCode = stock.stockCode,
                 date = Date(),
                 transactionType = type,
-                documentNum = (System.currentTimeMillis() % 100000).toInt(),
+                documentNum = nextDocNum,
                 qty = qty,
                 unitCost = stock.cost,
                 unitSell = stock.sellingPrice
