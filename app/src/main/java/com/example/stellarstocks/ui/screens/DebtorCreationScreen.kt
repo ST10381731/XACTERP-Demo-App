@@ -70,12 +70,30 @@ import com.example.stellarstocks.ui.theme.Red
 import com.example.stellarstocks.viewmodel.DebtorViewModel
 import com.example.stellarstocks.viewmodel.StockViewModel
 
+/*
+* Debtor Creation Screen
+-Creation Mode-
+* allows user to create new users by entering the required information into '*' fields
+* account code is auto created to prevent user errors
+* validation in place for name to allow certain special characters according to south african law
+* validation to prevent double spacing or starting/ending input with whitespace
+* validation to prevent inaccurate postal code
+* validation to prevent numbers and special characters in suburb
+* users have the option to add a secondary address however it must be filled in appropriately
+
+* Users can seamlessly switch between creation and edit mode by clicking the highlighted text
+
+-Edit mode-
+* edit mode allows users to search for debtors via part name or account code
+* all inputs are disabled until a relevant debtor has been selected
+* all inputs auto-populate with table data once a debtor is selected
+* prior validations remain active during edit reducing user error
+* edit mode allows users to delete a debtor which will deactivate their account
+*/
 @Composable
 fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController: NavController) {
     val accountCode by viewModel.accountCode.collectAsState()
     val name by viewModel.name.collectAsState()
-    var showConfirmationDialog by remember { mutableStateOf(false) } // delete confirmation dialog state
-
 
     // Address 1 States
     val addrLine1 by viewModel.addrLine1.collectAsState()
@@ -97,30 +115,34 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
 
     val scrollState = rememberScrollState() // default scroll state for the column
 
-    var showSearchDialog by remember { mutableStateOf(false) } // variable to determine if search dialog should be shown
+    var showConfirmationDialog by remember { mutableStateOf(false) }
+    // variable to determine if delete dialog should be shown
+    var showSearchDialog by remember { mutableStateOf(false) }
+    // variable to determine if search dialog should be shown
 
-    LaunchedEffect(toastMessage) {
+    LaunchedEffect(toastMessage) { // toast message initialisation
         toastMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             viewModel.clearToast()
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(Unit) { // set the account code to auto appear on launching screen
         if (!isEditMode) viewModel.generateNewCode() // if not in edit mode, generate a new code
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(Unit) { // navigate to debtor enquiry screen when done creating or editing
         viewModel.navigationChannel.collect { shouldNavigate ->
             if (shouldNavigate) {
-                navController.navigate(Screen.DebtorEnquiry.route) { // navigate to debtor enquiry screen
+                navController.navigate(Screen.DebtorEnquiry.route) {
+                    // navigate to debtor enquiry screen
                     popUpTo(Screen.DebtorMenu.route) { inclusive = false }
                 }
             }
         }
     }
 
-    if (showSearchDialog) {
+    if (showSearchDialog) { // show dialog to search for a debtor using part name or part account code
         DebtorCreationSearchDialog(
             viewModel = viewModel,
             onDismiss = {
@@ -129,14 +151,15 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
             },
             onDebtorSelected = { debtor ->
                 viewModel.onSearchCodeChange(debtor.accountCode)
-                viewModel.loadDebtorDetails(debtor.accountCode) // loadDebtorDetails to split address
+                viewModel.loadDebtorDetails(debtor.accountCode)
+                // loadDebtorDetails to split address into respective inputs
                 showSearchDialog = false
                 viewModel.resetSearch()
             }
         )
     }
 
-    if (showConfirmationDialog) { // show dialog to confirm deletion
+    if (showConfirmationDialog) { // show dialog to confirm or cancel deletion
         AlertDialog(
             onDismissRequest = { showConfirmationDialog = false },
             title = { Text(text = "Confirm Deletion") },
@@ -190,7 +213,8 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
                 color = Orange,
                 modifier = Modifier
                     .padding(start = 16.dp)
-                    .clickable { viewModel.toggleMode() } // toggle between edit and creation mode on click
+                    .clickable { viewModel.toggleMode() }
+                    // toggle between edit and creation mode on click
             )
 
         Text(
@@ -232,9 +256,11 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
         OutlinedTextField( // text field for name
             value = name,
             onValueChange = { input ->
-                val sanitised = input.trimStart().replace("  ", " ") // Prevent starting with space and prevent double spacing
+                val sanitised = input.trimStart().replace("  ", " ")
+                // prevent starting with space and prevent double spacing
                 if (sanitised.all { char ->
-                        char.isLetterOrDigit() || char == ' ' || char in "+&#%=()" //Allow letters, digits, space, and specific symbols
+                        char.isLetterOrDigit() || char == ' ' || char in "+&#%=()"
+                        // allow letters, digits, space, and specific symbols
                     }) {
                     viewModel.onNameChange(sanitised)
                 }
@@ -247,13 +273,13 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("Primary Address *", fontWeight = FontWeight.SemiBold, modifier = Modifier.align(Alignment.Start).padding(top=8.dp))
+        Text("Primary Address *", fontWeight = FontWeight.SemiBold, modifier = Modifier
+            .align(Alignment.Start).padding(top=8.dp))
 
-        // Numbers Only
-        OutlinedTextField(
+        OutlinedTextField( // text field for street number
             value = addrLine1,
             onValueChange = { input ->
-                if (input.all { it.isDigit() }) { // Numbers only
+                if (input.all { it.isDigit() }) { // numbers only
                     viewModel.onAddrLine1Change(input)
                 }
             },
@@ -264,13 +290,14 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Address Line 2
-        OutlinedTextField(
+        OutlinedTextField( //text field for street name
             value = addrLine2,
             onValueChange = { input ->
-                val sanitised = input.trimStart().replace("  ", " ")// Prevent starting with space and prevent double spacing
+                val sanitised = input.trimStart().replace("  ", " ")
+                // prevent starting with space and prevent double spacing
                 if (sanitised.all { char ->
-                        char.isLetterOrDigit() || char == ' ' || char in "+&#%=()" //Allow letters, digits, space, and specific symbols
+                        char.isLetterOrDigit() || char == ' ' || char in "+&#%=()"
+                // allow letters, digits, space, and specific symbols
                     }) {
                     viewModel.onAddrLine2Change(sanitised)
                 }
@@ -282,13 +309,15 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
         Spacer(modifier = Modifier.height(8.dp))
 
         Row(Modifier.fillMaxWidth()) {
-            // Suburb
-            OutlinedTextField(
+
+            OutlinedTextField(// text field for suburb
                 value = suburb,
                 onValueChange = { input ->
-                    val sanitised = input.trimStart().replace("  ", " ") // Prevent starting with space and prevent double spacing
+                    val sanitised = input.trimStart().replace("  ", " ")
+                    // prevent starting with space and prevent double spacing
                     if (sanitised.all { char ->
-                            char.isLetterOrDigit() || char == ' ' || char in "+&#%=()" //Allow letters, digits, space, and specific symbols
+                            char.isLetterOrDigit() || char == ' ' || char in "+&#%=()"
+                    // allow letters, digits, space, and specific symbols
                         }) {
                         viewModel.onSuburbChange(sanitised)
                     }
@@ -298,12 +327,11 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
                 enabled= accountCode.isNotBlank()
             )
 
-            // Postal Code
-            OutlinedTextField(
+
+            OutlinedTextField(// text field for postal code
                 value = postalCode,
                 onValueChange = { input ->
-                    // Digits only, Max length 4
-                    if (input.length <= 4 && input.all { it.isDigit() }) {
+                    if (input.length <= 4 && input.all { it.isDigit() }) {// Digits only and Max length=4
                         viewModel.onPostalCodeChange(input)
                     }
                 },
@@ -322,18 +350,20 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("Add Secondary Address? (Optional)", fontWeight = FontWeight.Bold)
-            Switch(
+            Switch( // switch to toggle secondary address
                 checked = showAddress2,
                 onCheckedChange = { viewModel.onShowAddress2Change(it) },
-                colors = SwitchDefaults.colors(checkedThumbColor = DarkGreen, checkedTrackColor = LightGreen),
+                colors = SwitchDefaults.colors(checkedThumbColor = DarkGreen,
+                    checkedTrackColor = LightGreen),
                 enabled= accountCode.isNotBlank(),
             )
         }
 
         if (showAddress2) {
-            Text("Secondary Address", fontWeight = FontWeight.Bold, color = DarkGreen, modifier = Modifier.align(Alignment.Start))
+            Text("Secondary Address", fontWeight = FontWeight.Bold, color = DarkGreen,
+                modifier = Modifier.align(Alignment.Start))
 
-            OutlinedTextField(
+            OutlinedTextField( // text field for secondary street number
                 value = addr2Line1,
                 onValueChange = { input ->
                     if (input.all { it.isDigit() })
@@ -346,12 +376,14 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            OutlinedTextField(
+            OutlinedTextField( // text field for secondary street name
                 value = addr2Line2,
                 onValueChange = { input ->
-                    val sanitised = input.trimStart().replace("  ", " ") // Prevent starting with space and prevent double spacing
+                    val sanitised = input.trimStart().replace("  ", " ")
+                    // prevent starting with space and prevent double spacing
                     if (sanitised.all { char ->
-                            char.isLetterOrDigit() || char == ' ' || char in "+&#%=()" //Allow letters, digits, space, and specific symbols
+                            char.isLetterOrDigit() || char == ' ' || char in "+&#%=()"
+                    // allow letters, digits, space, and specific symbols
                         }) {
                         viewModel.onAddr2Line2Change(sanitised)
                     }
@@ -363,12 +395,14 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
             Spacer(modifier = Modifier.height(8.dp))
 
             Row(Modifier.fillMaxWidth()) {
-                OutlinedTextField(
+                OutlinedTextField( // text field for secondary suburb
                     value = addr2Suburb,
                     onValueChange = { input ->
-                        val sanitised = input.trimStart().replace("  ", " ") // Prevent starting with space and prevent double spacing
+                        val sanitised = input.trimStart().replace("  ", " ")
+                        // prevent starting with space and prevent double spacing
                         if (sanitised.all { char ->
-                                char.isLetterOrDigit() || char == ' ' || char in "+&#%=()" //Allow letters, digits, space, and specific symbols
+                                char.isLetterOrDigit() || char == ' ' || char in "+&#%=()"
+                        // allow letters, digits, space, and specific symbols
                             }) {
                             viewModel.onAddr2SuburbChange(sanitised)
                         }
@@ -377,7 +411,7 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
                     modifier = Modifier.weight(1f).padding(end = 4.dp)
                 )
 
-                OutlinedTextField(
+                OutlinedTextField( // text field for secondary postal code
                     value = addr2PostalCode,
                     onValueChange = { input ->
                         if (input.length <= 4 && input.all { it.isDigit() }) {
@@ -397,7 +431,7 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            Button(
+            Button( // button to save or update debtor depending on mode
                 onClick = { viewModel.saveDebtor() },
                 colors = ButtonDefaults.buttonColors(containerColor = DarkGreen),
                 modifier = Modifier.weight(1f).padding(end = 8.dp),
@@ -407,7 +441,7 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
             }
 
             if (isEditMode) {
-                Button(
+                Button( // button to delete debtor in edit mode only
                     onClick = { showConfirmationDialog = true },
                     colors = ButtonDefaults.buttonColors(containerColor = Red),
                     modifier = Modifier.weight(1f).padding(start = 8.dp),
@@ -419,34 +453,6 @@ fun DebtorCreationScreen(viewModel: DebtorViewModel = viewModel(), navController
         }
     }
 }
-/*
-fun isValidDebtorNameChar(char: Char): Boolean {
-
-    if (char.isLetterOrDigit()) return true // checks letters (A-Z, a-z) and Numbers 0-9
-
-    if (char.isWhitespace()) return true
-
-    // Select Symbols: +, &, #, %, =
-    if ("+&#%=".contains(char)) return true
-
-    // Round Brackets: ( )
-    if ("()".contains(char)) return true
-
-    // Punctuation Marks
-    if (".,;:!?'\"-".contains(char)) return true
-
-    return false
-}
-
-fun areBracketsBalanced(input: String): Boolean { // function to check if brackets are balanced in debtor name
-    var count = 0
-    for (char in input) {
-        if (char == '(') count++
-        if (char == ')') count--
-        if (count < 0) return false
-    }
-    return count == 0
-}*/
 
 @Composable
 fun DebtorCreationSearchDialog( // search dialog for selecting debtor
@@ -480,7 +486,7 @@ fun DebtorCreationSearchDialog( // search dialog for selecting debtor
                     singleLine = true,
                     leadingIcon = { Icon(Icons.Default.Search, null) },
                     trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
+                        if (searchQuery.isNotEmpty()) { // if search query is not empty, show clear button
                             IconButton(onClick = { viewModel.onSearchQueryChange("") }) {
                                 Icon(
                                     Icons.Default.Close,
@@ -493,7 +499,7 @@ fun DebtorCreationSearchDialog( // search dialog for selecting debtor
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 LazyColumn { // Table to hold list of debtors
-                    items(filteredDebtor) { debtor ->
+                    items(filteredDebtor) { debtor -> // loop through debtors master to find search query
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()

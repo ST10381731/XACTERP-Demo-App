@@ -36,22 +36,24 @@ enum class StockListSortOption { // sort options for stock enquiry
     COST_ASC
 }
 
-class StockViewModel(private val repository: StellarStocksRepository) : ViewModel() { // Stock view model
+class StockViewModel(private val repository: StellarStocksRepository) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("") // Search query for stock
-    val searchQuery = _searchQuery.asStateFlow() //allows other classes to observe changes to the search query
+    val searchQuery = _searchQuery.asStateFlow()
 
     private val _stockListSort = MutableStateFlow(StockListSortOption.CODE_ASC) // Sort option for stock list
     val stockListSort = _stockListSort.asStateFlow()
 
     private val _stock = MutableStateFlow<List<StockMaster>>(emptyList()) // List of stock
-    val stock: StateFlow<List<StockMaster>> = _stock //allows list of stock to be observed by other classes
+    val stock: StateFlow<List<StockMaster>> = _stock
 
-    val filteredStock: StateFlow<List<StockMaster>> = combine( // Combine stock, search query, and sort option to filter and sort stock
+    val filteredStock: StateFlow<List<StockMaster>> = combine(
+        // Combine stock, search query, and sort option to filter and sort stock
         repository.getAllStock(),
         _searchQuery,
         _stockListSort
-    ) { stockList: List<StockMaster>, query: String, sortOption: StockListSortOption -> //combine all three flows into one
+    ) { stockList: List<StockMaster>, query: String, sortOption: StockListSortOption ->
+        //combine all three flows into one
 
         val filtered = if (query.isBlank()) { // If search query is blank, return all stock
             stockList
@@ -77,14 +79,17 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
     )
 
     private val _selectedStock = MutableStateFlow<StockMaster?>(null) // Selected stock for details
-    val selectedStock = _selectedStock.asStateFlow()    //allows other classes to observe changes to the selected stock
+    val selectedStock = _selectedStock.asStateFlow()
 
-    private val _selectedTransactions = MutableStateFlow<List<TransactionInfo>>(emptyList()) // List of transactions for selected stock
+    private val _selectedTransactions = MutableStateFlow<List<TransactionInfo>>(emptyList())
+    // List of transactions for selected stock
 
-    private val _currentSort = MutableStateFlow(StockSortOption.FULL_LIST) // current sort option for transactions
-    val currentSort = _currentSort.asStateFlow() //allows other classes to observe changes to the current sort option
+    private val _currentSort = MutableStateFlow(StockSortOption.FULL_LIST)
+    // current sort option for transactions
+    val currentSort = _currentSort.asStateFlow()
 
-    val visibleTransactions: StateFlow<List<TransactionInfo>> = combine( // Combine transactions and sort option to filter and sort transactions
+    val visibleTransactions: StateFlow<List<TransactionInfo>> = combine(
+        // Combine transactions and sort option to filter and sort transactions
         _selectedTransactions,
         _currentSort
     ) { transactions, sortOption ->
@@ -96,7 +101,8 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
         }
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000), //continuously collect data from the flow and emit new values to the UI
+        started = SharingStarted.WhileSubscribed(5000),
+        //continuously collect data from the flow and display new values to the UI
         initialValue = emptyList()
     )
 
@@ -296,6 +302,7 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
         }
 
         if (type == "Adjustment" && (stock.stockOnHand + qty) < 0) {
+            // Adjustments cannot drop stock on hand to negative
             _toastMessage.value = "Insufficient stock! Current: ${stock.stockOnHand}"
             return
         }

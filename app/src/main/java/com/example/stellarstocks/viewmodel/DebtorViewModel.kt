@@ -38,14 +38,16 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
     private val _searchQuery = MutableStateFlow("") // variable to hold search query
     val searchQuery = _searchQuery.asStateFlow()
 
-    private val _debtorListSort = MutableStateFlow(DebtorListSortOption.CODE_ASC) // variable to hold debtor list sort option
+    private val _debtorListSort = MutableStateFlow(DebtorListSortOption.CODE_ASC)
+    // variable to hold debtor list sort option
     val debtorListSort = _debtorListSort.asStateFlow()
 
     private val _currentSort =
         MutableStateFlow(SortOption.RECENT_ITEM_SOLD) // variable to hold current sort option
     val currentSort = _currentSort.asStateFlow()
 
-    val filteredDebtors: StateFlow<List<DebtorMaster>> = combine( // variable to hold filtered debtors based on search query and sort option
+    val filteredDebtors: StateFlow<List<DebtorMaster>> = combine(
+        // variable to hold filtered debtors based on search query and sort option
         repository.getAllDebtors(),
         _searchQuery,
         _debtorListSort
@@ -58,7 +60,6 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
                         it.name.contains(query, ignoreCase = true)
             }
         }
-
         when (sortOption) { // sort debtors based on sort option
             DebtorListSortOption.CODE_ASC -> filtered.sortedBy { it.accountCode }
             DebtorListSortOption.CODE_DESC -> filtered.sortedByDescending { it.accountCode }
@@ -76,17 +77,18 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
     val selectedDebtor = _selectedDebtor.asStateFlow()
 
     private val _selectedTransactions =
-        MutableStateFlow<List<DebtorTransactionInfo>>(emptyList()) // variable to hold selected debtor transactions
+        MutableStateFlow<List<DebtorTransactionInfo>>(emptyList())
+    // variable to hold selected debtor transactions
 
     val visibleTransactions: StateFlow<List<DebtorTransactionInfo>> =
         combine( // variable to hold debtor transactions based on sort option
             _selectedTransactions,
             _currentSort
         ) { transactions, sortOption ->
-            when (sortOption) { // sort transactions based on sort option
+            when (sortOption) {
+                // sort transactions based on sort option
                 SortOption.RECENT_ITEM_SOLD -> transactions.filter { it.items != null }
                     .sortedByDescending { it.date }
-
                 SortOption.HIGHEST_VALUE -> transactions.sortedByDescending { abs(it.value) }
                 SortOption.LOWEST_VALUE -> transactions.sortedBy { abs(it.value) }
             }
@@ -117,7 +119,8 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
     private val _postalCode = MutableStateFlow("") // variable to hold debtor postal code
     val postalCode = _postalCode.asStateFlow()
 
-    private val _showAddress2 = MutableStateFlow(false) // variable to determine state of secondary address
+    private val _showAddress2 = MutableStateFlow(false)
+    // variable to determine state of secondary address
     val showAddress2 = _showAddress2.asStateFlow()
 
     private val _addr2Line1 = MutableStateFlow("") // variable to hold secondary address line 1
@@ -129,7 +132,8 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
     private val _addr2Suburb = MutableStateFlow("") // variable to hold secondary address suburb
     val addr2Suburb = _addr2Suburb.asStateFlow()
 
-    private val _addr2PostalCode = MutableStateFlow("") // variable to hold secondary address postal code
+    private val _addr2PostalCode = MutableStateFlow("")
+    // variable to hold secondary address postal code
     val addr2PostalCode = _addr2PostalCode.asStateFlow()
 
     private val _balance = MutableStateFlow(0.0) // variable to hold debtor balance
@@ -140,13 +144,15 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
     private val _navigationChannel = Channel<Boolean>() // variable to hold navigation events
     val navigationChannel = _navigationChannel.receiveAsFlow()
 
-    private val _transactionInfo = MutableStateFlow<List<DebtorTransactionInfo>>(emptyList()) // variable to hold debtor transaction info
+    private val _transactionInfo = MutableStateFlow<List<DebtorTransactionInfo>>(emptyList())
+    // variable to hold debtor transaction info
 
     fun onSearchQueryChange(query: String) { // function to update search query
         _searchQuery.value = query
     }
 
-    fun updateDebtorListSort(option: DebtorListSortOption) { // function to update debtor list sort option
+    fun updateDebtorListSort(option: DebtorListSortOption) {
+        // function to update debtor list sort option
         _debtorListSort.value = option
     }
 
@@ -197,8 +203,10 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
         // Filter digits and limit to 4 characters
         _postalCode.value = newValue.filter { it.isDigit() }.take(4)
     }
+
     // Secondary Address Setters
-    fun onShowAddress2Change(v: Boolean) { _showAddress2.value = v } // function to toggle secondary address visibility
+    fun onShowAddress2Change(v: Boolean) { _showAddress2.value = v }
+    // function to toggle secondary address visibility
     fun onAddr2Line1Change(v: String) { // function to update secondary address line 1
         _addr2Line1.value = v.filter { it.isDigit() }
     }
@@ -279,13 +287,15 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
                     _toastMessage.value = "Address 2 Suburb required"
                     return@launch
                 }
-                if (_addr2PostalCode.value.length != 4) { // if address 2 postal code is not 4 digits throw error
+                if (_addr2PostalCode.value.length != 4) {
+                    // if address 2 postal code is not 4 digits throw error
                     _toastMessage.value = "Address 2 Post Code must be 4 digits"
                     return@launch
                 }
             }
 
-            val combinedAddress2 = if (_showAddress2.value) { // combine address 2 lines into one string
+            val combinedAddress2 = if (_showAddress2.value) {
+                // combine address 2 lines into one string
                 listOf(
                     _addr2Line1.value.trim(),
                     _addr2Line2.value.trim(),
@@ -306,7 +316,8 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
             if (_isEditMode.value) { // if in edit mode, update debtor
                 val existing = repository.getDebtor(_accountCode.value) // get existing debtor
                 if (existing != null) { // if debtor exists, update it
-                    repository.updateDebtor(debtor.copy( // create new debtor object with updated values
+                    repository.updateDebtor(debtor.copy(
+                        // create new debtor object with updated values
                         balance = existing.balance,
                         salesYearToDate = existing.salesYearToDate,
                         costYearToDate = existing.costYearToDate,
@@ -342,7 +353,8 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
                 _postalCode.value = parts1.getOrNull(3) ?: ""
 
                 // Split Address 2
-                val parts2 = debtor.address2?.split(",")?.map { it.trim() } //split address into parts if it exists
+                val parts2 = debtor.address2?.split(",")?.map { it.trim() }
+                //split address into parts if it exists
                 if (!parts2.isNullOrEmpty() && debtor.address2?.isNotBlank() == true) {
                     _showAddress2.value = true
                     _addr2Line1.value = parts2.getOrNull(0) ?: ""
@@ -355,7 +367,8 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
                 }
 
                 _balance.value = debtor.balance
-                repository.getDebtorTransactionInfo(code).collect { list -> _transactionInfo.value = list }
+                repository.getDebtorTransactionInfo(code).collect { list ->  // get debtor transactions
+                    _transactionInfo.value = list }
             }
         }
     }
@@ -395,11 +408,13 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
         _addr2PostalCode.value = ""
     }
 
-    val topDebtors = repository.getAllDebtors().map { list -> //for graphing get all debtors with top 5 sales year to date
+    val topDebtors = repository.getAllDebtors().map { list ->
+        // get all debtors with top 5 sales year to date for landing page
         list.sortedByDescending { it.salesYearToDate }.take(5)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val monthlySales: StateFlow<List<Pair<Float, Float>>> = repository.getAllDebtorTransactions() //for graphing get all debtor transactions
+    val monthlySales: StateFlow<List<Pair<Float, Float>>> = repository.getAllDebtorTransactions()
+        //for graphing get all debtor transactions
         .map { transactions ->
             if (transactions.isEmpty()) return@map emptyList<Pair<Float, Float>>()
 

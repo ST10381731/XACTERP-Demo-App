@@ -806,6 +806,17 @@ fun SimpleLineChart(
                     .verticalScroll(scrollState),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 8.dp)
+            ) {
+                Text(
+                    "Create a new Invoice",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = DarkGreen
+                )
+            }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -902,7 +913,7 @@ fun SimpleLineChart(
                                         onClick = { showDebtorSearchDialog = true },
                                         colors = ButtonDefaults.textButtonColors(contentColor = Orange)
                                     ) {
-                                        Text(if (selectedDebtor == null) "+ Select Debtor" else "Change Debtor", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                        Text(if (selectedDebtor == null) "+ Select Debtor" else "Change Debtor", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }
@@ -953,7 +964,7 @@ fun SimpleLineChart(
                             } else {
                                 Text(
                                     "No Debtor Selected",
-                                    color = Color.Red,
+                                    color = Color.LightGray,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -963,21 +974,21 @@ fun SimpleLineChart(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(Color(0xFF000000)) // Slightly lighter grey for header
+                                    .background(Color(0xFF000000))
                                     .padding(horizontal = 4.dp, vertical = 2.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("Add an Item", fontWeight = FontWeight.Bold, fontSize = 12.sp)
 
                                     if (!isInvoiceProcessed) {
-                                        IconButton(
-                                            onClick = { showStockSearchDialog = true },
-                                            modifier = Modifier.size(24.dp).padding(start = 4.dp)
-                                        ) {
-                                            Icon(Icons.Default.AddShoppingCart, contentDescription = "Add Item", tint = DarkGreen)
-                                        }
+                                            TextButton(
+                                                onClick = { showStockSearchDialog = true },
+                                                colors = ButtonDefaults.textButtonColors(contentColor = DarkGreen)
+                                            ) {
+                                                Text("Add an Item", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                                Icon(Icons.Default.AddShoppingCart, contentDescription = "Add Item", tint = DarkGreen)
+                                            }
                                     }
                                 }
                                 Text("Total (Excl VAT)", fontWeight = FontWeight.Bold, fontSize = 12.sp)
@@ -1010,7 +1021,7 @@ fun SimpleLineChart(
                                                 Text("${item.qty} x R${item.stock.sellingPrice}", fontSize = 12.sp, color = Color.Gray) // item quantity and price
                                                 if (item.discountPercent > 0) { // if item has discount
                                                     Spacer(Modifier.width(8.dp))
-                                                    Text("(-${item.discountPercent}%)", fontSize = 12.sp, color = Red)
+                                                    Text("(-${String.format("%.2f",item.discountPercent)}%)", fontSize = 12.sp, color = Red)
                                                 }
                                             }
                                         }
@@ -1175,8 +1186,7 @@ fun AddStockDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .onFocusChanged { focusState ->
-                            // Auto-highlight logic
-                            if (focusState.isFocused) {
+                            if (focusState.isFocused) {// Auto-highlight logic
                                 val text = qtyState.text
                                 qtyState = qtyState.copy(selection = TextRange(0, text.length))
                             }
@@ -1235,173 +1245,7 @@ fun AddStockDialog(
     }
 }
 
-/*
-* Title- Make a Ticket View with Jetpack Compose
-* Author- Kush Saini
-* Accessed- 30/01/2026
-* URL- https://medium.com/@kushsaini/make-a-ticketview-with-jetpack-compose-ea0c8f7a00a8
-* */
-    @Preview
-    @Composable
-    private fun TicketView( // custom background for invoice
-        content: @Composable () -> Unit = {
-            Text("Ticket View")
-        }
-    ) {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.primary
-        ) {
 
-            Box(
-                modifier = Modifier
-                    .padding(8.dp)
-                    .shadow(
-                        2.dp,
-                        shape = TicketShape(8f, 4f),
-                        clip = true
-                    )
-                    .background(Color.White)
-            ) {
-
-                Box(modifier = Modifier.padding(16.dp)) {
-                    content()
-                }
-            }
-        }
-    }
-
-    /*
-* Title- Make a Ticket View with Jetpack Compose
-* Author- Kush Saini
-* Accessed- 30/01/2026
-* URL- https://medium.com/@kushsaini/make-a-ticketview-with-jetpack-compose-ea0c8f7a00a8
-* */
-    class TicketShape(
-        private val teethWidthDp: Float,
-        private val teethHeightDp: Float
-    ) : Shape {
-        override fun createOutline(
-            size: Size,
-            layoutDirection: LayoutDirection,
-            density: Density
-        ) = Outline.Generic(Path().apply {
-
-            moveTo(
-                size.width * 0.99f,
-                size.height * 0.01f
-            )
-
-            val teethHeightPx = teethHeightDp * density.density
-            var fullTeethWidthPx = teethWidthDp * density.density
-            var halfTeethWidthPx = fullTeethWidthPx / 2
-            var currentDrawPositionX = size.width * 0.99f
-            var teethBasePositionY = size.height * 0.01f + teethHeightPx
-            val shapeWidthPx = size.width * 0.99f - size.width * 0.01f
-
-            val teethCount = shapeWidthPx / fullTeethWidthPx
-            val minTeethCount = floor(teethCount)
-
-            if (teethCount != minTeethCount) { // check to allow drawing if shape width is a multiple of teeth count
-                val newTeethWidthPx = shapeWidthPx / minTeethCount
-                fullTeethWidthPx = newTeethWidthPx
-                halfTeethWidthPx = fullTeethWidthPx / 2
-            }
-
-            var drawnTeethCount = 1
-
-            // draw half of first teeth
-            lineTo(
-                currentDrawPositionX - halfTeethWidthPx,
-                teethBasePositionY + teethHeightPx
-            )
-
-            // draw remaining teethes
-            while (drawnTeethCount < minTeethCount) {
-
-                currentDrawPositionX -= halfTeethWidthPx
-
-                // draw right half of teeth
-                lineTo(
-                    currentDrawPositionX - halfTeethWidthPx,
-                    teethBasePositionY - teethHeightPx
-                )
-
-                currentDrawPositionX -= halfTeethWidthPx
-
-                // draw left half of teeth
-                lineTo(
-                    currentDrawPositionX - halfTeethWidthPx,
-                    teethBasePositionY + teethHeightPx
-                )
-
-                drawnTeethCount++
-            }
-
-            currentDrawPositionX -= halfTeethWidthPx
-
-            // draw half of last teeth
-            lineTo(
-                currentDrawPositionX - halfTeethWidthPx,
-                teethBasePositionY - teethHeightPx
-            )
-
-            // draw left edge
-            lineTo(
-                size.width * 0.01f,
-                size.height * 0.99f
-            )
-
-            drawnTeethCount = 1
-            teethBasePositionY = size.height * 0.99f - teethHeightPx
-            currentDrawPositionX = size.width * 0.01f
-
-            // draw half of first teeth
-            lineTo(
-                currentDrawPositionX,
-                teethBasePositionY + teethHeightPx
-            )
-
-            lineTo(
-                currentDrawPositionX + halfTeethWidthPx,
-                teethBasePositionY - teethHeightPx
-            )
-
-            // draw remaining teethes
-            while (drawnTeethCount < minTeethCount) {
-
-                currentDrawPositionX += halfTeethWidthPx
-
-                // draw left half of teeth
-                lineTo(
-                    currentDrawPositionX + halfTeethWidthPx,
-                    teethBasePositionY + teethHeightPx
-                )
-
-                currentDrawPositionX += halfTeethWidthPx
-
-                // draw right half of teeth
-                lineTo(
-                    currentDrawPositionX + halfTeethWidthPx,
-                    teethBasePositionY - teethHeightPx
-                )
-
-                drawnTeethCount++
-            }
-
-            currentDrawPositionX += halfTeethWidthPx
-
-            // draw half of last teeth
-            lineTo(
-                currentDrawPositionX + halfTeethWidthPx,
-                teethBasePositionY + teethHeightPx
-            )
-
-            // left edge will automatically be drawn to close the path with the top-left arc
-            close()
-        })
-
-    }
 
     data class DebtorMenuItemData( // data class for debtor menu tiles
         val title: String,
@@ -1761,6 +1605,10 @@ fun AddStockDialog(
                         )
                     }
                 }
+                Spacer(Modifier.width(8.dp))
+
+                Text("Tap a Debtor to continue", fontSize = 12.sp, color = Color.Gray,
+                    textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
 
                 Row(
                     modifier = Modifier
@@ -1960,6 +1808,10 @@ fun AddStockDialog(
                         )
                     }
                 }
+                Spacer(Modifier.width(8.dp))
+
+                Text("Tap a Stock to continue", fontSize = 12.sp, color = Color.Gray,
+                    textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
 
                 Row(
                     modifier = Modifier
@@ -2052,4 +1904,173 @@ fun RowScope.TableCell( // table cell layout
             fontSize = if (isHeader) 16.sp else 14.sp
         )
     }
+}
+
+
+/*
+* Title- Make a Ticket View with Jetpack Compose
+* Author- Kush Saini
+* Accessed- 30/01/2026
+* URL- https://medium.com/@kushsaini/make-a-ticketview-with-jetpack-compose-ea0c8f7a00a8
+* */
+@Preview
+@Composable
+private fun TicketView( // custom background for invoice
+    content: @Composable () -> Unit = {
+        Text("Ticket View")
+    }
+) {
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.primary
+    ) {
+
+        Box(
+            modifier = Modifier
+                .padding(8.dp)
+                .shadow(
+                    2.dp,
+                    shape = TicketShape(8f, 4f),
+                    clip = true
+                )
+                .background(Color.White)
+        ) {
+
+            Box(modifier = Modifier.padding(16.dp)) {
+                content()
+            }
+        }
+    }
+}
+
+/*
+* Title- Make a Ticket View with Jetpack Compose
+* Author- Kush Saini
+* Accessed- 30/01/2026
+* URL- https://medium.com/@kushsaini/make-a-ticketview-with-jetpack-compose-ea0c8f7a00a8
+* */
+class TicketShape(
+    private val teethWidthDp: Float,
+    private val teethHeightDp: Float
+) : Shape {
+    override fun createOutline(
+        size: Size,
+        layoutDirection: LayoutDirection,
+        density: Density
+    ) = Outline.Generic(Path().apply {
+
+        moveTo(
+            size.width * 0.99f,
+            size.height * 0.01f
+        )
+
+        val teethHeightPx = teethHeightDp * density.density
+        var fullTeethWidthPx = teethWidthDp * density.density
+        var halfTeethWidthPx = fullTeethWidthPx / 2
+        var currentDrawPositionX = size.width * 0.99f
+        var teethBasePositionY = size.height * 0.01f + teethHeightPx
+        val shapeWidthPx = size.width * 0.99f - size.width * 0.01f
+
+        val teethCount = shapeWidthPx / fullTeethWidthPx
+        val minTeethCount = floor(teethCount)
+
+        if (teethCount != minTeethCount) { // check to allow drawing if shape width is a multiple of teeth count
+            val newTeethWidthPx = shapeWidthPx / minTeethCount
+            fullTeethWidthPx = newTeethWidthPx
+            halfTeethWidthPx = fullTeethWidthPx / 2
+        }
+
+        var drawnTeethCount = 1
+
+        // draw half of first teeth
+        lineTo(
+            currentDrawPositionX - halfTeethWidthPx,
+            teethBasePositionY + teethHeightPx
+        )
+
+        // draw remaining teethes
+        while (drawnTeethCount < minTeethCount) {
+
+            currentDrawPositionX -= halfTeethWidthPx
+
+            // draw right half of teeth
+            lineTo(
+                currentDrawPositionX - halfTeethWidthPx,
+                teethBasePositionY - teethHeightPx
+            )
+
+            currentDrawPositionX -= halfTeethWidthPx
+
+            // draw left half of teeth
+            lineTo(
+                currentDrawPositionX - halfTeethWidthPx,
+                teethBasePositionY + teethHeightPx
+            )
+
+            drawnTeethCount++
+        }
+
+        currentDrawPositionX -= halfTeethWidthPx
+
+        // draw half of last teeth
+        lineTo(
+            currentDrawPositionX - halfTeethWidthPx,
+            teethBasePositionY - teethHeightPx
+        )
+
+        // draw left edge
+        lineTo(
+            size.width * 0.01f,
+            size.height * 0.99f
+        )
+
+        drawnTeethCount = 1
+        teethBasePositionY = size.height * 0.99f - teethHeightPx
+        currentDrawPositionX = size.width * 0.01f
+
+        // draw half of first teeth
+        lineTo(
+            currentDrawPositionX,
+            teethBasePositionY + teethHeightPx
+        )
+
+        lineTo(
+            currentDrawPositionX + halfTeethWidthPx,
+            teethBasePositionY - teethHeightPx
+        )
+
+        // draw remaining teethes
+        while (drawnTeethCount < minTeethCount) {
+
+            currentDrawPositionX += halfTeethWidthPx
+
+            // draw left half of teeth
+            lineTo(
+                currentDrawPositionX + halfTeethWidthPx,
+                teethBasePositionY + teethHeightPx
+            )
+
+            currentDrawPositionX += halfTeethWidthPx
+
+            // draw right half of teeth
+            lineTo(
+                currentDrawPositionX + halfTeethWidthPx,
+                teethBasePositionY - teethHeightPx
+            )
+
+            drawnTeethCount++
+        }
+
+        currentDrawPositionX += halfTeethWidthPx
+
+        // draw half of last teeth
+        lineTo(
+            currentDrawPositionX + halfTeethWidthPx,
+            teethBasePositionY + teethHeightPx
+        )
+
+        // left edge will automatically be drawn to close the path with the top-left arc
+        close()
+    })
+
 }

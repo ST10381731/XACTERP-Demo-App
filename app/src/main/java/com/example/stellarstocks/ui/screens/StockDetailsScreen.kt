@@ -52,15 +52,17 @@ import com.example.stellarstocks.viewmodel.StockViewModel
 import java.text.SimpleDateFormat
 import java.util.Locale
 
+/*
+* */
 @Composable
 fun StockDetailsScreen(
     stockCode: String,
     viewModel: StockViewModel,
     navController: NavHostController
 ) {
-    val stock by viewModel.selectedStock.collectAsState() // variable to manage stockViewModel state
-    val transactions by viewModel.visibleTransactions.collectAsState() // variable to manage transaction table
-    val currentSort by viewModel.currentSort.collectAsState() // variable to manage sort option
+    val stock by viewModel.selectedStock.collectAsState()
+    val transactions by viewModel.visibleTransactions.collectAsState()
+    val currentSort by viewModel.currentSort.collectAsState()
 
     var expanded by remember { mutableStateOf(false) } // variable to manage dropdown menu
 
@@ -111,7 +113,8 @@ fun StockDetailsScreen(
 
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
-                StockDetailRow("Cost Price:", String.format("R%.2f", currentStock.cost)) // format cost to 2 decimal places
+                StockDetailRow("Cost Price:", String.format("R%.2f", currentStock.cost))
+                // format cost to 2 decimal places
                 StockDetailRow("Selling Price:", String.format("R%.2f", currentStock.sellingPrice))
 
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
@@ -137,7 +140,8 @@ fun StockDetailsScreen(
         }
 
         Box {
-            Button(
+            Button( // button for transaction sort
+                modifier = Modifier.padding(vertical = 8.dp),
                 onClick = { expanded = true },
                 colors = ButtonDefaults.buttonColors(containerColor = LightGreen)
             ) {

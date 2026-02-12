@@ -60,20 +60,54 @@ import com.example.stellarstocks.ui.theme.Red
 import com.example.stellarstocks.viewmodel.DebtorViewModel
 import com.example.stellarstocks.viewmodel.StockViewModel
 
+/*
+* Stock Creation Screen
+-Creation Mode-
+* allows user to create new stock items by entering the required information into '*' fields
+* stock code is auto created to prevent user errors
+* validation to prevent double spacing or starting/ending input with whitespace for description
+* validation to prevent letters and special characters in cost and selling price
+* validation to prevent negative cost or selling price
+* validation to prevent selling price being lower than cost price
+
+* Users can seamlessly switch between creation and edit mode by clicking the highlighted text
+
+-Edit mode-
+* edit mode allows users to search for stock items via part stock code or description
+* all inputs are disabled until a relevant stock item has been selected
+* all inputs auto-populate with table data once a stock item is selected
+* prior validations remain active during edit reducing user error
+* edit mode allows users to delete a stock which will deactivate the stock in master table
+*/
 @Composable
 fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: NavController) {
     val isEditMode by viewModel.isEditMode.collectAsState() // Check if in edit mode
     var showConfirmationDialog by remember { mutableStateOf(false) } // delete confirmation dialog state
 
-    val stockCode by viewModel.stockCode.collectAsState() // variable to hold the stock code
-    val description by viewModel.description.collectAsState() // variable to hold the description
-    val cost by viewModel.cost.collectAsState() // variable to hold the cost
-    val sellingPrice by viewModel.sellingPrice.collectAsState() // variable to hold the selling price
+    val stockCode by viewModel.stockCode.collectAsState()
+    val description by viewModel.description.collectAsState()
+    val cost by viewModel.cost.collectAsState()
+    val sellingPrice by viewModel.sellingPrice.collectAsState()
 
     var costTfv by remember { mutableStateOf(TextFieldValue(cost.toString())) }
+    // Text field values for cost to manipulate the cost price input
     var sellingPriceTfv by remember { mutableStateOf(TextFieldValue(sellingPrice.toString())) }
+    // Text field values for selling price to manipulate the sell price input
 
-    LaunchedEffect(cost) {
+    val toastMessage by viewModel.toastMessage.collectAsState()
+    val context = LocalContext.current
+
+    val scrollState = rememberScrollState()
+    var showSearchDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(toastMessage) { // initialise toast messages
+        toastMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearToast()
+        }
+    }
+
+    LaunchedEffect(cost) { // to update the cost text field value
         val currentInputVal = costTfv.text.toDoubleOrNull() ?: 0.0
         if (currentInputVal != cost) {
             val newText = cost.toString()
@@ -81,7 +115,7 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
         }
     }
 
-    LaunchedEffect(sellingPrice) {
+    LaunchedEffect(sellingPrice) { // to update the selling price text field value
         val currentInputVal = sellingPriceTfv.text.toDoubleOrNull() ?: 0.0
         if (currentInputVal != sellingPrice) {
             val newText = sellingPrice.toString()
@@ -89,22 +123,11 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
         }
     }
 
-    val toastMessage by viewModel.toastMessage.collectAsState()
-    val context = LocalContext.current
-    val scrollState = rememberScrollState()
-    var showSearchDialog by remember { mutableStateOf(false) }
-
-    LaunchedEffect(toastMessage) {
-        toastMessage?.let {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            viewModel.clearToast()
-        }
-    }
-
     LaunchedEffect(Unit) {
         viewModel.navigationChannel.collect { shouldNavigate ->
             if (shouldNavigate) {
-                navController.navigate(Screen.StockEnquiry.route) { // Navigate to the stock enquiry screen after creation/edit
+                navController.navigate(Screen.StockEnquiry.route) {
+                    // Navigate to the stock enquiry screen after creation/edit
                     popUpTo(Screen.StockMenu.route) { inclusive = false }
                 }
             }
@@ -138,7 +161,7 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
             title = { Text(text = "Confirm Deletion") },
             text = {
                 Text(
-                    "Are you sure you want to delete this Debtor?\n\n" +
+                    "Are you sure you want to delete this Stock?\n\n" +
                             "Stock Code: $stockCode\n" +
                             "Description: $description\n" +
                             "Cost: $cost\n" +
@@ -237,11 +260,12 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
+        OutlinedTextField( // Text field for cost
             value = costTfv,
             onValueChange = { input ->
 
-                if (input.text.count { it == '.' } <= 1 && input.text.all { it.isDigit() || it == '.' }) {// Only allow digits and max one decimal point
+                if (input.text.count { it == '.' } <= 1 && input.text.all { it.isDigit() || it == '.' }) {
+                    // Only allow digits and max one decimal point
                     costTfv = input
                     viewModel.onCostChange(input.text.toDoubleOrNull() ?: 0.0)
                 }
@@ -249,7 +273,7 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
             label = { Text("Cost of Item * ") },
             modifier = Modifier
                 .fillMaxWidth()
-                .onFocusChanged { focusState ->
+                .onFocusChanged { focusState -> // on selecting input, highlight all text
                     if (focusState.isFocused) {
                         val text = costTfv.text
                         costTfv = costTfv.copy(selection = TextRange(0, text.length))
@@ -262,10 +286,11 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
+        OutlinedTextField( // Text field for selling price
             value = sellingPriceTfv,
             onValueChange = { input ->
                 if (input.text.count { it == '.' } <= 1 && input.text.all { it.isDigit() || it == '.' }) { // Only allow digits and max one decimal point
+                    // Only allow digits and max one decimal point
                     sellingPriceTfv = input
                     viewModel.onSellingPriceChange(input.text.toDoubleOrNull() ?: 0.0)
                 }
@@ -273,7 +298,7 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
             label = { Text("Selling Price * ") },
             modifier = Modifier
                 .fillMaxWidth()
-                .onFocusChanged { focusState ->
+                .onFocusChanged { focusState ->// on selecting input, highlight all text
                     if (focusState.isFocused) {
                         val text = sellingPriceTfv.text
                         sellingPriceTfv = sellingPriceTfv.copy(selection = TextRange(0, text.length))
@@ -296,7 +321,9 @@ fun StockCreationScreen(viewModel: StockViewModel = viewModel(), navController: 
                 modifier = Modifier.weight(1f),
                 enabled = stockCode.isNotBlank()
             ) {
-                Text(if (isEditMode) "Update Details" else "Confirm Creation")
+                Text(
+                    if (isEditMode) "Update Details" else "Confirm Creation" // change title depending on mode
+                )
             }
 
             if (isEditMode) { // If in edit mode, show the delete button
@@ -346,8 +373,8 @@ fun StockCreationSearchDialog( // Search dialog for selecting a stock item
                     leadingIcon = { Icon(Icons.Default.Search, null) }
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                LazyColumn { // Lazy column to display the filtered stock items
-                    items(filteredStock) { stock ->
+                LazyColumn {
+                    items(filteredStock) { stock -> // loop through stock master to find filtered stock item
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()

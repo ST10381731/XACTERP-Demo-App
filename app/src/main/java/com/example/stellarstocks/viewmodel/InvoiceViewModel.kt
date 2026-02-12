@@ -47,7 +47,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
         fetchNextInvoiceId()
     }
 
-    private fun fetchNextInvoiceId() {
+    private fun fetchNextInvoiceId() { // Fetch next invoice ID
         viewModelScope.launch {
             _invoiceNum.value = repository.getNextInvoiceNum()
         }
@@ -61,6 +61,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
     }
 
     private fun areDiscountsEqual(d1: Double, d2: Double): Boolean {
+        // Helper function to check if discounts are equal to combine duplicate invoice items
         return abs(d1 - d2) < 0.001
     }
 
@@ -69,45 +70,50 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
             _toastMessage.value = "Quantity must be greater than 0"
             return
         }
-        if (discountPercent !in 0.0..100.0) { // discount cannot be greater than 100% or less than 0%
+        if (discountPercent !in 0.0..100.0) {
+            // discount cannot be greater than 100% or less than 0%
             _toastMessage.value = "Discount must be between 0% and 100%"
             return
         }
         val currentList = ArrayList(_invoiceItems.value)
 
 
-        val totalQtyInInvoice = currentList
+        val totalQtyInInvoice = currentList // Get total quantity of items in invoice
             .filter { it.stock.stockCode == stock.stockCode }
             .sumOf { it.qty }
 
 
         if ((totalQtyInInvoice + qty) > stock.stockOnHand) {
+            // Check if new quantity exceeds available stock
             _toastMessage.value = "Insufficient stock! Total in invoice: $totalQtyInInvoice. Remaining: ${stock.stockOnHand - totalQtyInInvoice}"
             return
         }
 
 
         val existingItemIndex = currentList.indexOfFirst {
+            // Check if item already exists in invoice
             it.stock.stockCode == stock.stockCode && it.discountPercent == discountPercent
         }
 
-        val grossTotal = stock.sellingPrice * qty
-        val discountAmt = grossTotal * (discountPercent / 100)
-        val finalTotal = grossTotal - discountAmt
+        val grossTotal = stock.sellingPrice * qty // Calculate gross total per line
+        val discountAmt = grossTotal * (discountPercent / 100) // Calculate discount amount
+        val finalTotal = grossTotal - discountAmt // Calculate final total per line
 
-        if (existingItemIndex != -1) {
+        if (existingItemIndex != -1) { // If item already exists in invoice
 
             val existingItem = currentList[existingItemIndex]
             val newQty = existingItem.qty + qty // merge quantities
 
 
-            val newGross = stock.sellingPrice * newQty // Calculate new gross total
+            val newGross = stock.sellingPrice * newQty // Calculate new gross total per line
             val newDiscAmt = newGross * (discountPercent / 100) // Calculate new discount amount
-            val newFinal = newGross - newDiscAmt // Calculate new final total
+            val newFinal = newGross - newDiscAmt // Calculate final total per line
 
             currentList[existingItemIndex] = InvoiceItem(stock, newQty, discountPercent, newDiscAmt, newFinal)
+            // update existing item
         } else {
             currentList.add(InvoiceItem(stock, qty, discountPercent, discountAmt, finalTotal))
+            // add new item to list
         }
 
         _invoiceItems.value = currentList
@@ -121,17 +127,18 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
         calculateTotals()
     }
     private fun calculateTotals() { // Calculate final total for invoice
-        val exVat = _invoiceItems.value.sumOf { it.lineTotal }
-        val vatCalc = exVat * 0.15 // 15% VAT
-        val total = exVat + vatCalc // line totals +vat
+        val exVat = _invoiceItems.value.sumOf { it.lineTotal } // Calculate total sales excl vat
+        val vatCalc = exVat * 0.15 // 15% VAT calculation
+        val total = exVat + vatCalc // all line totals +vat
 
-        _totalExVat.value = exVat
-        _vat.value = vatCalc
-        _grandTotal.value = total
+        _totalExVat.value = exVat // update total sales excl vat for display
+        _vat.value = vatCalc // update vat for display
+        _grandTotal.value = total // update grand total for display
     }
 
-    fun updateInvoiceItem(originalItem: InvoiceItem, newQty: Int, newDiscount: Double) { // Update an item in the invoice
-        if (newQty <= 0) {
+    fun updateInvoiceItem(originalItem: InvoiceItem, newQty: Int, newDiscount: Double) {
+        // Update an item in the invoice
+        if (newQty <= 0) { // check if quantity is valid
             removeFromInvoice(originalItem)
             _toastMessage.value = "Item removed (Qty 0)"
             return
@@ -148,38 +155,40 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
             .sumOf { it.qty }
 
 
-        if ((otherLinesQty + newQty) > originalItem.stock.stockOnHand) { // Check if new quantity exceeds available stock
+        if ((otherLinesQty + newQty) > originalItem.stock.stockOnHand) {
+            // Check if new quantity exceeds available stock in stock  master
             _toastMessage.value = "Insufficient stock! Other items have $otherLinesQty. Available : ${originalItem.stock.stockOnHand - otherLinesQty}"
             return
         }
 
-        val mergeTarget = currentItems.find { // Find item to merge with
-            it != originalItem && // Don't merge with self
-                    it.stock.stockCode == originalItem.stock.stockCode &&
+        val mergeTarget = currentItems.find { // Find same item with same discount to merge with
+            it != originalItem && it.stock.stockCode == originalItem.stock.stockCode &&
                     areDiscountsEqual(it.discountPercent, newDiscount)
         }
 
-        if (mergeTarget != null) { // If there is a merge target
+        if (mergeTarget != null) { // If merge stock is not null
             val listWithoutOriginal = currentItems.filter { it != originalItem } // Remove original item
 
-            _invoiceItems.value = listWithoutOriginal.map { item -> // update merge target
-                if (item == mergeTarget) { // if merge target
+            _invoiceItems.value = listWithoutOriginal.map { item -> // update list
+                if (item == mergeTarget) { // if merge is possible
                     val combinedQty = item.qty + newQty // combine quantities
-                    val newGross = item.stock.sellingPrice * combinedQty // Calculate new gross total
-                    val newDiscAmt = newGross * (newDiscount / 100) // Calculate new discount amount
-                    val newFinal = newGross - newDiscAmt // Calculate new final total
-                    item.copy(qty = combinedQty, discountAmount = newDiscAmt, lineTotal = newFinal) // return new item with updated values
+                    val newGross = item.stock.sellingPrice * combinedQty // Calculate new merged gross total
+                    val newDiscAmt = newGross * (newDiscount / 100) // Calculate new merged discount amount
+                    val newFinal = newGross - newDiscAmt // Calculate new merged final total
+                    item.copy(qty = combinedQty, discountAmount = newDiscAmt, lineTotal = newFinal)
+                // return new item with updated values
                 } else {
                     item // return original item
                 }
             }
-        } else {
-            _invoiceItems.value = currentItems.map { item -> // update original item
+        } else { // If merge is not possible
+            _invoiceItems.value = currentItems.map { item -> // update item list
                 if (item == originalItem) { // if original item
-                    val grossTotal = item.stock.sellingPrice * newQty // Calculate new gross total
-                    val discountAmt = grossTotal * (newDiscount / 100) // Calculate new discount amount
-                    val finalTotal = grossTotal - discountAmt // Calculate new final total
-                    item.copy(qty = newQty, discountPercent = newDiscount, discountAmount = discountAmt, lineTotal = finalTotal) // return new item with updated values
+                    val grossTotal = item.stock.sellingPrice * newQty // Calculate original gross total
+                    val discountAmt = grossTotal * (newDiscount / 100) // Calculate original discount amount
+                    val finalTotal = grossTotal - discountAmt // Calculate original final total
+                    item.copy(qty = newQty, discountPercent = newDiscount, discountAmount = discountAmt, lineTotal = finalTotal)
+                    // return new item with updated values
                 } else {
                     item // return the original item
                 }
@@ -188,7 +197,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
         calculateTotals()
     }
 
-    fun confirmInvoice() { // Confirm invoice and process it
+    fun confirmInvoice() { // Confirm invoice and process changes to db tables
         val debtor = _selectedDebtor.value
         val items = _invoiceItems.value
 
@@ -201,19 +210,18 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
             return
         }
 
-        val stockGroups = items.groupBy { it.stock.stockCode }
-        for ((_, groupItems) in stockGroups) {
-            val totalRequired = groupItems.sumOf { it.qty }
-            val stockOnHand = groupItems.first().stock.stockOnHand
-            if (totalRequired > stockOnHand) {
+        val stockGroups = items.groupBy { it.stock.stockCode } // group items by stock code
+        for ((_, groupItems) in stockGroups) { // for each item in group
+            val totalRequired = groupItems.sumOf { it.qty } // calculate total required for items
+            val stockOnHand = groupItems.first().stock.stockOnHand // get stock on hand for first item in group
+            if (totalRequired > stockOnHand) { // check if stock is sufficient for group
                 _toastMessage.value = "Insufficient stock for ${groupItems.first().stock.stockDescription}. Req: $totalRequired, Has: $stockOnHand"
                 return
             }
         }
 
         viewModelScope.launch {
-            val invoiceNum = _invoiceNum.value
-            val calculatedTotalCost = items.sumOf { it.qty * it.stock.cost }
+            val calculatedTotalCost = items.sumOf { (it.qty * it.stock.cost) } // calculate total cost for invoice
 
             val header = InvoiceHeader(
                 invoiceNum = 0,

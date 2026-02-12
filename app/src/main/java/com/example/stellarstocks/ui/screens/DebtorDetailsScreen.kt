@@ -52,20 +52,28 @@ import com.example.stellarstocks.viewmodel.SortOption
 import java.text.SimpleDateFormat
 import java.util.Locale
 
+/*
+* Debtor Details Screen
+* displays all information relating to debtor from debtor master table such as address, name, etc.
+* users can view debtor transaction history
+* users have the ability to click a debtor transaction entry to view the full details of the transaction
+* users can filter the transaction table to reveal most recent items sold, highest value and lowest value
+*/
 @Composable
 fun DebtorDetailsScreen(
     accountCode: String,
     viewModel: DebtorViewModel,
     navController: NavHostController
 ) {
-    val debtor by viewModel.selectedDebtor.collectAsState() // Debtor object to hold details
+    val debtor by viewModel.selectedDebtor.collectAsState()
     val transactions by viewModel.visibleTransactions.collectAsState() // List of transactions to display
     val currentSort by viewModel.currentSort.collectAsState() // Current sort option
 
     var expanded by remember { mutableStateOf(false) } // variable to control dropdown menu
 
     LaunchedEffect(accountCode) {
-        viewModel.selectDebtorForDetails(accountCode) // Fetch debtor details
+        viewModel.selectDebtorForDetails(accountCode)
+    // Fetch debtor details upon user clicking on a debtor in enquiry
     }
 
     if (debtor == null) { // if debtor is not found, show loading screen
@@ -84,6 +92,7 @@ fun DebtorDetailsScreen(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = { navController.popBackStack() }) {
+            // navigate back to enquiry screen
             Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = DarkGreen)
         }
         Text( // Debtor Details Header
@@ -133,15 +142,15 @@ fun DebtorDetailsScreen(
 
         }
         Box {
-            Button(
+            Button( // sort button
                 onClick = { expanded = true },
                 colors = ButtonDefaults.buttonColors(containerColor = LightGreen)
             ) {
-                Text("Sort By: ${getSortLabel(currentSort)}", color = Color.Black) // Sort Button
+                Text("Sort By: ${getSortLabel(currentSort)}", color = Color.Black)
                 Icon(Icons.Default.ArrowDropDown, contentDescription = "Sort", tint = Color.Black)
             }
 
-            DropdownMenu( // Sort Dropdown Menu
+            DropdownMenu( // Sort Dropdown Menu that appears after clicking sort button
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
@@ -183,8 +192,8 @@ fun DebtorDetailsScreen(
             Text("Value", Modifier.weight(0.6f), fontWeight = FontWeight.Bold, fontSize = 12.sp, textAlign = TextAlign.End)
         }
 
-        LazyColumn {
-            items(transactions) { trans -> // Transaction History List
+        LazyColumn {// Transaction History List
+            items(transactions) { trans -> // loop through each transaction in table and display
                 DebtorTransactionRow(trans)
             }
         }
@@ -213,7 +222,7 @@ fun DebtorDetailRow(label: String, value: String) { // function to display a row
 
 @Composable
 fun DebtorTransactionRow(trans: DebtorTransactionInfo) { // function to display a row of debtor transactions
-    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()) // Date format
+    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     var expanded by remember { mutableStateOf(false) } // variable to control dropdown menu
 
     Row(
@@ -238,11 +247,12 @@ fun DebtorTransactionRow(trans: DebtorTransactionInfo) { // function to display 
             text = trans.items ?: "-",
             modifier = Modifier.weight(1.0f),
             fontSize = 11.sp,
-            maxLines = if (expanded) Int.MAX_VALUE else 1,
-            overflow = TextOverflow.Ellipsis
+            maxLines = if (expanded) Int.MAX_VALUE else 1, // Expandable text
+            overflow = TextOverflow.Ellipsis  // ellipsis if text is too long
         )
 
         // Value
-        Text(String.format("R%.2f", trans.value), Modifier.weight(0.6f), fontSize = 11.sp, textAlign = TextAlign.End)
+        Text(String.format("R%.2f", trans.value), Modifier.weight(0.6f), fontSize = 11.sp,
+            textAlign = TextAlign.End)
     }
 }
