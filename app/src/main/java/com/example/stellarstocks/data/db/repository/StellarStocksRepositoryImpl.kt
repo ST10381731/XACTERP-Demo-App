@@ -113,18 +113,20 @@ class StellarStocksRepositoryImpl @Inject constructor(
 
     override suspend fun processInvoice(header: InvoiceHeader, items: List<InvoiceDetail>) {
         db.withTransaction {
+
+            /* insert invoice header */
             val headerToInsert = header.copy(invoiceNum = 0)
             // Create a copy of the header with a zero invoice number
             val invoiceId = invoiceHeaderDao.insertInvoiceHeader(headerToInsert).toInt()
             // Insert the header and get the generated ID
 
-
+            /* insert invoice details */
             val invoiceItems = items.map { it.copy(invoiceNum = invoiceId) }
             // Create a list of invoice items with the generated ID
             invoiceDetailDao.insertInvoiceDetails(invoiceItems)
             // Insert the invoice items into invoice items table
 
-
+            /* update debtor master */
             val debtor = debtorDao.getDebtor(header.accountCode)
             // Get Debtor from invoice header
             if (debtor != null) {
@@ -161,6 +163,7 @@ class StellarStocksRepositoryImpl @Inject constructor(
                     )
                 )
 
+                /* insert debtor transaction */
                 debtorDao.insertTransaction(// add Debtor Transaction
                     DebtorTransaction(
                         accountCode = header.accountCode,
@@ -173,6 +176,7 @@ class StellarStocksRepositoryImpl @Inject constructor(
                 )
             }
 
+            /* update stock master */
             items.forEach { item -> // process each item in the invoice
                 val stock = stockDao.getStock(item.stockCode)
                 if (stock != null) {
@@ -187,6 +191,7 @@ class StellarStocksRepositoryImpl @Inject constructor(
                         saleAmount = item.total
                     )
 
+                    /* update stock transaction */
                     stockDao.insertTransaction( // insert a new stock transaction
                         StockTransaction(
                             stockCode = item.stockCode,

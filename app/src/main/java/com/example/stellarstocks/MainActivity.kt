@@ -123,7 +123,6 @@ import com.example.stellarstocks.ui.theme.Orange
 import com.example.stellarstocks.ui.theme.ProfessionalLightBlue
 import com.example.stellarstocks.ui.theme.Red
 import com.example.stellarstocks.ui.theme.StellarStocksTheme
-import com.example.stellarstocks.ui.theme.White
 import com.example.stellarstocks.ui.theme.Yellow
 import com.example.stellarstocks.viewmodel.DebtorListSortOption
 import com.example.stellarstocks.viewmodel.DebtorViewModel
@@ -157,7 +156,7 @@ data class BottomNavItem( // bottom navigation bar
 
 /*
 * The purpose of this function to generate the wave image used in the background of the application*/
-fun createWavePath( // image for landing page
+fun createWavePath( // image for backgrounds
     width: Float,
     height: Float,
     waveHeight: Float
@@ -191,7 +190,7 @@ The second page is the MainApp, which contains the core functionality of the app
 fun AppEntryPoint() {
     val pagerState = rememberPagerState(pageCount = { 2 })
 
-    VerticalPager( //view pager for landing page and main app
+    VerticalPager( //vertical swipe transition for landing page and main app
         state = pagerState,
         modifier = Modifier.fillMaxSize()
     ) { page ->
@@ -221,6 +220,8 @@ fun LandingPage() { //landing page for app with graph and analytics
     val popularStock by stockViewModel.popularStock.collectAsState()
 
     val financialYearDataPoints = remember(monthlySales){ //for graph to link data points accurately to months on x axis
+        /* calendar returns Month 0- Jan to 11- Dec
+         * financial Year starts in March. This block remaps months so the graph starts in March */
         val monthRemapping = mapOf(
             0 to 10,
             1 to 11,
@@ -646,22 +647,18 @@ fun SimpleLineChart(
  */
     @Composable
     fun InvoiceScreen(
-        stockViewModel: StockViewModel = viewModel(factory = StockViewModelFactory(
-            (LocalContext.current.applicationContext as StellarStocksApplication).repository)),
-        debtorViewModel: DebtorViewModel = viewModel(factory = DebtorViewModelFactory(
-            (LocalContext.current.applicationContext as StellarStocksApplication).repository)),
+        stockViewModel: StockViewModel,
+        debtorViewModel: DebtorViewModel,
         invoiceViewModel: InvoiceViewModel = viewModel(factory = InvoiceViewModelFactory(
             (LocalContext.current.applicationContext as StellarStocksApplication).repository))
     ) {
         var showStockSearchDialog by remember { mutableStateOf(false) } // stock search dialog state
         var showDebtorSearchDialog by remember { mutableStateOf(false) } // debtor search dialog state
         var showQtyDialog by remember { mutableStateOf(false) } // quantity dialog state
+        var showConfirmationDialog by remember { mutableStateOf(false) } // invoice confirmation dialog state
 
         var tempSelectedStock by remember { mutableStateOf<com.example.stellarstocks.data.db.models.StockMaster?>(null) } // temporary selected stock state for invoice preview
-
         var editingInvoiceItem by remember { mutableStateOf<InvoiceItem?>(null) }
-
-        var showConfirmationDialog by remember { mutableStateOf(false) } // invoice confirmation dialog state
         var isEditMode by remember { mutableStateOf(false) } // edit mode for quantity dialog
         var editInitialQty by remember { mutableIntStateOf(1) } // initial quantity for quantity dialog
         var editInitialDiscount by remember { mutableDoubleStateOf(0.0) } // initial discount for quantity dialog

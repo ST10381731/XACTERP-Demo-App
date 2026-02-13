@@ -38,15 +38,16 @@ enum class StockListSortOption { // sort options for stock enquiry
 
 class StockViewModel(private val repository: StellarStocksRepository) : ViewModel() {
 
-    private val _searchQuery = MutableStateFlow("") // Search query for stock
+    private val _searchQuery = MutableStateFlow("") // user input for searching
     val searchQuery = _searchQuery.asStateFlow()
 
-    private val _stockListSort = MutableStateFlow(StockListSortOption.CODE_ASC) // Sort option for stock list
+    private val _stockListSort = MutableStateFlow(StockListSortOption.CODE_ASC) // Sort option for stock enquiry
     val stockListSort = _stockListSort.asStateFlow()
 
     private val _stock = MutableStateFlow<List<StockMaster>>(emptyList()) // List of stock
     val stock: StateFlow<List<StockMaster>> = _stock
 
+    //The search updates instantly when input changes
     val filteredStock: StateFlow<List<StockMaster>> = combine(
         // Combine stock, search query, and sort option to filter and sort stock
         repository.getAllStock(),
@@ -109,16 +110,17 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
     private val _adjustmentSearchCode = MutableStateFlow("") // Search query for stock adjustment
     val adjustmentSearchCode = _adjustmentSearchCode.asStateFlow()
 
-    private val _foundAdjustmentStock = MutableStateFlow<StockMaster?>(null) // Found stock for adjustment
+    private val _foundAdjustmentStock = MutableStateFlow<StockMaster?>(null) // selected stock for adjustment
     val foundAdjustmentStock = _foundAdjustmentStock.asStateFlow()
 
-    private val _adjustmentQty = MutableStateFlow(0) // Adjustment quantity
+    private val _adjustmentQty = MutableStateFlow(0) // adjustment quantity
     val adjustmentQty = _adjustmentQty.asStateFlow()
 
-    private val _adjustmentType = MutableStateFlow("Adjustment") //Transaction type for adjustment
+    private val _adjustmentType = MutableStateFlow("Adjustment") // Transaction type for adjustment
     val adjustmentType = _adjustmentType.asStateFlow()
 
-    private val _isEditMode = MutableStateFlow(false) // Edit mode for stock
+
+    private val _isEditMode = MutableStateFlow(false) // toggle edit or creation mode for stock
     val isEditMode = _isEditMode.asStateFlow()
 
     private val _stockCode = MutableStateFlow("") // Stock code
@@ -177,10 +179,10 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
         }
     }
 
-    fun toggleMode() { // Toggle edit mode
+    fun toggleMode() { // Toggle edit or creation mode
         _isEditMode.value = !_isEditMode.value
         clearForm()
-        if (!_isEditMode.value) generateNewCode() // Generate new code if not in edit mode
+        if (!_isEditMode.value) generateNewCode() // Generate new code if in creation mode
     }
 
     fun onStockCodeChange(newValue: String) { _stockCode.value = newValue } // Update stock code
@@ -232,7 +234,7 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
                 return@launch
             }
 
-            val stock = StockMaster( // Create new stock
+            val stock = StockMaster( // Create stock object
                 stockCode = _stockCode.value,
                 stockDescription = _description.value.trim(), // prevents text ending in whitespace
                 cost = _cost.value,
@@ -302,7 +304,7 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
         }
 
         if (type == "Adjustment" && (stock.stockOnHand + qty) < 0) {
-            // Adjustments cannot drop stock on hand to negative
+            // cannot drop stock on hand to negative
             _toastMessage.value = "Insufficient stock! Current: ${stock.stockOnHand}"
             return
         }
@@ -352,7 +354,7 @@ class StockViewModel(private val repository: StellarStocksRepository) : ViewMode
     _sellingPrice.value = 0.0
     _stockCode.value = "" }
 
-    val popularStock= repository.getAllStock().map { list -> //for graphing. Get all stock and sort by qty sold
+    val popularStock= repository.getAllStock().map { list -> // get all stock and sort by qty sold for landing page table
         list.sortedByDescending { it.qtySold }.take(5)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 

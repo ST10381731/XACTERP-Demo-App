@@ -35,17 +35,18 @@ enum class DebtorListSortOption { //enum class to hold debtor list sort options
     BALANCE_DESC
 }
 class DebtorViewModel(private val repository: StellarStocksRepository) : ViewModel() {
-    private val _searchQuery = MutableStateFlow("") // variable to hold search query
+    private val _searchQuery = MutableStateFlow("") // // User input for searching debtors
     val searchQuery = _searchQuery.asStateFlow()
 
     private val _debtorListSort = MutableStateFlow(DebtorListSortOption.CODE_ASC)
-    // variable to hold debtor list sort option
+    // Current sort selection for the enquiry list
     val debtorListSort = _debtorListSort.asStateFlow()
 
-    private val _currentSort =
-        MutableStateFlow(SortOption.RECENT_ITEM_SOLD) // variable to hold current sort option
+    private val _currentSort = MutableStateFlow(SortOption.RECENT_ITEM_SOLD)
+    // Current sort selection for transaction history
     val currentSort = _currentSort.asStateFlow()
 
+    // Debtor enquiry search that automatically updates the UI whenever input changes
     val filteredDebtors: StateFlow<List<DebtorMaster>> = combine(
         // variable to hold filtered debtors based on search query and sort option
         repository.getAllDebtors(),
@@ -98,7 +99,7 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
             initialValue = emptyList()
         )
 
-    private val _isEditMode = MutableStateFlow(false) // variable to hold edit mode
+    private val _isEditMode = MutableStateFlow(false) // variable to toggle between create and edit
     val isEditMode = _isEditMode.asStateFlow()
 
     private val _accountCode = MutableStateFlow("") // variable to hold account code
@@ -120,7 +121,7 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
     val postalCode = _postalCode.asStateFlow()
 
     private val _showAddress2 = MutableStateFlow(false)
-    // variable to determine state of secondary address
+    // variable to toggle visibility of secondary address
     val showAddress2 = _showAddress2.asStateFlow()
 
     private val _addr2Line1 = MutableStateFlow("") // variable to hold secondary address line 1
@@ -141,7 +142,7 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
     private val _toastMessage = MutableStateFlow<String?>(null) // variable to hold toast messages
     val toastMessage = _toastMessage.asStateFlow()
 
-    private val _navigationChannel = Channel<Boolean>() // variable to hold navigation events
+    private val _navigationChannel = Channel<Boolean>() // variable to signal the UI to navigate back after save
     val navigationChannel = _navigationChannel.receiveAsFlow()
 
     private val _transactionInfo = MutableStateFlow<List<DebtorTransactionInfo>>(emptyList())
@@ -160,7 +161,7 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
         _searchQuery.value = ""
     }
 
-    fun selectDebtorForDetails(code: String) { // function to select debtor for details
+    fun selectDebtorForDetails(code: String) { // Fetches full details for a debtor when selected from the enquiry
         viewModelScope.launch {
             // Get Debtor Master Details
             _selectedDebtor.value = repository.getDebtor(code)
@@ -176,7 +177,7 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
         _currentSort.value = option
     }
 
-    fun toggleMode() { // function to toggle edit mode
+    fun toggleMode() { // function to toggle edit or creation mode
         _isEditMode.value = !_isEditMode.value
         clearForm()
         if (!_isEditMode.value) generateNewCode()
@@ -221,7 +222,7 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
     }
 
 
-    fun generateNewCode() { // function to generate new account code
+    fun generateNewCode() { // function to auto generate new account code
         viewModelScope.launch {
             val lastCode = repository.getLastDebtorCode() // get last account code
 
@@ -338,7 +339,7 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
         }
     }
 
-    fun loadDebtorDetails(code: String) { // function to load debtor details
+    fun loadDebtorDetails(code: String) { // function to load debtor details when editing
         viewModelScope.launch {
             val debtor = repository.getDebtor(code) // get debtor by code
             if (debtor != null) { // if debtor exists, update form fields
@@ -413,10 +414,12 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
         list.sortedByDescending { it.salesYearToDate }.take(5)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+
+    // calculate total sales per month for the line graph.
     val monthlySales: StateFlow<List<Pair<Float, Float>>> = repository.getAllDebtorTransactions()
         //for graphing get all debtor transactions
         .map { transactions ->
-            if (transactions.isEmpty()) return@map emptyList<Pair<Float, Float>>()
+            if (transactions.isEmpty()) return@map emptyList()
 
             val calendar = Calendar.getInstance() // calendar to get month from date
 
@@ -425,10 +428,10 @@ class DebtorViewModel(private val repository: StellarStocksRepository) : ViewMod
                     calendar.time = it.date
                     calendar.get(Calendar.MONTH) // Get Month from Date
                 }
-                .map { (month, trans) -> // create a pair of month and total value
+                .map { (month, trans) -> // Sum gross transaction values for each month
                     month.toFloat() to trans.sumOf { it.grossTransactionValue }.toFloat()
                 }
-                .sortedBy { it.first } // chronological order
+                .sortedBy { it.first } // chronological order from Jan to Dec
         }
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

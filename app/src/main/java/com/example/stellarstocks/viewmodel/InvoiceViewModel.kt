@@ -28,23 +28,26 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
     private val _invoiceItems = MutableStateFlow<List<InvoiceItem>>(emptyList()) // List of items in the Invoice
     val invoiceItems = _invoiceItems.asStateFlow()
 
-    private val _totalExVat = MutableStateFlow(0.0) // Total amount before VAT
+    private val _totalExVat = MutableStateFlow(0.0) // variable to hold sum of all line totals
     val totalExVat = _totalExVat.asStateFlow()
 
     private val _vat = MutableStateFlow(0.0) // VAT amount
     val vat = _vat.asStateFlow()
 
-    private val _grandTotal = MutableStateFlow(0.0) // Gross total amount
+    private val _grandTotal = MutableStateFlow(0.0) // Total Ex Vat + VAT
     val grandTotal = _grandTotal.asStateFlow()
 
     private val _toastMessage = MutableStateFlow<String?>(null) // variable for toast message
     val toastMessage = _toastMessage.asStateFlow()
 
-    private val _invoiceNum = MutableStateFlow(0)
+    private val _invoiceNum = MutableStateFlow(0) // variable to display next invoice ID
     val invoiceNum = _invoiceNum.asStateFlow()
 
+    private val _isInvoiceProcessed = MutableStateFlow(false) // Invoice check variable
+    val isInvoiceProcessed = _isInvoiceProcessed.asStateFlow()
+
     init {
-        fetchNextInvoiceId()
+        fetchNextInvoiceId() // Load the next ID immediately on startup
     }
 
     private fun fetchNextInvoiceId() { // Fetch next invoice ID
@@ -53,15 +56,12 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
         }
     }
 
-    private val _isInvoiceProcessed = MutableStateFlow(false) // Invoice processed flag
-    val isInvoiceProcessed = _isInvoiceProcessed.asStateFlow()
-
     fun setDebtor(debtor: DebtorMaster) { // function to set debtor for invoice
         _selectedDebtor.value = debtor
     }
 
     private fun areDiscountsEqual(d1: Double, d2: Double): Boolean {
-        // Helper function to check if discounts are equal to combine duplicate invoice items
+        // function to check if discounts are equal to combine duplicate invoice items
         return abs(d1 - d2) < 0.001
     }
 
@@ -75,10 +75,11 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
             _toastMessage.value = "Discount must be between 0% and 100%"
             return
         }
+
         val currentList = ArrayList(_invoiceItems.value)
 
 
-        val totalQtyInInvoice = currentList // Get total quantity of items in invoice
+        val totalQtyInInvoice = currentList // Calculate total quantity of a specific stock currently in the invoice
             .filter { it.stock.stockCode == stock.stockCode }
             .sumOf { it.qty }
 
@@ -91,7 +92,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
 
 
         val existingItemIndex = currentList.indexOfFirst {
-            // Check if item already exists in invoice
+            // Check if item already exists in invoice with same discount
             it.stock.stockCode == stock.stockCode && it.discountPercent == discountPercent
         }
 
@@ -136,7 +137,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
         _grandTotal.value = total // update grand total for display
     }
 
-    fun updateInvoiceItem(originalItem: InvoiceItem, newQty: Int, newDiscount: Double) {
+    fun updateInvoiceItem(originalItem: InvoiceItem, newQty: Int, newDiscount: Double) { // editing an item in invoice
         // Update an item in the invoice
         if (newQty <= 0) { // check if quantity is valid
             removeFromInvoice(originalItem)
@@ -161,7 +162,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
             return
         }
 
-        val mergeTarget = currentItems.find { // Find same item with same discount to merge with
+        val mergeTarget = currentItems.find { // Check if the edit creates a duplicate line
             it != originalItem && it.stock.stockCode == originalItem.stock.stockCode &&
                     areDiscountsEqual(it.discountPercent, newDiscount)
         }
@@ -212,7 +213,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
 
         val stockGroups = items.groupBy { it.stock.stockCode } // group items by stock code
         for ((_, groupItems) in stockGroups) { // for each item in group
-            val totalRequired = groupItems.sumOf { it.qty } // calculate total required for items
+            val totalRequired = groupItems.sumOf { it.qty } // calculate total stock required for items
             val stockOnHand = groupItems.first().stock.stockOnHand // get stock on hand for first item in group
             if (totalRequired > stockOnHand) { // check if stock is sufficient for group
                 _toastMessage.value = "Insufficient stock for ${groupItems.first().stock.stockDescription}. Req: $totalRequired, Has: $stockOnHand"
@@ -223,6 +224,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
         viewModelScope.launch {
             val calculatedTotalCost = items.sumOf { (it.qty * it.stock.cost) } // calculate total cost for invoice
 
+            // create Header
             val header = InvoiceHeader(
                 invoiceNum = 0,
                 accountCode = debtor.accountCode,
@@ -232,6 +234,7 @@ class InvoiceViewModel(private val repository: StellarStocksRepository) : ViewMo
                 totalCost = calculatedTotalCost
             )
 
+            // create details
             val detailItems = items.mapIndexed { index, invoiceItem ->
                 InvoiceDetail(
                     invoiceNum = 0,

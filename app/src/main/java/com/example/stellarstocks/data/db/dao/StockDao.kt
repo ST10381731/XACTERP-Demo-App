@@ -55,17 +55,6 @@ interface StockDao {
     suspend fun getMaxAdjustmentDocNum(): Int?
     // Get the highest adjustment document number
 
-    @Query("""
-        SELECT h.accountCode 
-        FROM stock_transaction t
-        JOIN invoice_items i ON t.documentNum = i.invoiceNum AND t.stockCode = i.stockCode
-        JOIN invoice_header h ON i.invoiceNum = h.invoiceNum
-        WHERE t.stockCode = :code AND t.transactionType = 'Invoice'
-        ORDER BY t.date DESC LIMIT 1
-    """)
-    suspend fun getMostRecentDebtorForStock(code: String): String?
-    // Get most recent debtor for a stock
-
     @Transaction
     @Query("""
         SELECT t.id AS transactionId, t.date, h.accountCode, t.documentNum, t.transactionType, t.qty, 
